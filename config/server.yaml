@@ -1,0 +1,15 @@
+server:
+  port: 30000
+  mode: debug # debug, release, test
+  host: "0.0.0.0"
+
+# database:
+#   host: "localhost"
+#   port: 3306
+#   username: "root"
+#   password: ""
+#   database: "onegotask"
+
+log:
+  level: "info" # debug, info, warn, error
+  file: "logs/app.log"
