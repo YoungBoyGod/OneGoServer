@@ -2,6 +2,9 @@ server:
   port: 30000
   mode: debug # debug, release, test
   host: "0.0.0.0"
+  shutdown_timeout: 30  # 优雅关闭超时时间(秒)
+  read_timeout: 30      # 读取超时时间(秒)
+  write_timeout: 30     # 写入超时时间(秒)
 
 # database:
 #   host: "localhost"
