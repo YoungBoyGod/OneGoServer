@@ -1,6 +1,8 @@
 package middleware
 
 import (
+	"crypto/md5"
+	"fmt"
 	"time"
 
 	"learngo0619/internal/logger"
@@ -57,7 +59,7 @@ func ZapRecovery() gin.HandlerFunc {
 	})
 }
 
-// RequestID 为每个请求添加唯一ID
+// RequestID 为每个请求添加唯一ID和客户端指纹
 func RequestID() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		requestID := c.GetHeader("X-Request-ID")
@@ -66,14 +68,39 @@ func RequestID() gin.HandlerFunc {
 		}
 
 		// 获取会话ID
-		_, sessionID := logger.GetInstanceInfo()
+		_, sessionID, serverMac := logger.GetInstanceInfo()
+
+		// 生成客户端指纹（作为客户端MAC的替代）
+		clientFingerprint := generateClientFingerprint(c)
 
 		c.Set("request_id", requestID)
 		c.Set("session_id", sessionID)
+		c.Set("server_mac", serverMac)
+		c.Set("client_fingerprint", clientFingerprint)
+
+		// 设置响应头
 		c.Header("X-Request-ID", requestID)
 		c.Header("X-Session-ID", sessionID)
+		c.Header("X-Server-MAC", serverMac)
+		c.Header("X-Client-Fingerprint", clientFingerprint)
+
 		c.Next()
 	}
+}
+
+// generateClientFingerprint 生成客户端指纹（替代MAC地址）
+func generateClientFingerprint(c *gin.Context) string {
+	// 组合客户端特征信息
+	fingerprint := fmt.Sprintf("%s|%s|%s|%s",
+		c.ClientIP(),
+		c.Request.UserAgent(),
+		c.GetHeader("Accept-Language"),
+		c.GetHeader("Accept-Encoding"),
+	)
+
+	// 生成MD5哈希作为指纹
+	hash := md5.Sum([]byte(fingerprint))
+	return fmt.Sprintf("%x", hash)[:16] // 取前16位
 }
 
 // generateRequestID 生成请求ID

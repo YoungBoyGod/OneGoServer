@@ -44,5 +44,6 @@ func registerRoutes(router *gin.Engine, cfg *config.Config) {
 	{
 		v1.GET("/status", handlers.APIStatusHandler)
 		v1.GET("/info", handlers.APIInfoHandler(cfg))
+		v1.GET("/client-info", handlers.ClientInfoHandler)
 	}
 }

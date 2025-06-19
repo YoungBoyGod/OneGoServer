@@ -69,11 +69,12 @@ func (s *Server) Start(verbose bool) error {
 
 // printStartupInfo prints server startup information
 func (s *Server) printStartupInfo(verbose bool) {
-	pid, sessionID := logger.GetInstanceInfo()
+	pid, sessionID, macAddress := logger.GetInstanceInfo()
 
 	// 输出类似于用户期望的格式
 	fmt.Printf("build running pid: %d\n", pid)
 	fmt.Printf("session: {%s}\n", sessionID)
+	fmt.Printf("server mac: %s\n", macAddress)
 	fmt.Printf("🚀 服务器启动在 http://%s:%s\n", s.config.Server.Host, s.config.Server.Port)
 	fmt.Printf("📋 模式: %s\n", s.config.Server.Mode)
 	fmt.Printf("📱 应用: %s v%s\n", s.config.App.Name, s.config.App.Version)
@@ -89,6 +90,7 @@ func (s *Server) printStartupInfo(verbose bool) {
 		fmt.Printf("📍 详细配置信息:\n")
 		fmt.Printf("   进程ID: %d\n", pid)
 		fmt.Printf("   会话ID: %s\n", sessionID)
+		fmt.Printf("   服务器MAC: %s\n", macAddress)
 		fmt.Printf("   主机: %s\n", s.config.Server.Host)
 		fmt.Printf("   端口: %s\n", s.config.Server.Port)
 		fmt.Printf("   模式: %s\n", s.config.Server.Mode)

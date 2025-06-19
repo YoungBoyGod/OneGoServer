@@ -2,6 +2,7 @@ package logger
 
 import (
 	"fmt"
+	"net"
 	"os"
 	"path/filepath"
 	"strings"
@@ -20,8 +21,9 @@ var (
 	Sugar  *zap.SugaredLogger
 
 	// 应用实例信息
-	ProcessID int
-	SessionID string
+	ProcessID  int
+	SessionID  string
+	MacAddress string // 服务端MAC地址
 )
 
 // Init 初始化日志系统
@@ -29,6 +31,7 @@ func Init(cfg *config.Config) error {
 	// 生成应用实例信息
 	ProcessID = os.Getpid()
 	SessionID = generateSessionID()
+	MacAddress = getMacAddress()
 
 	logger, err := NewLogger(cfg)
 	if err != nil {
@@ -47,11 +50,35 @@ func Init(cfg *config.Config) error {
 
 // generateSessionID 生成唯一会话ID
 func generateSessionID() string {
-	return uuid.New().String()[:8] + "-" + uuid.New().String()[:8]
+	return uuid.New().String()
+}
+
+// getMacAddress 获取服务端MAC地址
+func getMacAddress() string {
+	interfaces, err := net.Interfaces()
+	if err != nil {
+		return "unknown"
+	}
+
+	for _, iface := range interfaces {
+		// 跳过回环接口和非激活接口
+		if iface.Flags&net.FlagLoopback == 0 && iface.Flags&net.FlagUp != 0 {
+			mac := iface.HardwareAddr.String()
+			if mac != "" {
+				return mac
+			}
+		}
+	}
+	return "unknown"
 }
 
 // GetInstanceInfo 获取实例信息
-func GetInstanceInfo() (int, string) {
+func GetInstanceInfo() (int, string, string) {
+	return ProcessID, SessionID, MacAddress
+}
+
+// GetInstanceInfoLegacy 获取实例信息(兼容旧版本)
+func GetInstanceInfoLegacy() (int, string) {
 	return ProcessID, SessionID
 }
 
@@ -71,13 +98,14 @@ func NewLogger(cfg *config.Config) (*zap.Logger, error) {
 	// 创建logger
 	logger := zap.New(core, zap.AddCaller(), zap.AddStacktrace(zapcore.ErrorLevel))
 
-	// 添加字段 (包含PID和会话ID)
+	// 添加字段 (包含PID、会话ID和MAC地址)
 	logger = logger.With(
 		zap.String("app", cfg.App.Name),
 		zap.String("version", cfg.App.Version),
 		zap.String("env", config.GetEnvironment()),
 		zap.Int("pid", ProcessID),
 		zap.String("session_id", SessionID),
+		zap.String("server_mac", MacAddress), // 服务端MAC地址
 	)
 
 	return logger, nil
