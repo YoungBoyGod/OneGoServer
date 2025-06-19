@@ -3,6 +3,7 @@ package routes
 import (
 	"learngo0619/internal/config"
 	"learngo0619/internal/server/api/handlers"
+	"learngo0619/internal/server/api/middleware"
 
 	"github.com/gin-gonic/gin"
 )
@@ -16,10 +17,15 @@ func SetupRouter(cfg *config.Config) *gin.Engine {
 		gin.SetMode(gin.ReleaseMode)
 	}
 
-	// 2. 创建路由器
-	router := gin.Default()
+	// 2. 创建路由器 (不使用默认中间件)
+	router := gin.New()
 
-	// 3. 注册路由
+	// 3. 添加自定义中间件
+	router.Use(middleware.RequestID())   // 请求ID
+	router.Use(middleware.ZapLogger())   // Zap日志
+	router.Use(middleware.ZapRecovery()) // Zap恢复
+
+	// 4. 注册路由
 	registerRoutes(router, cfg)
 
 	return router

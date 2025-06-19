@@ -6,4 +6,14 @@ server:
 
 app:
   name: "learngo0619-test"
-  version: "1.0.0-test" 
+  version: "1.0.0-test"
+
+log:
+  level: "warn"           # 测试环境只记录警告和错误
+  format: "json"          # JSON格式
+  output: "file"          # 仅输出到文件
+  dir: "logs"
+  max_size: 20            # 20MB
+  max_age: 3              # 3天
+  max_backups: 2
+  compress: false 

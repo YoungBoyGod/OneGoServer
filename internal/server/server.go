@@ -3,7 +3,6 @@ package server
 import (
 	"context"
 	"fmt"
-	"log"
 	"net/http"
 	"os"
 	"os/signal"
@@ -12,7 +11,10 @@ import (
 	"time"
 
 	"learngo0619/internal/config"
+	"learngo0619/internal/logger"
 	"learngo0619/internal/server/api/routes"
+
+	"go.uber.org/zap"
 )
 
 // Server represents the HTTP server
@@ -30,6 +32,14 @@ func NewServer(cfg *config.Config) *Server {
 
 // Start starts the HTTP server with graceful shutdown
 func (s *Server) Start(verbose bool) error {
+	// 初始化日志系统
+	if err := logger.Init(s.config); err != nil {
+		return fmt.Errorf("failed to initialize logger: %w", err)
+	}
+
+	// 注册清理函数
+	defer logger.Cleanup()
+
 	// 创建路由
 	router := routes.SetupRouter(s.config)
 
@@ -43,8 +53,13 @@ func (s *Server) Start(verbose bool) error {
 	go func() {
 		s.printStartupInfo(verbose)
 
+		logger.Info("Starting HTTP server",
+			zap.String("address", s.server.Addr),
+			zap.String("mode", s.config.Server.Mode),
+		)
+
 		if err := s.server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.Fatalf("服务器启动失败: %s\n", err)
+			logger.Fatal("Server startup failed", zap.Error(err))
 		}
 	}()
 
@@ -57,6 +72,11 @@ func (s *Server) printStartupInfo(verbose bool) {
 	fmt.Printf("🚀 服务器启动在 http://%s:%s\n", s.config.Server.Host, s.config.Server.Port)
 	fmt.Printf("📋 模式: %s\n", s.config.Server.Mode)
 	fmt.Printf("📱 应用: %s v%s\n", s.config.App.Name, s.config.App.Version)
+	fmt.Printf("📝 日志级别: %s\n", s.config.Log.Level)
+	fmt.Printf("📂 日志输出: %s\n", s.config.Log.Output)
+	if s.config.Log.Output == "file" || s.config.Log.Output == "both" {
+		fmt.Printf("📄 日志目录: %s\n", s.config.Log.Dir)
+	}
 	fmt.Println("按 Ctrl+C 优雅关闭服务器")
 	fmt.Println(strings.Repeat("-", 50))
 
@@ -67,6 +87,10 @@ func (s *Server) printStartupInfo(verbose bool) {
 		fmt.Printf("   模式: %s\n", s.config.Server.Mode)
 		fmt.Printf("   应用名: %s\n", s.config.App.Name)
 		fmt.Printf("   版本: %s\n", s.config.App.Version)
+		fmt.Printf("   日志级别: %s\n", s.config.Log.Level)
+		fmt.Printf("   日志格式: %s\n", s.config.Log.Format)
+		fmt.Printf("   日志输出: %s\n", s.config.Log.Output)
+		fmt.Printf("   日志目录: %s\n", s.config.Log.Dir)
 		fmt.Println(strings.Repeat("-", 50))
 	}
 }
@@ -77,6 +101,7 @@ func (s *Server) waitForShutdown() error {
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	sig := <-quit
 
+	logger.Info("Received shutdown signal", zap.String("signal", sig.String()))
 	fmt.Printf("\n🛑 收到信号: %v，开始优雅关闭服务器...\n", sig)
 
 	// 优雅关闭的上下文，超时时间为5秒
@@ -84,9 +109,11 @@ func (s *Server) waitForShutdown() error {
 	defer cancel()
 
 	if err := s.server.Shutdown(ctx); err != nil {
+		logger.Error("Server forced to shutdown", zap.Error(err))
 		return fmt.Errorf("强制关闭服务器: %v", err)
 	}
 
+	logger.Info("Server shutdown completed")
 	fmt.Println("✅ 服务器已优雅关闭")
 	fmt.Printf("🕐 关闭时间: %s\n", time.Now().Format("2006-01-02 15:04:05"))
 
