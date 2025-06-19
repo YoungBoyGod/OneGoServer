@@ -52,7 +52,7 @@ var defaultClientLogConfig = ClientLogConfig{
 // Init 初始化日志系统
 func Init(cfg *config.Config) error {
 	// 生成应用实例信息
-	ProcessID = os.Getpid()
+	ProcessID = os.Getpid() // 我需要在启动之后，如果启动成功，就把这个pid写入到文件中,文件名就是程序名称.pid
 	SessionID = generateSessionID()
 	MacAddress = getMacAddress()
 
@@ -524,4 +524,42 @@ func Fatalf(template string, args ...interface{}) {
 	if Sugar != nil {
 		Sugar.Fatalf(template, args...)
 	}
+}
+
+// WritePIDFile 写入PID文件
+func WritePIDFile(appName string) error {
+	pidFile := fmt.Sprintf("%s.pid", appName)
+	pidData := fmt.Sprintf("%d", ProcessID)
+
+	err := os.WriteFile(pidFile, []byte(pidData), 0644)
+	if err != nil {
+		return fmt.Errorf("failed to write PID file %s: %w", pidFile, err)
+	}
+
+	Logger.Info("PID file written",
+		zap.String("pid_file", pidFile),
+		zap.Int("pid", ProcessID),
+	)
+
+	return nil
+}
+
+// RemovePIDFile 删除PID文件
+func RemovePIDFile(appName string) error {
+	pidFile := fmt.Sprintf("%s.pid", appName)
+
+	if _, err := os.Stat(pidFile); os.IsNotExist(err) {
+		return nil // 文件不存在，无需删除
+	}
+
+	err := os.Remove(pidFile)
+	if err != nil {
+		return fmt.Errorf("failed to remove PID file %s: %w", pidFile, err)
+	}
+
+	Logger.Info("PID file removed",
+		zap.String("pid_file", pidFile),
+	)
+
+	return nil
 }

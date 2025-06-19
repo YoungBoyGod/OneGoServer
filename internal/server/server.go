@@ -65,6 +65,11 @@ func (s *Server) Start(verbose bool) error {
 			zap.String("mode", s.config.Server.Mode),
 		)
 
+		// 写入PID文件
+		if err := logger.WritePIDFile(s.config.App.Name); err != nil {
+			logger.Warn("Failed to write PID file", zap.Error(err))
+		}
+
 		if err := s.server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			logger.Fatal("Server startup failed", zap.Error(err))
 		}
@@ -131,6 +136,11 @@ func (s *Server) waitForShutdown() error {
 	if err := s.server.Shutdown(ctx); err != nil {
 		logger.Error("Server forced to shutdown", zap.Error(err))
 		return fmt.Errorf("强制关闭服务器: %v", err)
+	}
+
+	// 删除PID文件
+	if err := logger.RemovePIDFile(s.config.App.Name); err != nil {
+		logger.Warn("Failed to remove PID file", zap.Error(err))
 	}
 
 	logger.Info("Server shutdown completed")
