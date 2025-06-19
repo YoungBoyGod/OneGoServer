@@ -14,6 +14,7 @@ type Config struct {
 
 // ServerConfig is the configuration for the server
 type ServerConfig struct {
+	Host string `yaml:"host"`
 	Port string `yaml:"port"`
 	Mode string `yaml:"mode"`
 }
