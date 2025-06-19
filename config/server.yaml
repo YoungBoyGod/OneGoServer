@@ -4,5 +4,5 @@ server:
   mode: debug
 
 app:
-  name: myapp
+  name: learngo0619
   version: 1.0.0

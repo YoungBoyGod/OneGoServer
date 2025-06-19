@@ -1,0 +1,9 @@
+# 测试环境配置
+server:
+  host: "127.0.0.1"
+  port: "9999"
+  mode: "test"
+
+app:
+  name: "learngo0619-test"
+  version: "1.0.0-test" 
