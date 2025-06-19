@@ -36,6 +36,8 @@ func RegisterRoutes(engine *gin.Engine, cfg *config.Config) {
 
 	// 注册具体路由
 	registerRoutes(engine, cfg)
+
+	engine.StaticFile("/favicon.ico", "favicon.ico")
 }
 
 // registerRoutes 注册所有路由
