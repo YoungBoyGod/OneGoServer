@@ -1,0 +1,99 @@
+package server
+
+import (
+	"context"
+	"fmt"
+	"log"
+	"net/http"
+	"os"
+	"os/signal"
+	"strings"
+	"syscall"
+	"time"
+
+	"learngo0619/internal/config"
+	"learngo0619/internal/server/api/routes"
+)
+
+// Server represents the HTTP server
+type Server struct {
+	config *config.Config
+	server *http.Server
+}
+
+// NewServer creates a new server instance
+func NewServer(cfg *config.Config) *Server {
+	return &Server{
+		config: cfg,
+	}
+}
+
+// Start starts the HTTP server with graceful shutdown
+func (s *Server) Start(verbose bool) error {
+	// 创建路由
+	router := routes.SetupRouter(s.config)
+
+	// 创建HTTP服务器
+	s.server = &http.Server{
+		Addr:    s.config.Server.Host + ":" + s.config.Server.Port,
+		Handler: router,
+	}
+
+	// 在goroutine中启动服务器
+	go func() {
+		s.printStartupInfo(verbose)
+
+		if err := s.server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Fatalf("服务器启动失败: %s\n", err)
+		}
+	}()
+
+	// 等待中断信号来优雅地关闭服务器
+	return s.waitForShutdown()
+}
+
+// printStartupInfo prints server startup information
+func (s *Server) printStartupInfo(verbose bool) {
+	fmt.Printf("🚀 服务器启动在 http://%s:%s\n", s.config.Server.Host, s.config.Server.Port)
+	fmt.Printf("📋 模式: %s\n", s.config.Server.Mode)
+	fmt.Printf("📱 应用: %s v%s\n", s.config.App.Name, s.config.App.Version)
+	fmt.Println("按 Ctrl+C 优雅关闭服务器")
+	fmt.Println(strings.Repeat("-", 50))
+
+	if verbose {
+		fmt.Printf("📍 配置文件信息:\n")
+		fmt.Printf("   主机: %s\n", s.config.Server.Host)
+		fmt.Printf("   端口: %s\n", s.config.Server.Port)
+		fmt.Printf("   模式: %s\n", s.config.Server.Mode)
+		fmt.Printf("   应用名: %s\n", s.config.App.Name)
+		fmt.Printf("   版本: %s\n", s.config.App.Version)
+		fmt.Println(strings.Repeat("-", 50))
+	}
+}
+
+// waitForShutdown waits for interrupt signal and performs graceful shutdown
+func (s *Server) waitForShutdown() error {
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+	sig := <-quit
+
+	fmt.Printf("\n🛑 收到信号: %v，开始优雅关闭服务器...\n", sig)
+
+	// 优雅关闭的上下文，超时时间为5秒
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	if err := s.server.Shutdown(ctx); err != nil {
+		return fmt.Errorf("强制关闭服务器: %v", err)
+	}
+
+	fmt.Println("✅ 服务器已优雅关闭")
+	fmt.Printf("🕐 关闭时间: %s\n", time.Now().Format("2006-01-02 15:04:05"))
+
+	return nil
+}
+
+// GetConfig returns the server configuration
+func (s *Server) GetConfig() *config.Config {
+	return s.config
+}
