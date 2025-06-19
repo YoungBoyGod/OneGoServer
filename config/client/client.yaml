@@ -1,0 +1,6 @@
+client:
+  server_url: "http://localhost:30000"  # 服务器地址
+  timeout: 30                           # 请求超时时间(秒)
+  retry_count: 3                        # 重试次数
+  retry_delay: 1                        # 重试延迟(秒)
+  output_format: "json"                 # 输出格式: json, yaml, table
