@@ -12,6 +12,7 @@ import (
 
 	"learngo0619/internal/config"
 	"learngo0619/internal/logger"
+	"learngo0619/internal/server/api/handlers"
 	"learngo0619/internal/server/api/routes"
 
 	"go.uber.org/zap"
@@ -37,8 +38,14 @@ func (s *Server) Start(verbose bool) error {
 		return fmt.Errorf("failed to initialize logger: %w", err)
 	}
 
+	// 初始化客户端管理器
+	handlers.InitClientManager()
+
 	// 注册清理函数
-	defer logger.Cleanup()
+	defer func() {
+		logger.Cleanup()
+		handlers.StopClientManager() // 停止客户端管理器
+	}()
 
 	// 创建路由
 	router := routes.SetupRouter(s.config)

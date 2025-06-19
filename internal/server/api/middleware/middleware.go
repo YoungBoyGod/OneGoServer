@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"learngo0619/internal/logger"
+	"learngo0619/internal/server/api/handlers"
 
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
@@ -40,6 +41,15 @@ func LoggerMiddleware() gin.HandlerFunc {
 			zap.Int("status", statusCode),
 			zap.Float64("latency", latency),
 			zap.String("time", time.Now().Format(time.RFC3339)),
+		}
+
+		// 更新客户端管理器统计信息
+		if clientManager := handlers.GetClientManager(); clientManager != nil {
+			if statusCode >= 400 {
+				clientManager.IncrementErrorCount(clientIP, userAgent)
+			} else {
+				clientManager.IncrementRequestCount(clientIP, userAgent)
+			}
 		}
 
 		// 根据状态码选择日志级别并记录到客户端专用日志

@@ -29,9 +29,19 @@ func APIStatusHandler(c *gin.Context) {
 		"api_version": "v1",
 		"timestamp":   time.Now().Format(time.RFC3339),
 		"endpoints": []string{
-			"/api/v1/status",
-			"/api/v1/info",
-			"/api/v1/client-info",
+			"/api/v1/server/status",
+			"/api/v1/server/info",
+			"/api/v1/server/client-info",
+			"/api/v1/server/log-stats",
+			// 客户端注册管理端点
+			"/api/v1/clients/register",  // POST - 客户端注册
+			"/api/v1/clients/heartbeat", // POST - 客户端心跳
+			"/api/v1/clients",           // GET - 客户端列表
+			"/api/v1/clients/online",    // GET - 在线客户端
+			"/api/v1/clients/stats",     // GET - 客户端统计
+			"/api/v1/clients/types",     // GET - 客户端类型
+			"/api/v1/clients/:id",       // GET - 客户端详情
+			"/api/v1/clients/:id",       // DELETE - 客户端注销
 		},
 	})
 }
