@@ -70,9 +70,13 @@ func (s *Server) Start(verbose bool) error {
 // printStartupInfo prints server startup information
 func (s *Server) printStartupInfo(verbose bool) {
 	pid, sessionID, macAddress := logger.GetInstanceInfo()
+	// 如果启动成功，就把这个pid写入到文件中,文件名就是程序名称.pid
+	pidFile := fmt.Sprintf("%s.pid", s.config.App.Name)
+	os.WriteFile(pidFile, []byte(fmt.Sprintf("%d", pid)), 0644)
 
 	// 输出类似于用户期望的格式
 	fmt.Printf("build running pid: %d\n", pid)
+
 	fmt.Printf("session: {%s}\n", sessionID)
 	fmt.Printf("server mac: %s\n", macAddress)
 	fmt.Printf("🚀 服务器启动在 http://%s:%s\n", s.config.Server.Host, s.config.Server.Port)

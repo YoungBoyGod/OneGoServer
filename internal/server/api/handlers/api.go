@@ -88,3 +88,14 @@ func ClientInfoHandler(c *gin.Context) {
 		"note": "服务端可获取真实MAC地址，客户端MAC地址因安全限制无法获取，使用指纹替代",
 	})
 }
+
+// LogStatsHandler 返回日志统计信息
+func LogStatsHandler(c *gin.Context) {
+	stats := logger.GetClientLoggerStats()
+
+	c.JSON(http.StatusOK, gin.H{
+		"timestamp":   time.Now().Format(time.RFC3339),
+		"client_logs": stats,
+		"description": "客户端日志分离统计信息",
+	})
+}

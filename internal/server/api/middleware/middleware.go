@@ -11,52 +11,100 @@ import (
 	"go.uber.org/zap"
 )
 
-// ZapLogger 返回使用zap的Gin日志中间件
-func ZapLogger() gin.HandlerFunc {
-	return gin.LoggerWithFormatter(func(param gin.LogFormatterParams) string {
-		// 使用zap记录访问日志
+// LoggerMiddleware 日志中间件
+func LoggerMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		start := time.Now()
+		path := c.Request.URL.Path
+		query := c.Request.URL.RawQuery
+
+		// 处理请求
+		c.Next()
+
+		// 计算延迟
+		latency := time.Since(start).Seconds()
+
+		// 获取客户端信息
+		clientIP := c.ClientIP()
+		userAgent := c.Request.UserAgent()
+		method := c.Request.Method
+		statusCode := c.Writer.Status()
+
+		// 构建日志字段
 		fields := []zap.Field{
-			zap.String("method", param.Method),
-			zap.String("path", param.Path),
-			zap.String("query", param.Request.URL.RawQuery),
-			zap.String("ip", param.ClientIP),
-			zap.String("user_agent", param.Request.UserAgent()),
-			zap.Int("status", param.StatusCode),
-			zap.Duration("latency", param.Latency),
-			zap.String("time", param.TimeStamp.Format(time.RFC3339)),
+			zap.String("method", method),
+			zap.String("path", path),
+			zap.String("query", query),
+			zap.String("ip", clientIP),
+			zap.String("user_agent", userAgent),
+			zap.Int("status", statusCode),
+			zap.Float64("latency", latency),
+			zap.String("time", time.Now().Format(time.RFC3339)),
 		}
 
-		if param.ErrorMessage != "" {
-			fields = append(fields, zap.String("error", param.ErrorMessage))
+		// 根据状态码选择日志级别并记录到客户端专用日志
+		if statusCode >= 400 {
+			logger.ErrorForClient(clientIP, userAgent, "HTTP Request", fields...)
+		} else if statusCode >= 300 {
+			logger.WarnForClient(clientIP, userAgent, "HTTP Request", fields...)
+		} else {
+			logger.InfoForClient(clientIP, userAgent, "HTTP Request", fields...)
 		}
-
-		// 根据状态码决定日志级别
-		switch {
-		case param.StatusCode >= 500:
-			logger.Error("HTTP Request", fields...)
-		case param.StatusCode >= 400:
-			logger.Warn("HTTP Request", fields...)
-		default:
-			logger.Info("HTTP Request", fields...)
-		}
-
-		return ""
-	})
+	}
 }
 
-// ZapRecovery 返回使用zap的恢复中间件
-func ZapRecovery() gin.HandlerFunc {
-	return gin.CustomRecovery(func(c *gin.Context, recovered interface{}) {
-		if err, ok := recovered.(string); ok {
-			logger.Error("Panic recovered",
-				zap.String("error", err),
-				zap.String("method", c.Request.Method),
-				zap.String("path", c.Request.URL.Path),
-				zap.String("ip", c.ClientIP()),
-			)
+// CORSMiddleware 跨域中间件
+func CORSMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		c.Header("Access-Control-Allow-Origin", "*")
+		c.Header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+		c.Header("Access-Control-Allow-Headers", "Origin, Content-Type, Accept, Authorization, X-Requested-With")
+
+		if c.Request.Method == "OPTIONS" {
+			c.AbortWithStatus(204)
+			return
 		}
-		c.AbortWithStatus(500)
-	})
+
+		c.Next()
+	}
+}
+
+// SecurityMiddleware 安全中间件
+func SecurityMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		// 安全头
+		c.Header("X-Content-Type-Options", "nosniff")
+		c.Header("X-Frame-Options", "DENY")
+		c.Header("X-XSS-Protection", "1; mode=block")
+
+		c.Next()
+	}
+}
+
+// RecoveryMiddleware 恢复中间件
+func RecoveryMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		defer func() {
+			if err := recover(); err != nil {
+				clientIP := c.ClientIP()
+				userAgent := c.Request.UserAgent()
+
+				// 记录panic到客户端专用日志
+				logger.ErrorForClient(clientIP, userAgent, "Panic recovered",
+					zap.Any("error", err),
+					zap.String("path", c.Request.URL.Path),
+					zap.String("method", c.Request.Method),
+				)
+
+				c.JSON(500, gin.H{
+					"error": "Internal Server Error",
+					"code":  500,
+				})
+				c.Abort()
+			}
+		}()
+		c.Next()
+	}
 }
 
 // RequestID 为每个请求添加唯一ID和客户端指纹

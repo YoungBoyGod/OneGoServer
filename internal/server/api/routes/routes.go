@@ -20,15 +20,22 @@ func SetupRouter(cfg *config.Config) *gin.Engine {
 	// 2. 创建路由器 (不使用默认中间件)
 	router := gin.New()
 
-	// 3. 添加自定义中间件
-	router.Use(middleware.RequestID())   // 请求ID
-	router.Use(middleware.ZapLogger())   // Zap日志
-	router.Use(middleware.ZapRecovery()) // Zap恢复
-
-	// 4. 注册路由
-	registerRoutes(router, cfg)
+	// 3. 注册路由
+	RegisterRoutes(router, cfg)
 
 	return router
+}
+
+// RegisterRoutes 注册所有路由
+func RegisterRoutes(engine *gin.Engine, cfg *config.Config) {
+	// 注册全局中间件
+	engine.Use(middleware.LoggerMiddleware())   // 使用新的客户端日志中间件
+	engine.Use(middleware.RecoveryMiddleware()) // 使用新的恢复中间件
+	engine.Use(middleware.CORSMiddleware())     // 跨域中间件
+	engine.Use(middleware.SecurityMiddleware()) // 安全中间件
+
+	// 注册具体路由
+	registerRoutes(engine, cfg)
 }
 
 // registerRoutes 注册所有路由
@@ -45,5 +52,6 @@ func registerRoutes(router *gin.Engine, cfg *config.Config) {
 		v1.GET("/status", handlers.APIStatusHandler)
 		v1.GET("/info", handlers.APIInfoHandler(cfg))
 		v1.GET("/client-info", handlers.ClientInfoHandler)
+		v1.GET("/log-stats", handlers.LogStatsHandler) // 新增日志统计端点
 	}
 }
