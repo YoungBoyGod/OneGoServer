@@ -1,0 +1,9 @@
+# 开发环境配置
+server:
+  host: "127.0.0.1"
+  port: "8080" 
+  mode: "debug"
+
+app:
+  name: "learngo0619-dev"
+  version: "1.0.0-dev" 
