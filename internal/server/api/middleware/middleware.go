@@ -65,8 +65,13 @@ func RequestID() gin.HandlerFunc {
 			requestID = generateRequestID()
 		}
 
+		// 获取会话ID
+		_, sessionID := logger.GetInstanceInfo()
+
 		c.Set("request_id", requestID)
+		c.Set("session_id", sessionID)
 		c.Header("X-Request-ID", requestID)
+		c.Header("X-Session-ID", sessionID)
 		c.Next()
 	}
 }

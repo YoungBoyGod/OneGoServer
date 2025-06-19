@@ -8,6 +8,7 @@ import (
 
 	"learngo0619/internal/config"
 
+	"github.com/google/uuid"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"gopkg.in/natefinch/lumberjack.v2"
@@ -17,10 +18,18 @@ var (
 	// 全局日志实例
 	Logger *zap.Logger
 	Sugar  *zap.SugaredLogger
+
+	// 应用实例信息
+	ProcessID int
+	SessionID string
 )
 
 // Init 初始化日志系统
 func Init(cfg *config.Config) error {
+	// 生成应用实例信息
+	ProcessID = os.Getpid()
+	SessionID = generateSessionID()
+
 	logger, err := NewLogger(cfg)
 	if err != nil {
 		return fmt.Errorf("failed to initialize logger: %w", err)
@@ -34,6 +43,16 @@ func Init(cfg *config.Config) error {
 	zap.ReplaceGlobals(logger)
 
 	return nil
+}
+
+// generateSessionID 生成唯一会话ID
+func generateSessionID() string {
+	return uuid.New().String()[:8] + "-" + uuid.New().String()[:8]
+}
+
+// GetInstanceInfo 获取实例信息
+func GetInstanceInfo() (int, string) {
+	return ProcessID, SessionID
 }
 
 // NewLogger 创建新的日志实例
@@ -52,11 +71,13 @@ func NewLogger(cfg *config.Config) (*zap.Logger, error) {
 	// 创建logger
 	logger := zap.New(core, zap.AddCaller(), zap.AddStacktrace(zapcore.ErrorLevel))
 
-	// 添加字段
+	// 添加字段 (包含PID和会话ID)
 	logger = logger.With(
 		zap.String("app", cfg.App.Name),
 		zap.String("version", cfg.App.Version),
 		zap.String("env", config.GetEnvironment()),
+		zap.Int("pid", ProcessID),
+		zap.String("session_id", SessionID),
 	)
 
 	return logger, nil
