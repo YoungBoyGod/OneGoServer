@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 	"time"
 
@@ -651,4 +652,71 @@ func (cm *ClientManager) GetOnlineClients() []*models.RegisteredClient {
 	}
 
 	return onlineClients
+}
+
+// K8s风格认证验证函数
+
+// ValidatePSKCredential 验证PSK凭证
+func ValidatePSKCredential(namespace, clientName, secretKey string) bool {
+	// 这里应该从配置文件或数据库中验证PSK凭证
+	// 为演示目的，使用简单的硬编码验证
+
+	// 示例：验证默认的PSK凭证
+	if namespace == "default" && clientName == "OneGoClient" {
+		// 这里应该是从安全存储中获取的密钥
+		expectedKey := "your-psk-secret-key-here"
+		return secretKey == expectedKey
+	}
+
+	// 可以添加更多的验证逻辑
+	return false
+}
+
+// ValidateJWTCredential 验证JWT凭证
+func ValidateJWTCredential(namespace, token string) bool {
+	// 这里应该使用真正的JWT库验证token
+	// 为演示目的，使用简单的验证
+
+	if namespace == "default" {
+		// 简化的JWT验证
+		return len(token) > 10 // 基本的长度检查
+	}
+
+	return false
+}
+
+// ValidateBasicAuthCredential 验证基础认证凭证
+func ValidateBasicAuthCredential(namespace, username, password string) bool {
+	// 这里应该从用户数据库验证用户名和密码
+	// 为演示目的，使用简单的硬编码验证
+
+	if namespace == "default" {
+		// 示例用户
+		validUsers := map[string]string{
+			"admin":       "admin123",
+			"client":      "client123",
+			"onegoclient": "onegoclient123",
+		}
+
+		if expectedPassword, exists := validUsers[username]; exists {
+			return password == expectedPassword
+		}
+	}
+
+	return false
+}
+
+// ValidateCertificateCredential 验证证书凭证
+func ValidateCertificateCredential(namespace, certificate string) bool {
+	// 这里应该验证客户端证书的有效性
+	// 为演示目的，使用简单的验证
+
+	if namespace == "default" {
+		// 基本的证书格式检查
+		return len(certificate) > 50 &&
+			(strings.Contains(certificate, "BEGIN CERTIFICATE") ||
+				strings.Contains(certificate, "CERTIFICATE"))
+	}
+
+	return false
 }

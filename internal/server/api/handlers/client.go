@@ -8,6 +8,10 @@ import (
 	"learngo0619/internal/server/models"
 	"learngo0619/internal/server/services"
 
+	"encoding/base64"
+	"fmt"
+	"strings"
+
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 )
@@ -30,7 +34,7 @@ func StopClientManager() {
 	}
 }
 
-// ClientRegisterHandler 客户端注册接口
+// ClientRegisterHandler 客户端注册接口（支持多种认证方式）
 func ClientRegisterHandler(c *gin.Context) {
 	var req models.ClientRegisterRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -46,7 +50,56 @@ func ClientRegisterHandler(c *gin.Context) {
 	ip := c.ClientIP()
 	userAgent := c.Request.UserAgent()
 
-	// 使用ClientManager注册客户端
+	// 检查认证方式
+	credentialType := c.GetHeader("X-Client-Credential-Type")
+
+	if credentialType != "" {
+		// K8s风格认证
+		if err := validateK8sStyleCredential(c, credentialType, ip, userAgent, &req); err != nil {
+			logger.WarnForClient(ip, userAgent,
+				"K8s-style credential authentication failed",
+				zap.String("credential_type", credentialType),
+				zap.String("client_name", req.Name),
+				zap.Error(err),
+			)
+
+			c.JSON(http.StatusUnauthorized, gin.H{
+				"success": false,
+				"message": "凭证认证失败: " + err.Error(),
+				"code":    401,
+			})
+			return
+		}
+
+		logger.InfoForClient(ip, userAgent,
+			"K8s-style credential authentication successful",
+			zap.String("credential_type", credentialType),
+			zap.String("client_name", req.Name),
+		)
+	} else {
+		// 传统Token认证（向后兼容）
+		if err := validateBearerToken(c, ip, userAgent, &req); err != nil {
+			logger.WarnForClient(ip, userAgent,
+				"Bearer token authentication failed",
+				zap.String("client_name", req.Name),
+				zap.Error(err),
+			)
+
+			c.JSON(http.StatusUnauthorized, gin.H{
+				"success": false,
+				"message": err.Error(),
+				"code":    401,
+			})
+			return
+		}
+
+		logger.InfoForClient(ip, userAgent,
+			"Bearer token authentication successful",
+			zap.String("client_name", req.Name),
+		)
+	}
+
+	// 认证通过，继续注册流程
 	response, err := clientManager.RegisterClient(&req, ip, userAgent)
 	if err != nil {
 		logger.WarnForClient(ip, userAgent,
@@ -65,15 +118,154 @@ func ClientRegisterHandler(c *gin.Context) {
 	}
 
 	// 记录注册成功日志
+	authMethod := "bearer-token"
+	if credentialType != "" {
+		authMethod = "k8s-credential-" + credentialType
+	}
+
 	logger.InfoForClient(ip, userAgent,
 		"Client registered successfully",
 		zap.String("client_id", response.ClientID),
 		zap.String("client_name", req.Name),
 		zap.String("client_type", string(req.Type)),
 		zap.String("client_version", req.Version),
+		zap.String("auth_method", authMethod),
 	)
 
 	c.JSON(http.StatusOK, response)
+}
+
+// validateK8sStyleCredential 验证K8s风格凭证
+func validateK8sStyleCredential(c *gin.Context, credentialType, ip, userAgent string, req *models.ClientRegisterRequest) error {
+	switch credentialType {
+	case "psk":
+		return validatePSKCredential(c, ip, userAgent, req)
+	case "jwt":
+		return validateJWTCredential(c, ip, userAgent, req)
+	case "basic":
+		return validateBasicAuthCredential(c, ip, userAgent, req)
+	case "certificate":
+		return validateCertificateCredential(c, ip, userAgent, req)
+	default:
+		return fmt.Errorf("unsupported credential type: %s", credentialType)
+	}
+}
+
+// validatePSKCredential 验证PSK凭证
+func validatePSKCredential(c *gin.Context, ip, userAgent string, req *models.ClientRegisterRequest) error {
+	namespace := c.GetHeader("X-Client-Namespace")
+	clientName := c.GetHeader("X-Client-Name")
+	secretKey := c.GetHeader("X-Client-Secret")
+
+	if namespace == "" || clientName == "" || secretKey == "" {
+		return fmt.Errorf("PSK凭证信息不完整")
+	}
+
+	// 这里应该从数据库或配置文件验证PSK
+	// 为演示目的，使用简单的验证逻辑
+	if !services.ValidatePSKCredential(namespace, clientName, secretKey) {
+		return fmt.Errorf("PSK凭证验证失败")
+	}
+
+	return nil
+}
+
+// validateJWTCredential 验证JWT凭证
+func validateJWTCredential(c *gin.Context, ip, userAgent string, req *models.ClientRegisterRequest) error {
+	authHeader := c.GetHeader("Authorization")
+	namespace := c.GetHeader("X-Client-Namespace")
+
+	if authHeader == "" {
+		return fmt.Errorf("缺少JWT令牌")
+	}
+
+	const bearerPrefix = "Bearer "
+	if len(authHeader) < len(bearerPrefix) || authHeader[:len(bearerPrefix)] != bearerPrefix {
+		return fmt.Errorf("JWT令牌格式错误")
+	}
+
+	token := authHeader[len(bearerPrefix):]
+
+	// 验证JWT令牌
+	if !services.ValidateJWTCredential(namespace, token) {
+		return fmt.Errorf("JWT令牌验证失败")
+	}
+
+	return nil
+}
+
+// validateBasicAuthCredential 验证基础认证凭证
+func validateBasicAuthCredential(c *gin.Context, ip, userAgent string, req *models.ClientRegisterRequest) error {
+	authHeader := c.GetHeader("Authorization")
+	namespace := c.GetHeader("X-Client-Namespace")
+
+	if authHeader == "" {
+		return fmt.Errorf("缺少基础认证信息")
+	}
+
+	const basicPrefix = "Basic "
+	if len(authHeader) < len(basicPrefix) || authHeader[:len(basicPrefix)] != basicPrefix {
+		return fmt.Errorf("基础认证格式错误")
+	}
+
+	// 解析用户名密码
+	auth := authHeader[len(basicPrefix):]
+	decoded, err := base64.StdEncoding.DecodeString(auth)
+	if err != nil {
+		return fmt.Errorf("基础认证解码失败")
+	}
+
+	credentials := strings.SplitN(string(decoded), ":", 2)
+	if len(credentials) != 2 {
+		return fmt.Errorf("基础认证格式错误")
+	}
+
+	username, password := credentials[0], credentials[1]
+
+	// 验证用户名密码
+	if !services.ValidateBasicAuthCredential(namespace, username, password) {
+		return fmt.Errorf("用户名或密码错误")
+	}
+
+	return nil
+}
+
+// validateCertificateCredential 验证证书凭证
+func validateCertificateCredential(c *gin.Context, ip, userAgent string, req *models.ClientRegisterRequest) error {
+	certificate := c.GetHeader("X-Client-Certificate")
+	namespace := c.GetHeader("X-Client-Namespace")
+
+	if certificate == "" {
+		return fmt.Errorf("缺少客户端证书")
+	}
+
+	// 验证证书
+	if !services.ValidateCertificateCredential(namespace, certificate) {
+		return fmt.Errorf("客户端证书验证失败")
+	}
+
+	return nil
+}
+
+// validateBearerToken 验证传统Bearer Token（向后兼容）
+func validateBearerToken(c *gin.Context, ip, userAgent string, req *models.ClientRegisterRequest) error {
+	authHeader := c.GetHeader("Authorization")
+	if authHeader == "" {
+		return fmt.Errorf("缺少授权令牌，请先获取注册令牌")
+	}
+
+	const bearerPrefix = "Bearer "
+	if len(authHeader) < len(bearerPrefix) || authHeader[:len(bearerPrefix)] != bearerPrefix {
+		return fmt.Errorf("授权令牌格式错误，应为 'Bearer <token>'")
+	}
+
+	token := authHeader[len(bearerPrefix):]
+
+	if !services.ValidateToken(token) {
+		return fmt.Errorf("注册令牌无效或已过期，请重新获取")
+	}
+
+	return nil
 }
 
 // ClientHeartbeatHandler 客户端心跳处理器

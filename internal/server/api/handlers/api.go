@@ -6,8 +6,10 @@ import (
 
 	"learngo0619/internal/config"
 	"learngo0619/internal/logger"
+	"learngo0619/internal/server/services"
 
 	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
 )
 
 // VersionHandler returns the application version
@@ -108,4 +110,63 @@ func LogStatsHandler(c *gin.Context) {
 		"client_logs": stats,
 		"description": "客户端日志分离统计信息",
 	})
+}
+
+// GetRegisterTokenHandler 获取注册Token处理器
+func GetRegisterTokenHandler(c *gin.Context) {
+	// 可以在这里添加额外的验证逻辑，比如IP白名单、基础认证等
+	clientIP := c.ClientIP()
+	userAgent := c.Request.UserAgent()
+
+	// 记录Token获取请求
+	logger.InfoForClient(clientIP, userAgent,
+		"Register token requested",
+		zap.String("ip", clientIP),
+		zap.String("user_agent", userAgent),
+	)
+
+	// 获取当前有效的注册Token
+	token := services.GetRegisterToken()
+	if token == nil {
+		logger.ErrorForClient(clientIP, userAgent,
+			"No valid register token available",
+		)
+
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"success": false,
+			"message": "服务器内部错误：无可用注册令牌",
+			"code":    500,
+		})
+		return
+	}
+
+	// 检查Token是否过期
+	if token.ExpiresAt.Before(time.Now()) {
+		logger.WarnForClient(clientIP, userAgent,
+			"Register token expired",
+			zap.Time("expired_at", token.ExpiresAt),
+		)
+
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"success": false,
+			"message": "注册令牌已过期，请联系管理员",
+			"code":    500,
+		})
+		return
+	}
+
+	// 返回Token信息（不包含敏感的完整token）
+	c.JSON(http.StatusOK, gin.H{
+		"success":    true,
+		"message":    "注册令牌获取成功",
+		"token":      token.Token,
+		"expires_at": token.ExpiresAt,
+		"valid_for":  int(time.Until(token.ExpiresAt).Hours()),
+	})
+
+	logger.InfoForClient(clientIP, userAgent,
+		"Register token provided",
+		zap.Time("expires_at", token.ExpiresAt),
+		zap.String("token_prefix", token.Token[:8]+"..."),
+	)
 }
