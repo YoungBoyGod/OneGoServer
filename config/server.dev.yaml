@@ -8,6 +8,10 @@ app:
   name: "learngo0619-dev"
   version: "1.0.0-dev"
 
+# 安全配置（简化版 - 仅预定义Token认证）
+security:
+  predefined_token: "OneGoClient2024Token123" # 预定义注册Token（唯一认证方式）
+
 log:
   level: "debug"          # 开发环境使用debug级别
   format: "console"       # 控制台格式便于调试

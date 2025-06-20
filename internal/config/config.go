@@ -10,9 +10,10 @@ import (
 
 // Config is the main configuration struct
 type Config struct {
-	Server ServerConfig `yaml:"server"`
-	App    AppConfig    `yaml:"app"`
-	Log    LogConfig    `yaml:"log"` // 新增日志配置
+	Server   ServerConfig `yaml:"server"`
+	App      AppConfig    `yaml:"app"`
+	Log      LogConfig    `yaml:"log"`      // 新增日志配置
+	Security SecurityInfo `yaml:"security"` // 安全配置移到根级别
 }
 
 // ServerConfig is the configuration for the server
@@ -23,7 +24,6 @@ type ServerConfig struct {
 	Server   ServerInfo   `yaml:"server"`
 	Database DatabaseInfo `yaml:"database"`
 	Log      LogInfo      `yaml:"log"`
-	Security SecurityInfo `yaml:"security"` // 新增安全配置
 }
 
 // AppConfig is the configuration for the app

@@ -53,6 +53,25 @@ func (s *Server) Start(verbose bool) error {
 	// 设置全局配置供处理器使用
 	handlers.SetGlobalConfig(s.config)
 
+	// 记录认证配置状态
+	logger.Info("Predefined token authentication mode enabled",
+		zap.String("token_configured", func() string {
+			if s.config.Security.PredefinedToken != "" {
+				return "yes"
+			}
+			return "no"
+		}()),
+		zap.String("token_prefix", func() string {
+			if s.config.Security.PredefinedToken != "" {
+				if len(s.config.Security.PredefinedToken) > 8 {
+					return s.config.Security.PredefinedToken[:8] + "..."
+				}
+				return s.config.Security.PredefinedToken
+			}
+			return "none"
+		}()),
+	)
+
 	// 注册清理函数
 	defer func() {
 		logger.Cleanup()

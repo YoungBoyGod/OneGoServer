@@ -113,11 +113,8 @@ func ClientRegisterHandler(c *gin.Context) {
 }
 
 // getServerConfig 获取服务器配置
-func getServerConfig() *config.ServerConfig {
-	if globalServerConfig != nil {
-		return &globalServerConfig.Server
-	}
-	return nil
+func getServerConfig() *config.Config {
+	return globalServerConfig
 }
 
 // validatePredefinedToken 验证预定义Token（简化版认证）
@@ -136,7 +133,18 @@ func validatePredefinedToken(c *gin.Context, ip, userAgent string, req *models.C
 
 	// 获取配置中的预定义Token
 	serverConfig := getServerConfig()
-	if serverConfig == nil || serverConfig.Security.PredefinedToken == "" {
+	if serverConfig == nil {
+		return fmt.Errorf("服务器配置未找到")
+	}
+
+	logger.InfoForClient(ip, userAgent,
+		"Debug: checking predefined token",
+		zap.String("client_name", req.Name),
+		zap.String("token_value", serverConfig.Security.PredefinedToken),
+		zap.Bool("token_empty", serverConfig.Security.PredefinedToken == ""),
+	)
+
+	if serverConfig.Security.PredefinedToken == "" {
 		return fmt.Errorf("服务器未配置预定义Token")
 	}
 
