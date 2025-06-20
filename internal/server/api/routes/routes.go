@@ -34,10 +34,11 @@ func RegisterRoutes(engine *gin.Engine, cfg *config.Config) {
 	engine.Use(middleware.CORSMiddleware())     // 跨域中间件
 	engine.Use(middleware.SecurityMiddleware()) // 安全中间件
 
+	// 增加favicon.ico静态文件路由
+	engine.StaticFile("/favicon.ico", "favicon.ico")
+
 	// 注册具体路由
 	registerRoutes(engine, cfg)
-
-	engine.StaticFile("/favicon.ico", "favicon.ico")
 }
 
 // registerRoutes 注册所有路由

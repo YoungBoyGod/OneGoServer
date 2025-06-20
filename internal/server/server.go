@@ -14,6 +14,7 @@ import (
 	"learngo0619/internal/logger"
 	"learngo0619/internal/server/api/handlers"
 	"learngo0619/internal/server/api/routes"
+	"learngo0619/internal/server/services"
 
 	"go.uber.org/zap"
 )
@@ -36,6 +37,14 @@ func (s *Server) Start(verbose bool) error {
 	// 初始化日志系统
 	if err := logger.Init(s.config); err != nil {
 		return fmt.Errorf("failed to initialize logger: %w", err)
+	}
+
+	// 初始化注册token和client列表
+	if err := services.InitRegisterToken(); err != nil {
+		return fmt.Errorf("failed to init register token: %w", err)
+	}
+	if err := services.InitClientList(); err != nil {
+		return fmt.Errorf("failed to init client list: %w", err)
 	}
 
 	// 初始化客户端管理器

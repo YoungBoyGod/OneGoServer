@@ -2,6 +2,8 @@ package services
 
 import (
 	"crypto/md5"
+	"crypto/rand"
+	"encoding/hex"
 	"fmt"
 	"sync"
 	"time"
@@ -11,6 +13,100 @@ import (
 
 	"go.uber.org/zap"
 )
+
+const (
+	TokenFilePath  = "register_token.json"
+	ClientFilePath = "clients.json"
+	TokenValidDays = 30
+)
+
+var (
+	registerToken *models.RegisterToken
+	clientList    *models.ClientList
+	once          sync.Once
+)
+
+// 生成随机token
+func generateToken(n int) (string, error) {
+	b := make([]byte, n)
+	_, err := rand.Read(b)
+	if err != nil {
+		return "", err
+	}
+	return hex.EncodeToString(b), nil
+}
+
+// 初始化注册token（首次生成或过期自动更新）
+func InitRegisterToken() error {
+	once.Do(func() {
+		f := models.TokenFile(TokenFilePath)
+		t, err := f.Load()
+		if err != nil || t == nil || t.ExpiresAt.Before(time.Now()) {
+			tokenStr, _ := generateToken(32)
+			now := time.Now()
+			t = &models.RegisterToken{
+				Token:     tokenStr,
+				CreatedAt: now,
+				ExpiresAt: now.Add(TokenValidDays * 24 * time.Hour),
+			}
+			_ = f.Save(t)
+		}
+		registerToken = t
+	})
+	return nil
+}
+
+func GetRegisterToken() *models.RegisterToken {
+	return registerToken
+}
+
+// 校验token合法性
+func ValidateToken(token string) bool {
+	return registerToken != nil && registerToken.Token == token && registerToken.ExpiresAt.After(time.Now())
+}
+
+// 初始化client列表
+func InitClientList() error {
+	f := models.ClientFile(ClientFilePath)
+	list, err := f.Load()
+	if err != nil {
+		return err
+	}
+	clientList = list
+	return nil
+}
+
+func SaveClientList() error {
+	f := models.ClientFile(ClientFilePath)
+	return f.Save(clientList)
+}
+
+// 注册client，绑定ip，返回client_id
+func RegisterClient(ip string) (string, bool) {
+	clientList.Lock()
+	defer clientList.Unlock()
+	for _, c := range clientList.Clients {
+		if c.IP == ip {
+			return c.ClientID, false // 已注册
+		}
+	}
+	clientID, _ := generateToken(16)
+	ci := models.ClientInfo{
+		ClientID:     clientID,
+		IP:           ip,
+		RegisteredAt: time.Now(),
+	}
+	clientList.Clients = append(clientList.Clients, ci)
+	_ = SaveClientList()
+	return clientID, true
+}
+
+// 获取所有已注册client
+func GetAllClients() []models.ClientInfo {
+	clientList.Lock()
+	defer clientList.Unlock()
+	return append([]models.ClientInfo{}, clientList.Clients...)
+}
 
 // ClientManager 客户端管理器
 type ClientManager struct {

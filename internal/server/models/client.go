@@ -1,7 +1,10 @@
 package models
 
 import (
+	"encoding/json"
 	"fmt"
+	"os"
+	"sync"
 	"time"
 )
 
@@ -199,4 +202,86 @@ func (req *ClientRegisterRequest) Validate() error {
 	}
 
 	return nil
+}
+
+// 注册token结构体
+type RegisterToken struct {
+	Token     string    `json:"token"`
+	CreatedAt time.Time `json:"created_at"`
+	ExpiresAt time.Time `json:"expires_at"`
+}
+
+// client注册信息结构体
+type ClientInfo struct {
+	ClientID     string    `json:"client_id"`
+	IP           string    `json:"ip"`
+	RegisteredAt time.Time `json:"registered_at"`
+}
+
+// client列表
+type ClientList struct {
+	Clients []ClientInfo `json:"clients"`
+	mu      sync.Mutex   `json:"-"`
+}
+
+// Lock 锁定互斥锁
+func (cl *ClientList) Lock() {
+	cl.mu.Lock()
+}
+
+// Unlock 解锁互斥锁
+func (cl *ClientList) Unlock() {
+	cl.mu.Unlock()
+}
+
+// 持久化token到文件
+type TokenFile string
+
+func (f TokenFile) Save(token *RegisterToken) error {
+	file, err := os.Create(string(f))
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+	return json.NewEncoder(file).Encode(token)
+}
+
+func (f TokenFile) Load() (*RegisterToken, error) {
+	file, err := os.Open(string(f))
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+	token := &RegisterToken{}
+	if err := json.NewDecoder(file).Decode(token); err != nil {
+		return nil, err
+	}
+	return token, nil
+}
+
+// 持久化client列表到文件
+type ClientFile string
+
+func (f ClientFile) Save(list *ClientList) error {
+	list.mu.Lock()
+	defer list.mu.Unlock()
+	file, err := os.Create(string(f))
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+	return json.NewEncoder(file).Encode(list.Clients)
+}
+
+func (f ClientFile) Load() (*ClientList, error) {
+	file, err := os.Open(string(f))
+	if err != nil {
+		return &ClientList{}, nil // 文件不存在时返回空列表
+	}
+	defer file.Close()
+	var clients []ClientInfo
+	if err := json.NewDecoder(file).Decode(&clients); err != nil {
+		return nil, err
+	}
+	return &ClientList{Clients: clients}, nil
 }

@@ -30,55 +30,41 @@ func StopClientManager() {
 	}
 }
 
-// ClientRegisterHandler 客户端注册处理器
+type RegisterRequest struct {
+	Token string `json:"token" binding:"required"`
+	IP    string `json:"ip"`
+}
+
+type RegisterResponse struct {
+	ClientID   string `json:"client_id"`
+	Registered bool   `json:"registered"`
+	ExpiresAt  string `json:"expires_at"`
+	Msg        string `json:"msg"`
+}
+
+// ClientRegisterHandler 客户端注册接口
 func ClientRegisterHandler(c *gin.Context) {
-	var req models.ClientRegisterRequest
-
-	// 绑定JSON请求
+	var req RegisterRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		logger.WarnForClient(c.ClientIP(), c.Request.UserAgent(),
-			"Client register request binding failed",
-			zap.Error(err),
-		)
-
-		c.JSON(http.StatusBadRequest, gin.H{
-			"success": false,
-			"message": "请求格式错误: " + err.Error(),
-			"code":    400,
-		})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "参数错误"})
 		return
 	}
-
-	// 获取客户端网络信息
-	clientIP := c.ClientIP()
-	userAgent := c.Request.UserAgent()
-
-	// 注册客户端
-	response, err := clientManager.RegisterClient(&req, clientIP, userAgent)
-	if err != nil {
-		logger.ErrorForClient(clientIP, userAgent,
-			"Client registration failed",
-			zap.Error(err),
-			zap.String("client_name", req.Name),
-		)
-
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"success": false,
-			"message": "注册失败: " + err.Error(),
-			"code":    500,
-		})
+	if !services.ValidateToken(req.Token) {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "无效或过期的token"})
 		return
 	}
-
-	// 记录成功日志
-	logger.InfoForClient(clientIP, userAgent,
-		"Client registered successfully",
-		zap.String("client_id", response.ClientID),
-		zap.String("client_name", req.Name),
-		zap.String("client_type", string(req.Type)),
-	)
-
-	c.JSON(http.StatusOK, response)
+	ip := req.IP
+	if ip == "" {
+		ip = c.ClientIP()
+	}
+	clientID, isNew := services.RegisterClient(ip)
+	resp := RegisterResponse{
+		ClientID:   clientID,
+		Registered: isNew,
+		ExpiresAt:  services.GetRegisterToken().ExpiresAt.Format("2006-01-02 15:04:05"),
+		Msg:        "注册成功",
+	}
+	c.JSON(http.StatusOK, resp)
 }
 
 // ClientHeartbeatHandler 客户端心跳处理器
