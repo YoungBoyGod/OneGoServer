@@ -30,41 +30,50 @@ func StopClientManager() {
 	}
 }
 
-type RegisterRequest struct {
-	Token string `json:"token" binding:"required"`
-	IP    string `json:"ip"`
-}
-
-type RegisterResponse struct {
-	ClientID   string `json:"client_id"`
-	Registered bool   `json:"registered"`
-	ExpiresAt  string `json:"expires_at"`
-	Msg        string `json:"msg"`
-}
-
 // ClientRegisterHandler 客户端注册接口
 func ClientRegisterHandler(c *gin.Context) {
-	var req RegisterRequest
+	var req models.ClientRegisterRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "参数错误"})
+		c.JSON(http.StatusBadRequest, gin.H{
+			"success": false,
+			"message": "请求格式错误: " + err.Error(),
+			"code":    400,
+		})
 		return
 	}
-	if !services.ValidateToken(req.Token) {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "无效或过期的token"})
+
+	// 获取客户端IP和User-Agent
+	ip := c.ClientIP()
+	userAgent := c.Request.UserAgent()
+
+	// 使用ClientManager注册客户端
+	response, err := clientManager.RegisterClient(&req, ip, userAgent)
+	if err != nil {
+		logger.WarnForClient(ip, userAgent,
+			"Client registration failed",
+			zap.Error(err),
+			zap.String("client_name", req.Name),
+			zap.String("client_type", string(req.Type)),
+		)
+
+		c.JSON(http.StatusBadRequest, gin.H{
+			"success": false,
+			"message": err.Error(),
+			"code":    400,
+		})
 		return
 	}
-	ip := req.IP
-	if ip == "" {
-		ip = c.ClientIP()
-	}
-	clientID, isNew := services.RegisterClient(ip)
-	resp := RegisterResponse{
-		ClientID:   clientID,
-		Registered: isNew,
-		ExpiresAt:  services.GetRegisterToken().ExpiresAt.Format("2006-01-02 15:04:05"),
-		Msg:        "注册成功",
-	}
-	c.JSON(http.StatusOK, resp)
+
+	// 记录注册成功日志
+	logger.InfoForClient(ip, userAgent,
+		"Client registered successfully",
+		zap.String("client_id", response.ClientID),
+		zap.String("client_name", req.Name),
+		zap.String("client_type", string(req.Type)),
+		zap.String("client_version", req.Version),
+	)
+
+	c.JSON(http.StatusOK, response)
 }
 
 // ClientHeartbeatHandler 客户端心跳处理器
