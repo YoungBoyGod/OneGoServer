@@ -106,8 +106,8 @@ type ClientListResponse struct {
 
 // IsOnline 检查客户端是否在线
 func (c *RegisteredClient) IsOnline() bool {
-	// 如果超过5分钟没有心跳，认为离线
-	return c.Status == ClientStatusOnline && time.Since(c.LastHeartbeat) < 5*time.Minute
+	// 如果超过15分钟没有心跳，认为离线（与服务器配置保持一致）
+	return c.Status == ClientStatusOnline && time.Since(c.LastHeartbeat) < 15*time.Minute
 }
 
 // UpdateHeartbeat 更新心跳信息

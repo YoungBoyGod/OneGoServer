@@ -1,0 +1,76 @@
+[
+  {
+    "client_id": "dcd73c0b5a4d9716",
+    "name": "OneGoClient",
+    "type": "desktop",
+    "ip_address": "127.0.0.1",
+    "last_heartbeat": "2025-06-20T10:45:14.525376771+08:00",
+    "register_time": "2025-06-20T10:45:14.525376771+08:00",
+    "metadata": {
+      "all_local_ips": [
+        "192.168.100.128",
+        "172.17.0.1",
+        "172.18.0.1"
+      ],
+      "arch": "amd64",
+      "config_source": "yaml",
+      "cpu_cores": 2,
+      "cpu_model": "AMD Ryzen 7 8845H w/ Radeon 780M Graphics",
+      "disk_total": 108578578432,
+      "disk_total_gb": "101.12 GB",
+      "go_version": "go1.24.3",
+      "hostname": "u24",
+      "kernel_name": "Linux",
+      "kernel_version": "6.11.0-26-generic",
+      "local_ip": "192.168.100.128",
+      "memory_total": 4054556672,
+      "memory_total_gb": "3.78 GB",
+      "network_interfaces": [
+        {
+          "addresses": [
+            "127.0.0.1/8",
+            "::1/128"
+          ],
+          "flags": "up|loopback|running",
+          "mtu": 65536,
+          "name": "lo"
+        },
+        {
+          "addresses": [
+            "192.168.100.128/24",
+            "fe80::f748:92bc:9b4a:9700/64"
+          ],
+          "flags": "up|broadcast|multicast|running",
+          "mac": "00:0c:29:9e:6c:3c",
+          "mtu": 1500,
+          "name": "ens33"
+        },
+        {
+          "addresses": [
+            "172.17.0.1/16"
+          ],
+          "flags": "up|broadcast|multicast",
+          "mac": "06:8f:6a:4d:84:77",
+          "mtu": 1500,
+          "name": "docker0"
+        },
+        {
+          "addresses": [
+            "172.18.0.1/16"
+          ],
+          "flags": "up|broadcast|multicast",
+          "mac": "6a:fa:49:5a:0c:38",
+          "mtu": 1500,
+          "name": "br-ab1cf313754e"
+        }
+      ],
+      "os": "linux",
+      "os_version": "Ubuntu 24.04.2 LTS",
+      "platform": "go",
+      "python_version": "Python 3.12.3",
+      "shell_version": "bash (GNU bash, version 5.2.21(1)-release (x86_64-pc-linux-gnu))",
+      "start_time": "2025-06-20T10:45:14.52331685+08:00"
+    },
+    "heartbeat_interval": 30000000000
+  }
+]

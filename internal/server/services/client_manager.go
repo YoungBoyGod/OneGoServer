@@ -4,7 +4,10 @@ import (
 	"crypto/md5"
 	"crypto/rand"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
+	"os"
+	"path/filepath"
 	"sync"
 	"time"
 
@@ -15,9 +18,12 @@ import (
 )
 
 const (
-	TokenFilePath  = "register_token.json"
-	ClientFilePath = "clients.json"
-	TokenValidDays = 30
+	TokenFilePath    = "register_token.json"
+	ClientFilePath   = "clients.json"
+	ClientStateFile  = "client_states.json" // 客户端状态持久化文件
+	TokenValidDays   = 30
+	OfflineThreshold = 15 * time.Minute // 修改：15分钟无心跳认为离线（之前是10分钟）
+	CleanupThreshold = 2 * time.Hour    // 修改：2小时后才清理离线客户端（之前是10分钟）
 )
 
 var (
@@ -25,6 +31,18 @@ var (
 	clientList    *models.ClientList
 	once          sync.Once
 )
+
+// ClientState 客户端状态持久化结构
+type ClientState struct {
+	ClientID          string                 `json:"client_id"`
+	Name              string                 `json:"name"`
+	Type              models.ClientType      `json:"type"`
+	IPAddress         string                 `json:"ip_address"`
+	LastHeartbeat     time.Time              `json:"last_heartbeat"`
+	RegisterTime      time.Time              `json:"register_time"`
+	Metadata          map[string]interface{} `json:"metadata"`
+	HeartbeatInterval time.Duration          `json:"heartbeat_interval"`
+}
 
 // 生成随机token
 func generateToken(n int) (string, error) {
@@ -108,31 +126,133 @@ func GetAllClients() []models.ClientInfo {
 	return append([]models.ClientInfo{}, clientList.Clients...)
 }
 
-// ClientManager 客户端管理器
+// ClientManager 客户端管理器（增强版）
 type ClientManager struct {
 	clients           map[string]*models.RegisteredClient // 客户端映射
 	mutex             sync.RWMutex                        // 读写锁
 	heartbeatInterval time.Duration                       // 心跳间隔
 	cleanupInterval   time.Duration                       // 清理间隔
 	stopCleanup       chan struct{}                       // 停止清理信号
+	stateFile         string                              // 状态文件路径
 }
 
-// NewClientManager 创建新的客户端管理器
+// NewClientManager 创建新的客户端管理器（增强版）
 func NewClientManager() *ClientManager {
 	cm := &ClientManager{
 		clients:           make(map[string]*models.RegisteredClient),
 		heartbeatInterval: 30 * time.Second, // 默认30秒心跳
-		cleanupInterval:   1 * time.Minute,  // 每分钟清理一次
+		cleanupInterval:   5 * time.Minute,  // 每5分钟清理一次（增加频率）
 		stopCleanup:       make(chan struct{}),
+		stateFile:         ClientStateFile,
 	}
+
+	// 尝试恢复客户端状态
+	cm.recoverClientStates()
 
 	// 启动清理协程
 	go cm.startCleanupRoutine()
 
+	logger.Info("Enhanced client manager initialized",
+		zap.String("state_file", cm.stateFile),
+		zap.Duration("offline_threshold", OfflineThreshold),
+		zap.Duration("cleanup_threshold", CleanupThreshold),
+	)
+
 	return cm
 }
 
-// RegisterClient 注册新客户端
+// recoverClientStates 恢复客户端状态
+func (cm *ClientManager) recoverClientStates() {
+	if _, err := os.Stat(cm.stateFile); os.IsNotExist(err) {
+		logger.Info("No client state file found, starting fresh")
+		return
+	}
+
+	data, err := os.ReadFile(cm.stateFile)
+	if err != nil {
+		logger.Error("Failed to read client state file", zap.Error(err))
+		return
+	}
+
+	var states []ClientState
+	if err := json.Unmarshal(data, &states); err != nil {
+		logger.Error("Failed to unmarshal client states", zap.Error(err))
+		return
+	}
+
+	recoveredCount := 0
+	now := time.Now()
+
+	for _, state := range states {
+		// 只恢复最近活跃的客户端（24小时内有心跳的）
+		if now.Sub(state.LastHeartbeat) < 24*time.Hour {
+			client := &models.RegisteredClient{
+				ClientID:       state.ClientID,
+				Name:           state.Name,
+				Type:           state.Type,
+				IPAddress:      state.IPAddress,
+				Status:         models.ClientStatusOffline, // 初始为离线状态
+				LastHeartbeat:  state.LastHeartbeat,
+				RegisterTime:   state.RegisterTime,
+				LastActiveTime: state.LastHeartbeat,
+				Metadata:       state.Metadata,
+				RequestCount:   0,
+				ErrorCount:     0,
+				OnlineDuration: 0,
+			}
+
+			cm.clients[state.ClientID] = client
+			recoveredCount++
+		}
+	}
+
+	logger.Info("Client states recovered",
+		zap.Int("total_states", len(states)),
+		zap.Int("recovered_count", recoveredCount),
+	)
+}
+
+// saveClientStates 保存客户端状态
+func (cm *ClientManager) saveClientStates() {
+	cm.mutex.RLock()
+	defer cm.mutex.RUnlock()
+
+	var states []ClientState
+	for _, client := range cm.clients {
+		state := ClientState{
+			ClientID:          client.ClientID,
+			Name:              client.Name,
+			Type:              client.Type,
+			IPAddress:         client.IPAddress,
+			LastHeartbeat:     client.LastHeartbeat,
+			RegisterTime:      client.RegisterTime,
+			Metadata:          client.Metadata,
+			HeartbeatInterval: cm.heartbeatInterval,
+		}
+		states = append(states, state)
+	}
+
+	data, err := json.MarshalIndent(states, "", "  ")
+	if err != nil {
+		logger.Error("Failed to marshal client states", zap.Error(err))
+		return
+	}
+
+	// 确保目录存在
+	if err := os.MkdirAll(filepath.Dir(cm.stateFile), 0755); err != nil {
+		logger.Error("Failed to create state directory", zap.Error(err))
+		return
+	}
+
+	if err := os.WriteFile(cm.stateFile, data, 0644); err != nil {
+		logger.Error("Failed to write client state file", zap.Error(err))
+		return
+	}
+
+	logger.Debug("Client states saved", zap.Int("count", len(states)))
+}
+
+// RegisterClient 注册新客户端（增强版）
 func (cm *ClientManager) RegisterClient(req *models.ClientRegisterRequest, ip, userAgent string) (*models.ClientRegisterResponse, error) {
 	// 验证请求
 	if err := req.Validate(); err != nil {
@@ -148,6 +268,8 @@ func (cm *ClientManager) RegisterClient(req *models.ClientRegisterRequest, ip, u
 	// 生成客户端指纹
 	fingerprint := cm.generateFingerprint(ip, userAgent)
 
+	now := time.Now()
+
 	// 检查是否已经注册
 	if existingClient, exists := cm.clients[clientID]; exists {
 		// 更新现有客户端信息
@@ -156,16 +278,22 @@ func (cm *ClientManager) RegisterClient(req *models.ClientRegisterRequest, ip, u
 		existingClient.Version = req.Version
 		existingClient.Description = req.Description
 		existingClient.Status = models.ClientStatusOnline
-		existingClient.LastHeartbeat = time.Now()
-		existingClient.LastActiveTime = time.Now()
+		existingClient.LastHeartbeat = now
+		existingClient.LastActiveTime = now
 		existingClient.Metadata = req.Metadata
 		existingClient.Tags = req.Tags
+		existingClient.IPAddress = ip // 更新IP（可能发生变化）
+		existingClient.UserAgent = userAgent
 
 		logger.Info("Client re-registered",
 			zap.String("client_id", clientID),
 			zap.String("name", req.Name),
 			zap.String("ip", ip),
+			zap.Duration("offline_duration", now.Sub(existingClient.LastHeartbeat)),
 		)
+
+		// 保存状态
+		go cm.saveClientStates()
 
 		return &models.ClientRegisterResponse{
 			ClientID:          clientID,
@@ -178,7 +306,6 @@ func (cm *ClientManager) RegisterClient(req *models.ClientRegisterRequest, ip, u
 	}
 
 	// 创建新客户端
-	now := time.Now()
 	client := &models.RegisteredClient{
 		ClientID:       clientID,
 		Name:           req.Name,
@@ -202,6 +329,9 @@ func (cm *ClientManager) RegisterClient(req *models.ClientRegisterRequest, ip, u
 	// 保存客户端
 	cm.clients[clientID] = client
 
+	// 保存状态
+	go cm.saveClientStates()
+
 	// 记录注册日志
 	logger.Info("New client registered",
 		zap.String("client_id", clientID),
@@ -222,7 +352,7 @@ func (cm *ClientManager) RegisterClient(req *models.ClientRegisterRequest, ip, u
 	}, nil
 }
 
-// ProcessHeartbeat 处理客户端心跳
+// ProcessHeartbeat 处理客户端心跳（增强版）
 func (cm *ClientManager) ProcessHeartbeat(req *models.ClientHeartbeatRequest) (*models.ClientHeartbeatResponse, error) {
 	cm.mutex.Lock()
 	defer cm.mutex.Unlock()
@@ -231,7 +361,7 @@ func (cm *ClientManager) ProcessHeartbeat(req *models.ClientHeartbeatRequest) (*
 	if !exists {
 		return &models.ClientHeartbeatResponse{
 			Success:       false,
-			Message:       "客户端未注册",
+			Message:       "客户端未注册，请重新注册",
 			ServerTime:    time.Now(),
 			NextHeartbeat: int(cm.heartbeatInterval.Seconds()),
 		}, fmt.Errorf("client not found: %s", req.ClientID)
@@ -239,6 +369,21 @@ func (cm *ClientManager) ProcessHeartbeat(req *models.ClientHeartbeatRequest) (*
 
 	// 更新心跳信息
 	client.UpdateHeartbeat(req.Status, req.Metadata)
+
+	// 如果客户端之前离线，现在重新上线，记录日志
+	if client.Status != models.ClientStatusOnline {
+		client.Status = models.ClientStatusOnline
+		logger.Info("Client back online",
+			zap.String("client_id", req.ClientID),
+			zap.String("client_name", client.Name),
+		)
+	}
+
+	// 定期保存状态（每10次心跳保存一次，减少IO）
+	client.RequestCount++
+	if client.RequestCount%10 == 0 {
+		go cm.saveClientStates()
+	}
 
 	// 记录心跳日志
 	logger.Debug("Client heartbeat received",
@@ -404,26 +549,42 @@ func (cm *ClientManager) startCleanupRoutine() {
 	}
 }
 
-// cleanupOfflineClients 清理离线客户端
+// cleanupOfflineClients 清理离线客户端（增强版）
 func (cm *ClientManager) cleanupOfflineClients() {
 	cm.mutex.Lock()
 	defer cm.mutex.Unlock()
 
 	now := time.Now()
-	offlineThreshold := 10 * time.Minute // 10分钟无心跳认为离线
-
 	var toDelete []string
+	var toMarkOffline []string
 
 	for clientID, client := range cm.clients {
-		if now.Sub(client.LastHeartbeat) > offlineThreshold {
+		offlineDuration := now.Sub(client.LastHeartbeat)
+
+		// 超过清理阈值的客户端删除
+		if offlineDuration > CleanupThreshold {
 			toDelete = append(toDelete, clientID)
+		} else if offlineDuration > OfflineThreshold && client.Status == models.ClientStatusOnline {
+			// 超过离线阈值但未到清理阈值的客户端标记为离线
+			toMarkOffline = append(toMarkOffline, clientID)
 		}
 	}
 
-	// 删除离线客户端
+	// 标记离线客户端
+	for _, clientID := range toMarkOffline {
+		client := cm.clients[clientID]
+		client.Status = models.ClientStatusOffline
+		logger.Info("Client marked as offline",
+			zap.String("client_id", clientID),
+			zap.String("name", client.Name),
+			zap.Duration("offline_duration", now.Sub(client.LastHeartbeat)),
+		)
+	}
+
+	// 删除长期离线的客户端
 	for _, clientID := range toDelete {
 		client := cm.clients[clientID]
-		logger.Info("Cleaned up offline client",
+		logger.Info("Cleaned up long-term offline client",
 			zap.String("client_id", clientID),
 			zap.String("name", client.Name),
 			zap.Duration("offline_duration", now.Sub(client.LastHeartbeat)),
@@ -431,8 +592,12 @@ func (cm *ClientManager) cleanupOfflineClients() {
 		delete(cm.clients, clientID)
 	}
 
-	if len(toDelete) > 0 {
+	// 如果有变化，保存状态
+	if len(toMarkOffline) > 0 || len(toDelete) > 0 {
+		go cm.saveClientStates()
+
 		logger.Info("Client cleanup completed",
+			zap.Int("marked_offline", len(toMarkOffline)),
 			zap.Int("cleaned_count", len(toDelete)),
 			zap.Int("remaining_clients", len(cm.clients)),
 		)
