@@ -1,7 +1,23 @@
+# 服务器配置
 server:
-  host: 0.0.0.0
-  port: 8080
-  mode: debug
+  host: "127.0.0.1"
+  port: "8080"
+  mode: "dev"
+
+# 安全配置（简化版 - 仅预定义Token认证）
+security:
+  predefined_token: "OneGoClient2024Token123" # 预定义注册Token（唯一认证方式）
+
+# 日志配置  
+log:
+  level: "info"
+  file: "logs/server.log"
+  format: "json"
+  output: "both"
+  max_size: 10
+  max_age: 7
+  max_backups: 5
+  compress: true
 
 app:
   name: learngo0619

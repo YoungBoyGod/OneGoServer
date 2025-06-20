@@ -2,10 +2,12 @@ package routes
 
 import (
 	"learngo0619/internal/config"
+	"learngo0619/internal/logger"
 	"learngo0619/internal/server/api/handlers"
 	"learngo0619/internal/server/api/middleware"
 
 	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
 )
 
 // SetupRouter creates and configures the Gin router
@@ -55,13 +57,12 @@ func registerRoutes(router *gin.Engine, cfg *config.Config) {
 		v1.GET("/status", handlers.APIStatusHandler)
 		v1.GET("/info", handlers.APIInfoHandler(cfg))
 		v1.GET("/client-info", handlers.ClientInfoHandler)
-		v1.GET("/log-stats", handlers.LogStatsHandler)              // 日志统计端点
-		v1.GET("/register-token", handlers.GetRegisterTokenHandler) // 获取注册Token
+		v1.GET("/log-stats", handlers.LogStatsHandler) // 日志统计端点
 
-		// 客户端注册管理路由组
+		// 客户端相关接口（简化版 - 仅预定义Token认证）
 		clients := v1.Group("/clients")
 		{
-			clients.POST("/register", handlers.ClientRegisterHandler)   // 注册客户端（需要Token）
+			clients.POST("/register", handlers.ClientRegisterHandler)   // 注册客户端（需要预定义Token）
 			clients.POST("/heartbeat", handlers.ClientHeartbeatHandler) // 客户端心跳
 			clients.GET("", handlers.ClientListHandler)                 // 客户端列表
 			clients.GET("/online", handlers.ClientOnlineHandler)        // 在线客户端
@@ -71,4 +72,14 @@ func registerRoutes(router *gin.Engine, cfg *config.Config) {
 			clients.DELETE("/:id", handlers.ClientUnregisterHandler)    // 客户端注销
 		}
 	}
+
+	// 记录认证模式
+	logger.Info("Predefined token authentication mode enabled",
+		zap.String("token_configured", func() string {
+			if cfg.Server.Security.PredefinedToken != "" {
+				return "yes"
+			}
+			return "no"
+		}()),
+	)
 }

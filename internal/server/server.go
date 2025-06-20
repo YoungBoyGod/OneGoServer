@@ -50,6 +50,9 @@ func (s *Server) Start(verbose bool) error {
 	// 初始化客户端管理器
 	handlers.InitClientManager()
 
+	// 设置全局配置供处理器使用
+	handlers.SetGlobalConfig(s.config)
+
 	// 注册清理函数
 	defer func() {
 		logger.Cleanup()

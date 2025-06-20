@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"time"
 
+	"learngo0619/internal/config"
 	"learngo0619/internal/logger"
 	"learngo0619/internal/server/models"
 	"learngo0619/internal/server/services"
@@ -19,12 +20,20 @@ import (
 var (
 	// 全局客户端管理器实例
 	clientManager *services.ClientManager
+	// 全局服务器配置实例
+	globalServerConfig *config.Config
 )
 
 // InitClientManager 初始化客户端管理器
 func InitClientManager() {
 	clientManager = services.NewClientManager()
 	logger.Info("Client manager initialized")
+}
+
+// SetGlobalConfig 设置全局配置
+func SetGlobalConfig(cfg *config.Config) {
+	globalServerConfig = cfg
+	logger.Info("Global server config set for handlers")
 }
 
 // StopClientManager 停止客户端管理器
@@ -34,7 +43,7 @@ func StopClientManager() {
 	}
 }
 
-// ClientRegisterHandler 客户端注册接口（支持多种认证方式）
+// ClientRegisterHandler 客户端注册接口（简化版 - 仅预定义Token认证）
 func ClientRegisterHandler(c *gin.Context) {
 	var req models.ClientRegisterRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -50,54 +59,27 @@ func ClientRegisterHandler(c *gin.Context) {
 	ip := c.ClientIP()
 	userAgent := c.Request.UserAgent()
 
-	// 检查认证方式
-	credentialType := c.GetHeader("X-Client-Credential-Type")
-
-	if credentialType != "" {
-		// K8s风格认证
-		if err := validateK8sStyleCredential(c, credentialType, ip, userAgent, &req); err != nil {
-			logger.WarnForClient(ip, userAgent,
-				"K8s-style credential authentication failed",
-				zap.String("credential_type", credentialType),
-				zap.String("client_name", req.Name),
-				zap.Error(err),
-			)
-
-			c.JSON(http.StatusUnauthorized, gin.H{
-				"success": false,
-				"message": "凭证认证失败: " + err.Error(),
-				"code":    401,
-			})
-			return
-		}
-
-		logger.InfoForClient(ip, userAgent,
-			"K8s-style credential authentication successful",
-			zap.String("credential_type", credentialType),
+	// 验证预定义Token（唯一认证方式）
+	if err := validatePredefinedToken(c, ip, userAgent, &req); err != nil {
+		logger.WarnForClient(ip, userAgent,
+			"Predefined token authentication failed",
 			zap.String("client_name", req.Name),
+			zap.Error(err),
 		)
-	} else {
-		// 传统Token认证（向后兼容）
-		if err := validateBearerToken(c, ip, userAgent, &req); err != nil {
-			logger.WarnForClient(ip, userAgent,
-				"Bearer token authentication failed",
-				zap.String("client_name", req.Name),
-				zap.Error(err),
-			)
 
-			c.JSON(http.StatusUnauthorized, gin.H{
-				"success": false,
-				"message": err.Error(),
-				"code":    401,
-			})
-			return
-		}
-
-		logger.InfoForClient(ip, userAgent,
-			"Bearer token authentication successful",
-			zap.String("client_name", req.Name),
-		)
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"success":    false,
+			"message":    err.Error(),
+			"code":       401,
+			"error_type": "token_invalid",
+		})
+		return
 	}
+
+	logger.InfoForClient(ip, userAgent,
+		"Predefined token authentication successful",
+		zap.String("client_name", req.Name),
+	)
 
 	// 认证通过，继续注册流程
 	response, err := clientManager.RegisterClient(&req, ip, userAgent)
@@ -118,21 +100,58 @@ func ClientRegisterHandler(c *gin.Context) {
 	}
 
 	// 记录注册成功日志
-	authMethod := "bearer-token"
-	if credentialType != "" {
-		authMethod = "k8s-credential-" + credentialType
-	}
-
 	logger.InfoForClient(ip, userAgent,
 		"Client registered successfully",
 		zap.String("client_id", response.ClientID),
 		zap.String("client_name", req.Name),
 		zap.String("client_type", string(req.Type)),
 		zap.String("client_version", req.Version),
-		zap.String("auth_method", authMethod),
+		zap.String("auth_method", "predefined-token"),
 	)
 
 	c.JSON(http.StatusOK, response)
+}
+
+// getServerConfig 获取服务器配置
+func getServerConfig() *config.ServerConfig {
+	if globalServerConfig != nil {
+		return &globalServerConfig.Server
+	}
+	return nil
+}
+
+// validatePredefinedToken 验证预定义Token（简化版认证）
+func validatePredefinedToken(c *gin.Context, ip, userAgent string, req *models.ClientRegisterRequest) error {
+	authHeader := c.GetHeader("Authorization")
+	if authHeader == "" {
+		return fmt.Errorf("缺少授权令牌，请在请求头中添加 'Authorization: Bearer <token>'")
+	}
+
+	const bearerPrefix = "Bearer "
+	if len(authHeader) < len(bearerPrefix) || authHeader[:len(bearerPrefix)] != bearerPrefix {
+		return fmt.Errorf("授权令牌格式错误，应为 'Bearer <token>'")
+	}
+
+	token := authHeader[len(bearerPrefix):]
+
+	// 获取配置中的预定义Token
+	serverConfig := getServerConfig()
+	if serverConfig == nil || serverConfig.Security.PredefinedToken == "" {
+		return fmt.Errorf("服务器未配置预定义Token")
+	}
+
+	// 验证Token是否匹配
+	if token != serverConfig.Security.PredefinedToken {
+		return fmt.Errorf("预定义Token验证失败，请检查Token是否正确")
+	}
+
+	logger.InfoForClient(ip, userAgent,
+		"Predefined token validated successfully",
+		zap.String("client_name", req.Name),
+		zap.String("token_prefix", token[:8]+"..."),
+	)
+
+	return nil
 }
 
 // validateK8sStyleCredential 验证K8s风格凭证
@@ -247,11 +266,11 @@ func validateCertificateCredential(c *gin.Context, ip, userAgent string, req *mo
 	return nil
 }
 
-// validateBearerToken 验证传统Bearer Token（向后兼容）
+// validateBearerToken 验证Bearer Token（支持预定义Token和动态Token）
 func validateBearerToken(c *gin.Context, ip, userAgent string, req *models.ClientRegisterRequest) error {
 	authHeader := c.GetHeader("Authorization")
 	if authHeader == "" {
-		return fmt.Errorf("缺少授权令牌，请先获取注册令牌")
+		return fmt.Errorf("缺少授权令牌，请在请求头中添加 'Authorization: Bearer <token>'")
 	}
 
 	const bearerPrefix = "Bearer "
@@ -261,9 +280,29 @@ func validateBearerToken(c *gin.Context, ip, userAgent string, req *models.Clien
 
 	token := authHeader[len(bearerPrefix):]
 
-	if !services.ValidateToken(token) {
-		return fmt.Errorf("注册令牌无效或已过期，请重新获取")
+	// 首先检查是否为预定义Token
+	serverConfig := getServerConfig()
+	if serverConfig != nil && serverConfig.Security.PredefinedToken != "" {
+		if token == serverConfig.Security.PredefinedToken {
+			logger.InfoForClient(ip, userAgent,
+				"Predefined token authentication successful",
+				zap.String("client_name", req.Name),
+				zap.String("token_prefix", token[:8]+"..."),
+			)
+			return nil
+		}
 	}
+
+	// 如果不是预定义Token，则检查动态Token（向后兼容）
+	if !services.ValidateToken(token) {
+		return fmt.Errorf("注册令牌无效或已过期。请使用有效的注册令牌，或联系管理员获取")
+	}
+
+	logger.InfoForClient(ip, userAgent,
+		"Dynamic token authentication successful",
+		zap.String("client_name", req.Name),
+		zap.String("token_prefix", token[:8]+"..."),
+	)
 
 	return nil
 }

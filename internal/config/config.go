@@ -17,9 +17,13 @@ type Config struct {
 
 // ServerConfig is the configuration for the server
 type ServerConfig struct {
-	Host string `yaml:"host"`
-	Port string `yaml:"port"`
-	Mode string `yaml:"mode"`
+	Host     string       `yaml:"host"`
+	Port     string       `yaml:"port"`
+	Mode     string       `yaml:"mode"`
+	Server   ServerInfo   `yaml:"server"`
+	Database DatabaseInfo `yaml:"database"`
+	Log      LogInfo      `yaml:"log"`
+	Security SecurityInfo `yaml:"security"` // 新增安全配置
 }
 
 // AppConfig is the configuration for the app
@@ -38,6 +42,28 @@ type LogConfig struct {
 	MaxAge     int    `yaml:"max_age"`     // 日志文件最长保存时间(天)
 	MaxBackups int    `yaml:"max_backups"` // 最大备份文件数量
 	Compress   bool   `yaml:"compress"`    // 是否压缩归档
+}
+
+// ServerInfo 服务器信息
+type ServerInfo struct {
+	Host string `yaml:"host"`
+	Port string `yaml:"port"`
+	Mode string `yaml:"mode"`
+}
+
+// DatabaseInfo 数据库信息
+type DatabaseInfo struct {
+	// Add any necessary fields for database configuration
+}
+
+// LogInfo 日志信息
+type LogInfo struct {
+	// Add any necessary fields for log configuration
+}
+
+// SecurityInfo 安全配置（简化版）
+type SecurityInfo struct {
+	PredefinedToken string `yaml:"predefined_token"` // 预定义注册Token（唯一认证方式）
 }
 
 // LoadConfig reads config from file
