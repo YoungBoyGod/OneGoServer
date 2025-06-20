@@ -53,7 +53,7 @@ func (s *Server) Start(verbose bool) error {
 	// 设置全局配置供处理器使用
 	handlers.SetGlobalConfig(s.config)
 
-	// 记录认证配置状态
+	// 记录认证配置状态 - Debug模式下输出详细信息
 	logger.Info("Predefined token authentication mode enabled",
 		zap.String("token_configured", func() string {
 			if s.config.Security.PredefinedToken != "" {
@@ -61,16 +61,24 @@ func (s *Server) Start(verbose bool) error {
 			}
 			return "no"
 		}()),
-		zap.String("token_prefix", func() string {
-			if s.config.Security.PredefinedToken != "" {
-				if len(s.config.Security.PredefinedToken) > 8 {
-					return s.config.Security.PredefinedToken[:8] + "..."
-				}
-				return s.config.Security.PredefinedToken
-			}
-			return "none"
-		}()),
+		zap.String("mode", s.config.Server.Mode),
 	)
+
+	// Debug模式下输出更详细的Token信息
+	if s.config.Server.Mode == "debug" {
+		logger.Info("Debug: Token configuration details",
+			zap.String("token_prefix", func() string {
+				if s.config.Security.PredefinedToken != "" {
+					if len(s.config.Security.PredefinedToken) > 8 {
+						return s.config.Security.PredefinedToken[:8] + "..."
+					}
+					return s.config.Security.PredefinedToken
+				}
+				return "none"
+			}()),
+			zap.Int("token_length", len(s.config.Security.PredefinedToken)),
+		)
+	}
 
 	// 注册清理函数
 	defer func() {

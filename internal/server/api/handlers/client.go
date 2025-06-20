@@ -137,12 +137,24 @@ func validatePredefinedToken(c *gin.Context, ip, userAgent string, req *models.C
 		return fmt.Errorf("服务器配置未找到")
 	}
 
-	logger.InfoForClient(ip, userAgent,
-		"Debug: checking predefined token",
-		zap.String("client_name", req.Name),
-		zap.String("token_value", serverConfig.Security.PredefinedToken),
-		zap.Bool("token_empty", serverConfig.Security.PredefinedToken == ""),
-	)
+	// Debug模式下输出详细的Token验证信息
+	if serverConfig.Server.Mode == "debug" {
+		logger.InfoForClient(ip, userAgent,
+			"Debug: checking predefined token",
+			zap.String("client_name", req.Name),
+			zap.String("token_value", func() string {
+				if serverConfig.Security.PredefinedToken != "" {
+					if len(serverConfig.Security.PredefinedToken) > 8 {
+						return serverConfig.Security.PredefinedToken[:8] + "..."
+					}
+					return serverConfig.Security.PredefinedToken
+				}
+				return "empty"
+			}()),
+			zap.Bool("token_empty", serverConfig.Security.PredefinedToken == ""),
+			zap.String("server_mode", serverConfig.Server.Mode),
+		)
+	}
 
 	if serverConfig.Security.PredefinedToken == "" {
 		return fmt.Errorf("服务器未配置预定义Token")

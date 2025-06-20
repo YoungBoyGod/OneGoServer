@@ -1,10 +1,20 @@
 [
   {
+    "client_id": "364f8d95c9e68cb6",
+    "name": "TestClient",
+    "type": "desktop",
+    "ip_address": "::1",
+    "last_heartbeat": "2025-06-20T15:10:06.843679313+08:00",
+    "register_time": "2025-06-20T15:10:06.843679313+08:00",
+    "metadata": null,
+    "heartbeat_interval": 30000000000
+  },
+  {
     "client_id": "dcd73c0b5a4d9716",
     "name": "OneGoClient",
     "type": "desktop",
     "ip_address": "127.0.0.1",
-    "last_heartbeat": "2025-06-20T15:10:26.437206931+08:00",
+    "last_heartbeat": "2025-06-20T15:26:06.278626033+08:00",
     "register_time": "2025-06-20T15:10:26.437206931+08:00",
     "metadata": {
       "all_local_ips": [
@@ -69,17 +79,37 @@
       "platform": "go",
       "python_version": "Python 3.12.3",
       "shell_version": "bash (GNU bash, version 5.2.21(1)-release (x86_64-pc-linux-gnu))",
-      "start_time": "2025-06-20T15:10:26.434710466+08:00"
+      "start_time": "2025-06-20T15:26:06.274772625+08:00"
     },
     "heartbeat_interval": 30000000000
   },
   {
-    "client_id": "364f8d95c9e68cb6",
-    "name": "TestClient",
+    "client_id": "e21b53fe5639ff6f",
+    "name": "TestModeCheck",
     "type": "desktop",
     "ip_address": "::1",
-    "last_heartbeat": "2025-06-20T15:10:06.843679313+08:00",
-    "register_time": "2025-06-20T15:10:06.843679313+08:00",
+    "last_heartbeat": "2025-06-20T15:20:03.428557372+08:00",
+    "register_time": "2025-06-20T15:20:03.428557372+08:00",
+    "metadata": null,
+    "heartbeat_interval": 30000000000
+  },
+  {
+    "client_id": "050f60473eab44f9",
+    "name": "TestProductionClient",
+    "type": "mobile",
+    "ip_address": "::1",
+    "last_heartbeat": "2025-06-20T15:18:55.621866555+08:00",
+    "register_time": "2025-06-20T15:18:55.621866555+08:00",
+    "metadata": null,
+    "heartbeat_interval": 30000000000
+  },
+  {
+    "client_id": "94d060ea7860278a",
+    "name": "TestDebugClient",
+    "type": "desktop",
+    "ip_address": "::1",
+    "last_heartbeat": "2025-06-20T15:16:29.698685147+08:00",
+    "register_time": "2025-06-20T15:16:29.698685147+08:00",
     "metadata": null,
     "heartbeat_interval": 30000000000
   }
