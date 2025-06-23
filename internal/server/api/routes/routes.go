@@ -68,6 +68,25 @@ func registerRoutes(router *gin.Engine, cfg *config.Config) {
 			clients.GET("/types", handlers.ClientTypesHandler)          // 支持的客户端类型
 			clients.GET("/:id", handlers.ClientDetailHandler)           // 客户端详情
 			clients.DELETE("/:id", handlers.ClientUnregisterHandler)    // 客户端注销
+
+			// 客户端任务相关接口
+			clients.GET("/:clientId/tasks", handlers.GetTasksForClientHandler)           // 获取客户端待执行任务
+			clients.GET("/:clientId/task-results", handlers.GetClientTaskResultsHandler) // 获取客户端任务执行结果
 		}
+
+		// 任务管理接口（管理员使用）
+		tasks := v1.Group("/tasks")
+		{
+			tasks.POST("", handlers.CreateTaskHandler)                     // 创建任务
+			tasks.GET("", handlers.GetAllTasksHandler)                     // 获取所有任务
+			tasks.GET("/stats", handlers.GetTaskStatsHandler)              // 获取任务统计信息
+			tasks.GET("/:taskId", handlers.GetTaskHandler)                 // 获取任务详情
+			tasks.PUT("/:taskId/status", handlers.UpdateTaskStatusHandler) // 更新任务状态
+			tasks.GET("/:taskId/results", handlers.GetTaskResultsHandler)  // 获取任务执行结果
+			tasks.DELETE("/:taskId", handlers.DeleteTaskHandler)           // 删除任务
+		}
+
+		// 客户端任务轮询接口（客户端使用）
+		v1.GET("/poll-tasks", handlers.TaskPollHandler) // 客户端轮询任务
 	}
 }
