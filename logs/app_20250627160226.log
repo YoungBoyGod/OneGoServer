@@ -1,0 +1,2 @@
+{"level":"info","timestamp":"2025-06-27T16:02:26.380+0800","caller":"cmd/server.go:66","msg":"🚀 服务器启动成功","address":"0.0.0.0:40000","name":"OneGoServer","version":"1.0.0","mode":"debug"}
+{"level":"info","timestamp":"2025-06-27T16:02:26.380+0800","caller":"cmd/server.go:83","msg":"📄 日志配置","level":"debug","output":"both","app_file":"logs/app_20250627160226.log","http_file":"logs/http_20250627160226.log","error_file":"logs/error_20250627160226.log"}

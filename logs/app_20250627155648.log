@@ -1,0 +1,3 @@
+{"level":"info","timestamp":"2025-06-27T15:56:48.651+0800","caller":"cmd/server.go:66","msg":"🚀 服务器启动成功","address":"0.0.0.0:40000","name":"OneGoServer","version":"1.0.0","mode":"debug"}
+{"level":"info","timestamp":"2025-06-27T15:56:48.651+0800","caller":"cmd/server.go:83","msg":"📄 日志配置","level":"debug","output":"both","app_file":"logs/app_20250627155648.log","http_file":"logs/http_20250627155648.log","error_file":"logs/error_20250627155648.log"}
+{"level":"fatal","timestamp":"2025-06-27T15:56:48.651+0800","caller":"cmd/server.go:94","msg":"❌ 服务器启动失败","error":"listen tcp 0.0.0.0:40000: bind: address already in use","stacktrace":"github.com/YoungBoyGod/OneGoServer/internal/cmd.(*Server).Start.func1\n\t/Users/haitang/code/OneGo/OneGoServer/internal/cmd/server.go:94"}
