@@ -2,8 +2,10 @@ package config
 
 import (
 	"fmt"
+	"os"
 	"time"
 
+	"github.com/joho/godotenv"
 	"github.com/spf13/viper"
 )
 
@@ -103,8 +105,23 @@ type Config struct {
 
 // LoadConfig 加载配置
 func LoadConfig(path string) (*Config, error) {
+	// 加载.env文件（如果存在）
+	if err := godotenv.Load(); err != nil {
+		// .env文件不存在或加载失败时不报错，使用系统环境变量
+		fmt.Println("Warning: .env file not found or failed to load, using system environment variables")
+	}
+
 	viper.SetConfigFile(path)
 	viper.SetConfigType("yaml")
+
+	// 自动读取环境变量
+	viper.AutomaticEnv()
+
+	// 设置环境变量前缀
+	viper.SetEnvPrefix("ONEGO")
+
+	// 绑定环境变量
+	bindEnvironmentVariables()
 
 	// 设置默认值
 	setDefaults()
@@ -118,12 +135,68 @@ func LoadConfig(path string) (*Config, error) {
 		return nil, fmt.Errorf("failed to unmarshal config: %w", err)
 	}
 
+	// 从环境变量覆盖敏感配置
+	overrideFromEnv(&cfg)
+
 	// 验证配置
 	if err := cfg.validate(); err != nil {
 		return nil, fmt.Errorf("config validation failed: %w", err)
 	}
 
 	return &cfg, nil
+}
+
+// bindEnvironmentVariables 绑定环境变量
+func bindEnvironmentVariables() {
+	// 数据库相关
+	viper.BindEnv("database.host", "DB_HOST")
+	viper.BindEnv("database.port", "DB_PORT")
+	viper.BindEnv("database.username", "DB_USERNAME")
+	viper.BindEnv("database.password", "DB_PASSWORD")
+	viper.BindEnv("database.dbname", "DB_NAME")
+
+	// JWT相关
+	viper.BindEnv("jwt.secret", "JWT_SECRET")
+
+	// 服务器相关（可选）
+	viper.BindEnv("server.host", "SERVER_HOST")
+	viper.BindEnv("server.port", "SERVER_PORT")
+	viper.BindEnv("server.mode", "SERVER_MODE")
+}
+
+// overrideFromEnv 从环境变量覆盖敏感配置
+func overrideFromEnv(cfg *Config) {
+	if host := os.Getenv("DB_HOST"); host != "" {
+		cfg.Database.Host = host
+	}
+	if port := os.Getenv("DB_PORT"); port != "" {
+		if p := viper.GetInt("DB_PORT"); p != 0 {
+			cfg.Database.Port = p
+		}
+	}
+	if username := os.Getenv("DB_USERNAME"); username != "" {
+		cfg.Database.Username = username
+	}
+	if password := os.Getenv("DB_PASSWORD"); password != "" {
+		cfg.Database.Password = password
+	}
+	if dbname := os.Getenv("DB_NAME"); dbname != "" {
+		cfg.Database.DBName = dbname
+	}
+	if secret := os.Getenv("JWT_SECRET"); secret != "" {
+		cfg.JWT.Secret = secret
+	}
+
+	// 可选的服务器配置
+	if host := os.Getenv("SERVER_HOST"); host != "" {
+		cfg.Server.Host = host
+	}
+	if port := viper.GetInt("SERVER_PORT"); port != 0 {
+		cfg.Server.Port = port
+	}
+	if mode := os.Getenv("SERVER_MODE"); mode != "" {
+		cfg.Server.Mode = mode
+	}
 }
 
 // setDefaults 设置默认配置值
@@ -177,6 +250,9 @@ func (c *DatabaseConfig) GetDSN() string {
 	case "mysql":
 		return fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=%s&parseTime=%v&loc=%s",
 			c.Username, c.Password, c.Host, c.Port, c.DBName, c.Charset, c.ParseTime, c.Loc)
+	case "postgres":
+		return fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%d sslmode=disable TimeZone=%s",
+			c.Host, c.Username, c.Password, c.DBName, c.Port, c.Loc)
 	case "sqlite":
 		if c.DBName == ":memory:" {
 			return ":memory:"

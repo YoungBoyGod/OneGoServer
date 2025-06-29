@@ -3,7 +3,7 @@ package main
 import (
 	"log"
 
-	"github.com/YoungBoyGod/OneGoServer/internal/cmd"
+	"github.com/YoungBoyGod/OneGoServer/cmd"
 	"github.com/YoungBoyGod/OneGoServer/internal/config"
 )
 
