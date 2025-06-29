@@ -51,6 +51,20 @@ type LoggingConfig struct {
 	Compress   bool   `yaml:"compress" mapstructure:"compress"`
 }
 
+// RedisConfig Redis配置
+type RedisConfig struct {
+	Host         string `yaml:"host" mapstructure:"host"`
+	Port         int    `yaml:"port" mapstructure:"port"`
+	Password     string `yaml:"password" mapstructure:"password"`
+	DB           int    `yaml:"db" mapstructure:"db"`
+	PoolSize     int    `yaml:"pool_size" mapstructure:"pool_size"`
+	MinIdleConns int    `yaml:"min_idle_conns" mapstructure:"min_idle_conns"`
+	DialTimeout  int    `yaml:"dial_timeout" mapstructure:"dial_timeout"`
+	ReadTimeout  int    `yaml:"read_timeout" mapstructure:"read_timeout"`
+	WriteTimeout int    `yaml:"write_timeout" mapstructure:"write_timeout"`
+	IdleTimeout  int    `yaml:"idle_timeout" mapstructure:"idle_timeout"`
+}
+
 // JWTConfig JWT配置
 type JWTConfig struct {
 	Secret      string `yaml:"secret" mapstructure:"secret"`
@@ -97,6 +111,7 @@ type BusinessConfig struct {
 type Config struct {
 	Server   ServerConfig   `yaml:"server" mapstructure:"server"`
 	Database DatabaseConfig `yaml:"database" mapstructure:"database"`
+	Redis    RedisConfig    `yaml:"redis" mapstructure:"redis"`
 	Logging  LoggingConfig  `yaml:"logging" mapstructure:"logging"`
 	JWT      JWTConfig      `yaml:"jwt" mapstructure:"jwt"`
 	Security SecurityConfig `yaml:"security" mapstructure:"security"`
