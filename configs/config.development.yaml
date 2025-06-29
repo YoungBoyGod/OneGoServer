@@ -1,0 +1,40 @@
+# OneGoServer 开发环境配置覆盖
+server:
+  mode: "debug"
+  port: "8080"
+
+# 开发环境数据库
+database:
+  host: "localhost"
+  port: 5432
+  username: "postgres"
+  password: "postgres"
+  dbname: "onego_dev"
+  auto_migrate: true
+
+# 开发环境Redis
+redis:
+  host: "localhost"
+  port: 6379
+  db: 1  # 使用db1避免与其他项目冲突
+
+# 开发环境Kafka
+kafka:
+  brokers: ["localhost:9092"]
+
+# 开发环境日志
+logging:
+  level: "debug"
+  output: "console"
+
+# 开发环境安全配置（宽松）
+security:
+  cors:
+    allow_origins: ["http://localhost:3000", "http://localhost:8080"]
+  rate_limit:
+    enabled: false  # 开发环境关闭限流
+
+# 开发环境JWT（短过期时间便于测试）
+jwt:
+  secret: "dev-jwt-secret-key"
+  expire_hours: 2 
