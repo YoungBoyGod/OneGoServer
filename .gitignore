@@ -34,6 +34,10 @@ go.work.sum
 config/server.yaml
 !config/server.yaml.template
 
+# 日志文件
+logs/
+*.log
+
 # Editor/IDE
 # .idea/
 # .vscode/

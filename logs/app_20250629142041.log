@@ -1,4 +1,0 @@
-{"level":"info","timestamp":"2025-06-29T14:20:41.150+0800","caller":"cmd/server.go:67","msg":"🚀 服务器启动成功","address":"0.0.0.0:40000","name":"OneGoServer","version":"1.0.0","mode":"debug"}
-{"level":"info","timestamp":"2025-06-29T14:20:41.151+0800","caller":"cmd/server.go:84","msg":"📄 日志配置","level":"debug","output":"both","app_file":"logs/app_20250629142041.log","http_file":"logs/http_20250629142041.log","error_file":"logs/error_20250629142041.log"}
-{"level":"info","timestamp":"2025-06-29T14:21:00.737+0800","caller":"cmd/server.go:164","msg":"🛑 正在关闭服务器..."}
-{"level":"info","timestamp":"2025-06-29T14:21:00.738+0800","caller":"cmd/server.go:177","msg":"✅ 服务器已安全关闭"}
