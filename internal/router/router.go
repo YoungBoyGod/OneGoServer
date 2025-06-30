@@ -4,7 +4,15 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/redis/go-redis/v9"
+	"gorm.io/gorm"
 )
+
+// Dependencies 路由依赖
+type Dependencies struct {
+	DB    *gorm.DB
+	Redis *redis.Client
+}
 
 // 临时处理器函数 - 用于占位，避免编译错误
 func placeholder(c *gin.Context) {
@@ -15,18 +23,46 @@ func placeholder(c *gin.Context) {
 	})
 }
 
-// 路由
-func NewRouter() *gin.Engine {
+// NewRouter 创建路由，接受依赖注入
+func NewRouter(deps *Dependencies) *gin.Engine {
 	router := gin.Default()
 
 	// API v1 路由组
 	v1 := router.Group("/api/v1")
 	{
-		// 健康检查
+		// 健康检查 - 可以检查数据库和Redis连接状态
 		v1.GET("/health", func(c *gin.Context) {
+			status := "ok"
+			checks := make(map[string]string)
+
+			// 检查数据库连接
+			if deps.DB != nil {
+				if sqlDB, err := deps.DB.DB(); err == nil && sqlDB.Ping() == nil {
+					checks["database"] = "healthy"
+				} else {
+					checks["database"] = "unhealthy"
+					status = "degraded"
+				}
+			} else {
+				checks["database"] = "not_configured"
+			}
+
+			// 检查Redis连接
+			if deps.Redis != nil {
+				if deps.Redis.Ping(c.Request.Context()).Err() == nil {
+					checks["redis"] = "healthy"
+				} else {
+					checks["redis"] = "unhealthy"
+					status = "degraded"
+				}
+			} else {
+				checks["redis"] = "not_configured"
+			}
+
 			c.JSON(http.StatusOK, gin.H{
-				"status":  "ok",
+				"status":  status,
 				"message": "OneGoServer is running",
+				"checks":  checks,
 			})
 		})
 
@@ -56,6 +92,7 @@ func NewRouter() *gin.Engine {
 			devices.POST("/register", placeholder)     // 注册设备
 			devices.POST("/online", placeholder)       // 设备上线
 			devices.POST("/offline", placeholder)      // 设备下线
+			devices.POST("/meta", placeholder)         // 设备元数据
 			devices.GET("/stats", placeholder)         // 获取设备统计信息
 			devices.GET("/:id", placeholder)           // 获取设备详情
 			devices.PUT("/:id", placeholder)           // 更新设备信息

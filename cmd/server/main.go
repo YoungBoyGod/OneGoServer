@@ -1,4 +1,4 @@
-package main
+package server
 
 import (
 	"log"
@@ -6,50 +6,41 @@ import (
 	"github.com/YoungBoyGod/OneGoServer/internal/config"
 	"github.com/YoungBoyGod/OneGoServer/internal/data/postgres"
 	"github.com/YoungBoyGod/OneGoServer/internal/data/redis"
-	"github.com/YoungBoyGod/OneGoServer/internal/router"
+	"github.com/YoungBoyGod/OneGoServer/internal/server"
 )
 
-func main() {
+func InitServer(cfg *config.Config) {
 	// 1. 加载配置
-	cfg, err := config.LoadConfig()
+	cfg, err := config.LoadConfig("configs/config.yaml")
 	if err != nil {
 		log.Fatalf("❌ 配置加载失败: %v", err)
 	}
 
 	// 2. 初始化数据库连接
-	db, err := postgres.InitDB(cfg)
-	if err != nil {
+	if err := postgres.InitPostgreSQL(cfg); err != nil {
 		log.Fatalf("❌ 数据库初始化失败: %v", err)
 	}
-	defer postgres.CloseDB(db)
+	defer func() {
+		if err := postgres.Close(); err != nil {
+			log.Printf("⚠️ 数据库关闭失败: %v", err)
+		}
+	}()
 
 	// 3. 初始化Redis连接
-	rdb, err := redis.InitRedis(cfg)
-	if err != nil {
+	if err := redis.InitRedis(cfg); err != nil {
 		log.Fatalf("❌ Redis初始化失败: %v", err)
 	}
-	defer redis.CloseRedis(rdb)
+	defer func() {
+		if err := redis.Close(); err != nil {
+			log.Printf("⚠️ Redis关闭失败: %v", err)
+		}
+	}()
 
-	// 4. 初始化Kafka生产者
-	producer, err := kafka.InitProducer(cfg)
-	if err != nil {
-		log.Fatalf("❌ Kafka生产者初始化失败: %v", err)
-	}
-	defer kafka.CloseProducer(producer)
+	// 4. 创建并启动服务器
+	srv := server.NewServer(cfg, postgres.GetDB(), redis.GetClient())
 
-	// 5. 启动Kafka消费者 (可选，用于异步任务处理)
-	consumer, err := kafka.InitConsumer(cfg)
-	if err != nil {
-		log.Printf("⚠️ Kafka消费者初始化失败: %v", err)
-	} else {
-		defer kafka.CloseConsumer(consumer)
-	}
-
-	// 6. 初始化并启动HTTP服务器
-	r := router.InitRouter(cfg, db, rdb, producer)
-
-	log.Printf("🚀 服务器启动中... 监听端口: %s", cfg.Server.Port)
-	if err := r.Run(":" + cfg.Server.Port); err != nil {
+	log.Printf("🚀 OneGoServer 启动中...")
+	if err := srv.Start(); err != nil {
 		log.Fatalf("❌ 服务器启动失败: %v", err)
 	}
 }

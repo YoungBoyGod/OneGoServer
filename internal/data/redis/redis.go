@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/YoungBoyGod/OneGoServer/internal/config"
-	"github.com/go-redis/redis/v8"
+	"github.com/redis/go-redis/v9"
 )
 
 // Client Redis客户端实例
@@ -17,15 +17,15 @@ var Client *redis.Client
 func InitRedis(cfg *config.Config) error {
 	// Redis配置
 	rdb := redis.NewClient(&redis.Options{
-		Addr:         fmt.Sprintf("%s:%d", cfg.Redis.Host, cfg.Redis.Port),
-		Password:     cfg.Redis.Password,
-		DB:           cfg.Redis.DB,
-		PoolSize:     cfg.Redis.PoolSize,
-		MinIdleConns: cfg.Redis.MinIdleConns,
-		DialTimeout:  time.Duration(cfg.Redis.DialTimeout) * time.Second,
-		ReadTimeout:  time.Duration(cfg.Redis.ReadTimeout) * time.Second,
-		WriteTimeout: time.Duration(cfg.Redis.WriteTimeout) * time.Second,
-		IdleTimeout:  time.Duration(cfg.Redis.IdleTimeout) * time.Minute,
+		Addr:            fmt.Sprintf("%s:%d", cfg.Redis.Host, cfg.Redis.Port),
+		Password:        cfg.Redis.Password,
+		DB:              cfg.Redis.DB,
+		PoolSize:        cfg.Redis.PoolSize,
+		MinIdleConns:    cfg.Redis.MinIdleConns,
+		DialTimeout:     time.Duration(cfg.Redis.DialTimeout) * time.Second,
+		ReadTimeout:     time.Duration(cfg.Redis.ReadTimeout) * time.Second,
+		WriteTimeout:    time.Duration(cfg.Redis.WriteTimeout) * time.Second,
+		ConnMaxIdleTime: time.Duration(cfg.Redis.IdleTimeout) * time.Minute,
 	})
 
 	// 测试连接
