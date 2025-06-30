@@ -1,80 +1,459 @@
 package sql
 
 import (
+	"context"
+	"database/sql"
 	"errors"
 	"fmt"
-	"log"
+	"sync"
 	"time"
 
 	"github.com/YoungBoyGod/OneGoServer/internal/config"
+	pkglog "github.com/YoungBoyGod/OneGoServer/pkg/log"
+	"go.uber.org/zap"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 )
 
-// 定义全局数据库实例
-var DB *gorm.DB
+// === 类型定义 ===
 
-// 1.数据库连接
-func InitDB(cfg *config.Config) {
-	// 从dsn中获取
-	dsn := cfg.Database.GetDsn()
-	fmt.Println(dsn)
-	// 配置gorm
+// DBStats 数据库连接统计信息
+type DBStats struct {
+	MaxOpenConnections int           `json:"max_open_connections"`
+	OpenConnections    int           `json:"open_connections"`
+	InUseConnections   int           `json:"in_use_connections"`
+	IdleConnections    int           `json:"idle_connections"`
+	WaitCount          int64         `json:"wait_count"`
+	WaitDuration       time.Duration `json:"wait_duration"`
+	MaxIdleClosed      int64         `json:"max_idle_closed"`
+	MaxLifetimeClosed  int64         `json:"max_lifetime_closed"`
+}
+
+// TransactionFunc 事务函数类型
+type TransactionFunc func(tx *gorm.DB) error
+
+// MigrationFunc 迁移函数类型
+type MigrationFunc func(db *gorm.DB) error
+
+// DBManager 数据库管理器
+type DBManager struct {
+	db       *gorm.DB
+	config   *config.DatabaseConfig
+	mu       sync.RWMutex
+	isReady  bool
+	lastPing time.Time
+}
+
+// === 全局变量 ===
+
+var (
+	// 全局数据库实例
+	DB      *gorm.DB
+	manager *DBManager
+	once    sync.Once
+)
+
+// === 配置验证 ===
+
+// validateDBConfig 验证数据库配置
+func validateDBConfig(cfg *config.DatabaseConfig) error {
+	if cfg == nil {
+		return errors.New("database config cannot be nil")
+	}
+
+	if cfg.Host == "" {
+		return errors.New("database host is required")
+	}
+
+	if cfg.Port <= 0 || cfg.Port > 65535 {
+		return errors.New("database port must be between 1 and 65535")
+	}
+
+	if cfg.Username == "" {
+		return errors.New("database username is required")
+	}
+
+	if cfg.DBName == "" {
+		return errors.New("database name is required")
+	}
+
+	if cfg.MaxIdleConns < 0 {
+		return errors.New("max idle connections cannot be negative")
+	}
+
+	if cfg.MaxOpenConns <= 0 {
+		return errors.New("max open connections must be positive")
+	}
+
+	if cfg.MaxIdleConns > cfg.MaxOpenConns {
+		return errors.New("max idle connections cannot exceed max open connections")
+	}
+
+	return nil
+}
+
+// === 初始化函数 ===
+
+// InitDB 初始化数据库连接
+func InitDB(cfg *config.Config) error {
+	var initErr error
+
+	once.Do(func() {
+		// 验证配置
+		if err := validateDBConfig(&cfg.Database); err != nil {
+			initErr = fmt.Errorf("invalid database config: %w", err)
+			return
+		}
+
+		// 创建数据库管理器
+		manager = &DBManager{
+			config: &cfg.Database,
+		}
+
+		// 初始化连接
+		if err := manager.connect(); err != nil {
+			initErr = fmt.Errorf("failed to connect to database: %w", err)
+			return
+		}
+
+		// 设置全局实例
+		DB = manager.db
+
+		// 自动迁移（如果配置启用）
+		if cfg.Database.AutoMigrate {
+			if err := manager.autoMigrate(); err != nil {
+				pkglog.LogWarn("Auto migration failed", zap.Error(err))
+			}
+		}
+
+		pkglog.LogInfo("Database initialized successfully",
+			zap.String("host", cfg.Database.Host),
+			zap.Int("port", cfg.Database.Port),
+			zap.String("database", cfg.Database.DBName))
+	})
+
+	return initErr
+}
+
+// InitDBWithRetry 带重试机制的数据库初始化
+func InitDBWithRetry(cfg *config.Config, maxRetries int, retryInterval time.Duration) error {
+	var lastErr error
+
+	for i := 0; i < maxRetries; i++ {
+		if err := InitDB(cfg); err != nil {
+			lastErr = err
+			pkglog.LogWarn("Database connection attempt failed",
+				zap.Int("attempt", i+1),
+				zap.Int("max_retries", maxRetries),
+				zap.Error(err))
+
+			if i < maxRetries-1 {
+				time.Sleep(retryInterval)
+				// 重置once以允许重试
+				once = sync.Once{}
+			}
+			continue
+		}
+		return nil
+	}
+
+	return fmt.Errorf("failed to connect to database after %d attempts: %w", maxRetries, lastErr)
+}
+
+// === 数据库管理器方法 ===
+
+// connect 建立数据库连接
+func (m *DBManager) connect() error {
+	// 构建DSN
+	dsn := m.config.GetDsn()
+
+	// 配置GORM
 	gormConfig := &gorm.Config{
 		Logger: logger.Default.LogMode(logger.Info),
+		NowFunc: func() time.Time {
+			return time.Now().Local()
+		},
 	}
+
 	// 连接数据库
 	db, err := gorm.Open(postgres.Open(dsn), gormConfig)
 	if err != nil {
-		log.Fatalf("Failed to connect to database: %v", err)
+		return fmt.Errorf("failed to open database connection: %w", err)
 	}
-	// 获取底层sql.DB对象进行连接池配置
+
+	// 获取底层sql.DB实例
 	sqlDB, err := db.DB()
 	if err != nil {
-		log.Fatalf("Failed to get database instance: %v", err)
+		return fmt.Errorf("failed to get underlying sql.DB: %w", err)
 	}
-	// 设置连接池参数
-	sqlDB.SetMaxIdleConns(cfg.Database.MaxIdleConns)
-	sqlDB.SetMaxOpenConns(cfg.Database.MaxOpenConns)
-	if lifetime, err := time.ParseDuration(cfg.Database.ConnMaxLifetime); err == nil {
-		sqlDB.SetConnMaxLifetime(lifetime)
+
+	// 配置连接池
+	if err := m.configureConnectionPool(sqlDB); err != nil {
+		return fmt.Errorf("failed to configure connection pool: %w", err)
 	}
-	// 设置全局数据库实例
-	DB = db
-	// 健康检查
-	if err := CheckDBHealth(); err != nil {
-		log.Fatalf("Database health check failed: %v", err)
+
+	// 设置数据库实例
+	m.mu.Lock()
+	m.db = db
+	m.isReady = true
+	m.lastPing = time.Now()
+	m.mu.Unlock()
+
+	// 执行健康检查
+	if err := m.ping(); err != nil {
+		return fmt.Errorf("initial health check failed: %w", err)
 	}
-	log.Printf("Database connected successfully")
+
+	pkglog.LogDBOperation("CONNECT", "postgresql", time.Since(m.lastPing), nil)
+
+	return nil
 }
 
-// 获取数据库实例
+// configureConnectionPool 配置连接池
+func (m *DBManager) configureConnectionPool(sqlDB *sql.DB) error {
+	// 设置最大空闲连接数
+	sqlDB.SetMaxIdleConns(m.config.MaxIdleConns)
+
+	// 设置最大打开连接数
+	sqlDB.SetMaxOpenConns(m.config.MaxOpenConns)
+
+	// 设置连接最大生命周期
+	if m.config.ConnMaxLifetime != "" {
+		lifetime, err := time.ParseDuration(m.config.ConnMaxLifetime)
+		if err != nil {
+			return fmt.Errorf("invalid connection max lifetime: %w", err)
+		}
+		sqlDB.SetConnMaxLifetime(lifetime)
+	}
+
+	return nil
+}
+
+// ping 执行数据库ping检查
+func (m *DBManager) ping() error {
+	m.mu.RLock()
+	if !m.isReady || m.db == nil {
+		m.mu.RUnlock()
+		return errors.New("database not initialized")
+	}
+	db := m.db
+	m.mu.RUnlock()
+
+	sqlDB, err := db.DB()
+	if err != nil {
+		return fmt.Errorf("failed to get sql.DB instance: %w", err)
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	if err := sqlDB.PingContext(ctx); err != nil {
+		return fmt.Errorf("database ping failed: %w", err)
+	}
+
+	m.mu.Lock()
+	m.lastPing = time.Now()
+	m.mu.Unlock()
+
+	return nil
+}
+
+// autoMigrate 执行自动迁移
+func (m *DBManager) autoMigrate() error {
+	// 这里可以添加您的模型
+	// 例如: return m.db.AutoMigrate(&User{}, &Order{})
+
+	pkglog.LogInfo("Auto migration completed")
+	return nil
+}
+
+// === 公共API函数 ===
+
+// GetDB 获取数据库实例
 func GetDB() *gorm.DB {
+	if manager != nil {
+		manager.mu.RLock()
+		defer manager.mu.RUnlock()
+		return manager.db
+	}
 	return DB
 }
 
-// 关闭数据库
-func CloseDB() error {
-	sqlDB, err := DB.DB()
-	if err != nil {
-		return err
+// IsReady 检查数据库是否就绪
+func IsReady() bool {
+	if manager != nil {
+		manager.mu.RLock()
+		defer manager.mu.RUnlock()
+		return manager.isReady
 	}
-	return sqlDB.Close()
+	return DB != nil
 }
 
-// 检查数据库健康状态
+// CheckDBHealth 检查数据库健康状态
 func CheckDBHealth() error {
-	if DB == nil {
+	if manager != nil {
+		return manager.ping()
+	}
 
+	// 向后兼容的检查
+	if DB == nil {
 		return errors.New("database not initialized")
 	}
+
 	sqlDB, err := DB.DB()
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to get sql.DB instance: %w", err)
 	}
-	if err := sqlDB.Ping(); err != nil {
-		return err
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	return sqlDB.PingContext(ctx)
+}
+
+// GetDBStats 获取数据库连接统计
+func GetDBStats() (*DBStats, error) {
+	db := GetDB()
+	if db == nil {
+		return nil, errors.New("database not initialized")
 	}
+
+	sqlDB, err := db.DB()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get sql.DB instance: %w", err)
+	}
+
+	stats := sqlDB.Stats()
+
+	return &DBStats{
+		MaxOpenConnections: stats.MaxOpenConnections,
+		OpenConnections:    stats.OpenConnections,
+		InUseConnections:   stats.InUse,
+		IdleConnections:    stats.Idle,
+		WaitCount:          stats.WaitCount,
+		WaitDuration:       stats.WaitDuration,
+		MaxIdleClosed:      stats.MaxIdleClosed,
+		MaxLifetimeClosed:  stats.MaxLifetimeClosed,
+	}, nil
+}
+
+// CloseDB 关闭数据库连接
+func CloseDB() error {
+	if manager != nil {
+		manager.mu.Lock()
+		defer manager.mu.Unlock()
+
+		if manager.db != nil {
+			sqlDB, err := manager.db.DB()
+			if err != nil {
+				return fmt.Errorf("failed to get sql.DB instance: %w", err)
+			}
+
+			if err := sqlDB.Close(); err != nil {
+				return fmt.Errorf("failed to close database: %w", err)
+			}
+
+			manager.db = nil
+			manager.isReady = false
+
+			pkglog.LogInfo("Database connection closed")
+			return nil
+		}
+	}
+
+	// 向后兼容
+	if DB != nil {
+		sqlDB, err := DB.DB()
+		if err != nil {
+			return fmt.Errorf("failed to get sql.DB instance: %w", err)
+		}
+		return sqlDB.Close()
+	}
+
 	return nil
+}
+
+// === 事务管理 ===
+
+// WithTransaction 执行事务
+func WithTransaction(fn TransactionFunc) error {
+	db := GetDB()
+	if db == nil {
+		return errors.New("database not initialized")
+	}
+
+	startTime := time.Now()
+
+	tx := db.Begin()
+	if tx.Error != nil {
+		pkglog.LogDBOperation("BEGIN_TX", "postgresql", time.Since(startTime), tx.Error)
+		return fmt.Errorf("failed to begin transaction: %w", tx.Error)
+	}
+
+	defer func() {
+		if r := recover(); r != nil {
+			tx.Rollback()
+			pkglog.LogError("Transaction panicked, rolled back",
+				zap.Any("panic", r),
+				zap.Duration("duration", time.Since(startTime)))
+		}
+	}()
+
+	if err := fn(tx); err != nil {
+		tx.Rollback()
+		pkglog.LogDBOperation("ROLLBACK_TX", "postgresql", time.Since(startTime), err)
+		return fmt.Errorf("transaction failed: %w", err)
+	}
+
+	if err := tx.Commit().Error; err != nil {
+		pkglog.LogDBOperation("COMMIT_TX", "postgresql", time.Since(startTime), err)
+		return fmt.Errorf("failed to commit transaction: %w", err)
+	}
+
+	pkglog.LogDBOperation("COMMIT_TX", "postgresql", time.Since(startTime), nil)
+	return nil
+}
+
+// === 迁移管理 ===
+
+// RunMigrations 运行数据库迁移
+func RunMigrations(migrations []MigrationFunc) error {
+	db := GetDB()
+	if db == nil {
+		return errors.New("database not initialized")
+	}
+
+	for i, migration := range migrations {
+		startTime := time.Now()
+
+		if err := migration(db); err != nil {
+			pkglog.LogDBOperation("MIGRATION", fmt.Sprintf("step_%d", i+1), time.Since(startTime), err)
+			return fmt.Errorf("migration step %d failed: %w", i+1, err)
+		}
+
+		pkglog.LogDBOperation("MIGRATION", fmt.Sprintf("step_%d", i+1), time.Since(startTime), nil)
+	}
+
+	pkglog.LogInfo("All migrations completed successfully",
+		zap.Int("total_migrations", len(migrations)))
+
+	return nil
+}
+
+// === 工具函数 ===
+
+// Ping 手动执行数据库ping
+func Ping() error {
+	return CheckDBHealth()
+}
+
+// GetLastPingTime 获取最后一次ping时间
+func GetLastPingTime() time.Time {
+	if manager != nil {
+		manager.mu.RLock()
+		defer manager.mu.RUnlock()
+		return manager.lastPing
+	}
+	return time.Time{}
 }

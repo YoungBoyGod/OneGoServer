@@ -12,4 +12,3 @@ import (
 var RedisClient *redis.Client
 
 // 初始化InitRedis
-func InitEnhan

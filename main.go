@@ -37,7 +37,9 @@ func main() {
 	log.Printf("Logger system initialized successfully")
 
 	// 初始化数据库
-	sql.InitDB(cfg)
+	if err := sql.InitDB(cfg); err != nil {
+		log.Fatalf("Failed to initialize database: %v", err)
+	}
 
 	// 使用统一日志系统记录信息
 	logger := pkglog.GetAppLogger(&cfg.Logging)
