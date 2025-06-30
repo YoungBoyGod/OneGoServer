@@ -2,6 +2,7 @@ package config
 
 import (
 	"errors"
+	"fmt"
 	"log"
 	"os"
 
@@ -113,6 +114,32 @@ func bindEnvironmentVariables() {
 	viper.BindEnv("server.host", "SERVER_HOST")
 	viper.BindEnv("server.port", "SERVER_PORT")
 	viper.BindEnv("server.mode", "SERVER_MODE")
+
+	// Redis配置环境变量绑定
+	viper.BindEnv("redis.host", "REDIS_HOST")
+	viper.BindEnv("redis.port", "REDIS_PORT")
+	viper.BindEnv("redis.password", "REDIS_PASSWORD")
+	viper.BindEnv("redis.db", "REDIS_DB")
+	viper.BindEnv("redis.pool_size", "REDIS_POOL_SIZE")
+	viper.BindEnv("redis.min_idle_conns", "REDIS_MIN_IDLE_CONNS")
+	viper.BindEnv("redis.dial_timeout", "REDIS_DIAL_TIMEOUT")
+	viper.BindEnv("redis.read_timeout", "REDIS_READ_TIMEOUT")
+	viper.BindEnv("redis.write_timeout", "REDIS_WRITE_TIMEOUT")
+	viper.BindEnv("redis.idle_timeout", "REDIS_IDLE_TIMEOUT")
+}
+
+// GetDsn 获取数据库连接字符串
+func (d *DatabaseConfig) GetDsn() string {
+	switch d.Type {
+	case "postgres":
+		return fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
+			d.Host, d.Port, d.Username, d.Password, d.DBName)
+	case "mysql":
+		return fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=%s&parseTime=%t&loc=%s",
+			d.Username, d.Password, d.Host, d.Port, d.DBName, d.Charset, d.ParseTime, d.Loc)
+	default:
+		return ""
+	}
 }
 
 // 校验配置参数
