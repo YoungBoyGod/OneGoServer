@@ -18,7 +18,7 @@ func getTestRedisConfig() *config.RedisConfig {
 	return &config.RedisConfig{
 		Host:         "localhost",
 		Port:         6379,
-		Password:     "",
+		Password:     "onegoserver",
 		DB:           0,
 		PoolSize:     10,
 		MinIdleConns: 5,

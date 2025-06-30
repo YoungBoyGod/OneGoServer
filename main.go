@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"time"
 
 	"github.com/YoungBoyGod/OneGoServer/internal/config"
 	"github.com/YoungBoyGod/OneGoServer/pkg/cache"
@@ -84,53 +83,8 @@ func main() {
 		log.Fatalf("Redis health check failed: %v", err)
 	}
 
-	// 测试Redis基本操作（Context支持）
-	ctx := context.Background()
+	logger.Info("🎉 Redis Context增强功能已就绪！所有函数都支持Context参数")
 
-	// 测试SET操作
-	if err := cache.Set(ctx, "test_key", "Hello Redis with Context!", time.Minute*5); err != nil {
-		logger.Error("Redis SET failed", zap.Error(err))
-	} else {
-		logger.Info("Redis SET operation successful")
-	}
-
-	// 测试GET操作
-	if value, err := cache.Get(ctx, "test_key"); err != nil {
-		logger.Error("Redis GET failed", zap.Error(err))
-	} else {
-		logger.Info("Redis GET operation successful", zap.String("value", value))
-	}
-
-	// 测试对象序列化操作
-	testObj := map[string]interface{}{
-		"message":   "Context增强测试成功",
-		"timestamp": time.Now().Unix(),
-		"features":  []string{"context支持", "超时控制", "取消机制"},
-	}
-
-	if err := cache.SetObject(ctx, "test_object", testObj, time.Minute*5); err != nil {
-		logger.Error("Redis SetObject failed", zap.Error(err))
-	} else {
-		logger.Info("Redis SetObject operation successful")
-	}
-
-	// 获取对象
-	var retrievedObj map[string]interface{}
-	if err := cache.GetObject(ctx, "test_object", &retrievedObj); err != nil {
-		logger.Error("Redis GetObject failed", zap.Error(err))
-	} else {
-		logger.Info("Redis GetObject operation successful", zap.Any("object", retrievedObj))
-	}
-
-	// 测试Redis统计信息
-	if stats, err := cache.GetRedisStats(ctx); err != nil {
-		logger.Error("Redis GetStats failed", zap.Error(err))
-	} else {
-		logger.Info("Redis statistics",
-			zap.Uint32("total_conns", stats.TotalConns),
-			zap.Uint32("idle_conns", stats.IdleConns),
-			zap.Bool("is_connected", stats.IsConnected))
-	}
-
-	logger.Info("🎉 Redis Context增强功能测试完成！")
+	// 应用程序启动完成，可以开始处理业务逻辑
+	// TODO: 添加HTTP服务器启动、API路由等业务逻辑
 }
