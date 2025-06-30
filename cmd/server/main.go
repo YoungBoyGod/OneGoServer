@@ -1,4 +1,4 @@
-package server
+package main
 
 import (
 	"log"
@@ -9,7 +9,7 @@ import (
 	"github.com/YoungBoyGod/OneGoServer/internal/server"
 )
 
-func InitServer(cfg *config.Config) {
+func main() {
 	// 1. 加载配置
 	cfg, err := config.LoadConfig("configs/config.yaml")
 	if err != nil {
