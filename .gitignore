@@ -38,6 +38,10 @@ config/server.yaml
 logs/
 *.log
 
+
+bin/
+
+
 # Editor/IDE
 # .idea/
 # .vscode/
