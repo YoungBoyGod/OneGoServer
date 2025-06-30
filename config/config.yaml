@@ -7,6 +7,17 @@ server:
   version: "v0.1.0"
   description: "分布式任务管理平台"
 
+# 日志配置
+logging:
+  level: "info"
+  format: "json"
+  output: "both"  # console, file, both
+  file_path: "logs/app_{timestamp}.log"
+  max_size: 100   # MB
+  max_backups: 10
+  max_age: 30     # days
+  compress: true
+
 # 数据库配置
 database:
   type: "postgres"
@@ -56,17 +67,6 @@ jwt:
   expire_hours: 24
   issuer: "OneGoServer"
   refresh_expire_hours: 168  # 7天
-
-# 日志配置
-logging:
-  level: "info"
-  format: "json"
-  output: "both"  # console, file, both
-  file_path: "logs/app_{timestamp}.log"
-  max_size: 100   # MB
-  max_backups: 10
-  max_age: 30     # days
-  compress: true
 
 # 安全配置
 security:

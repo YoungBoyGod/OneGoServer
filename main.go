@@ -5,6 +5,7 @@ import (
 	"log"
 
 	"github.com/YoungBoyGod/OneGoServer/internal/config"
+	pkglog "github.com/YoungBoyGod/OneGoServer/pkg/log"
 	"github.com/YoungBoyGod/OneGoServer/pkg/sql"
 )
 
@@ -26,10 +27,18 @@ func main() {
 	}
 	log.Printf("Database DSN: %s", cfg.Database.GetDsn())
 
+	// 初始化日志系统
+	if err := pkglog.InitLogger(&cfg.Logging); err != nil {
+		log.Fatalf("Failed to initialize logger: %v", err)
+	}
+	log.Printf("Logger initialized successfully")
+
 	// 初始化数据库
 	sql.InitDB(cfg)
 
-	// 打印成功
-	log.Printf("Database connected successfully")
+	// 使用配置的日志器记录信息
+	logger := pkglog.GetAppLogger(&cfg.Logging)
+	logger.Info("Application started successfully")
+	logger.Info("Database connected successfully")
 
 }
