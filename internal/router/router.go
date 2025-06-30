@@ -53,7 +53,9 @@ func NewRouter() *gin.Engine {
 		devices := v1.Group("/devices")
 		{
 			devices.GET("", placeholder)               // 获取设备列表
-			devices.POST("", placeholder)              // 注册设备
+			devices.POST("/register", placeholder)     // 注册设备
+			devices.POST("/online", placeholder)       // 设备上线
+			devices.POST("/offline", placeholder)      // 设备下线
 			devices.GET("/stats", placeholder)         // 获取设备统计信息
 			devices.GET("/:id", placeholder)           // 获取设备详情
 			devices.PUT("/:id", placeholder)           // 更新设备信息
