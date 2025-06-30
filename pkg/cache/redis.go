@@ -11,6 +11,5 @@ import (
 // Client Redis的客户端实例
 var RedisClient *redis.Client
 
-func InitRedis(cfg *config.RedisConfig) *redis.Client {
-
-}
+// 初始化InitRedis
+func InitEnhan

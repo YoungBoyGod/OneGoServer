@@ -7,6 +7,7 @@ import (
 	"github.com/YoungBoyGod/OneGoServer/internal/config"
 	pkglog "github.com/YoungBoyGod/OneGoServer/pkg/log"
 	"github.com/YoungBoyGod/OneGoServer/pkg/sql"
+	"go.uber.org/zap"
 )
 
 func main() {
@@ -29,21 +30,41 @@ func main() {
 	}
 	log.Printf("Database DSN: %s", cfg.Database.GetDsn())
 
-	// 初始化增强版日志系统
+	// 初始化统一日志系统
 	if err := pkglog.InitLoggerEnhanced(&cfg.Logging); err != nil {
-		log.Fatalf("Failed to initialize enhanced logger: %v", err)
+		log.Fatalf("Failed to initialize logger: %v", err)
 	}
-	log.Printf("Enhanced Logger initialized successfully")
+	log.Printf("Logger system initialized successfully")
 
 	// 初始化数据库
 	sql.InitDB(cfg)
 
-	// 使用配置的日志器记录信息
+	// 使用统一日志系统记录信息
 	logger := pkglog.GetAppLogger(&cfg.Logging)
 	logger.Info("Application started successfully")
 	logger.Info("Database connected successfully")
 
+	// 测试统一日志系统的增强功能
+	pkglog.LogSystemEvent("application_start", "main",
+		zap.String("version", cfg.Server.Version),
+		zap.Int("port", cfg.Server.Port),
+		zap.String("mode", cfg.Server.Mode))
+
+	// 测试健康检查
+	if err := pkglog.HealthCheck(); err != nil {
+		logger.Warn("Logger health check failed", zap.Error(err))
+	} else {
+		logger.Info("Logger system health check passed")
+	}
+
+	// 获取日志统计信息
+	stats := pkglog.GetStats()
+	logger.Info("Logger statistics",
+		zap.Int64("total_logs", stats.TotalLogs),
+		zap.Int64("info_logs", stats.InfoLogs),
+		zap.Int64("error_logs", stats.ErrorLogs))
+
 	// 同步日志
 	pkglog.Sync()
-	log.Printf("Application setup completed")
+	log.Printf("Application setup completed successfully")
 }

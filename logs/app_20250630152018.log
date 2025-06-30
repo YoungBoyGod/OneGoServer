@@ -1,0 +1,6 @@
+{"level":"info","timestamp":"2025-06-30T15:20:18.436+0800","caller":"log/zap.go:382","msg":"Logger system initialized successfully","level":"info","format":"json","output":"both"}
+{"level":"info","timestamp":"2025-06-30T15:20:18.453+0800","caller":"OneGoServer002/main.go:44","msg":"Application started successfully"}
+{"level":"info","timestamp":"2025-06-30T15:20:18.453+0800","caller":"OneGoServer002/main.go:45","msg":"Database connected successfully"}
+{"level":"info","timestamp":"2025-06-30T15:20:18.453+0800","caller":"log/zap.go:382","msg":"System event","type":"system_event","event":"application_start","component":"main","timestamp":"2025-06-30T15:20:18.453+0800","version":"v0.1.0","port":8080,"mode":"debug"}
+{"level":"info","timestamp":"2025-06-30T15:20:18.453+0800","caller":"OneGoServer002/main.go:57","msg":"Logger system health check passed"}
+{"level":"info","timestamp":"2025-06-30T15:20:18.453+0800","caller":"OneGoServer002/main.go:62","msg":"Logger statistics","total_logs":1,"info_logs":1,"error_logs":0}
