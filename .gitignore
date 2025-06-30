@@ -1,0 +1,157 @@
+# === Go语言相关 ===
+# 编译后的二进制文件
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+OneGoServer
+OneGoServer002
+main
+
+# Go测试二进制文件，构建时创建
+*.test
+
+# Go coverage 文件
+*.out
+*.cover
+coverage.html
+
+# Go工作区文件
+go.work
+go.work.sum
+
+# === 日志文件 ===
+# 项目日志目录
+logs/
+*.log
+
+# === 配置和环境文件 ===
+# 环境变量文件（可能包含敏感信息）
+.env
+.env.local
+.env.development
+.env.test
+.env.production
+
+# 配置文件备份
+*.bak
+*.backup
+config/*.bak
+
+# === IDE和编辑器 ===
+# VSCode
+.vscode/
+!.vscode/settings.json.example
+
+# GoLand/IntelliJ
+.idea/
+*.iml
+*.iws
+
+# Vim
+*.swp
+*.swo
+*~
+
+# Emacs
+*~
+\#*\#
+/.emacs.desktop
+/.emacs.desktop.lock
+*.elc
+
+# Sublime Text
+*.sublime-workspace
+*.sublime-project
+
+# === 操作系统 ===
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon?
+._*
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Linux
+*~
+
+# === 临时文件和缓存 ===
+# 临时目录
+tmp/
+temp/
+.tmp/
+
+# Go模块缓存（本地开发）
+vendor/
+
+# 调试文件
+debug
+*.debug
+*.pprof
+
+# === 数据库相关 ===
+# 数据库文件
+*.db
+*.sqlite
+*.sqlite3
+
+# 数据库备份
+*.sql.gz
+*.dump
+
+# === 证书和密钥 ===
+# SSL证书
+*.pem
+*.key
+*.crt
+*.cert
+
+# SSH密钥
+id_rsa
+id_rsa.pub
+
+# === 构建和部署 ===
+# Docker
+.dockerignore
+Dockerfile.prod
+
+# 构建输出
+build/
+dist/
+bin/
+
+# === 文档和媒体 ===
+# 大文件
+*.zip
+*.tar.gz
+*.rar
+
+# === 项目特定 ===
+# 测试数据
+testdata/
+fixtures/
+
+# 脚本输出
+script/output/
+script/logs/
+
+# 第三方工具
+.air.toml
+.realize.yaml
+
+# === 开发工具 ===
+# 性能分析
+*.prof
+cpu.prof
+mem.prof
+
+# 依赖分析
+go.mod.backup
+go.sum.backup 
