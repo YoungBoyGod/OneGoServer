@@ -3,6 +3,7 @@ package sql
 import (
 	"errors"
 	"fmt"
+	"sync"
 	"testing"
 	"time"
 
@@ -878,4 +879,781 @@ func (tm *TestTableManager) SimulateOperation(operation string) bool {
 	default:
 		return false
 	}
+}
+
+// === 真实PostgreSQL集成测试 ===
+
+// TestUser 测试用的用户模型
+type TestUser struct {
+	ID        uint      `gorm:"primaryKey;autoIncrement" json:"id"`
+	Name      string    `gorm:"size:100;not null" json:"name"`
+	Email     string    `gorm:"size:100;uniqueIndex" json:"email"`
+	Age       int       `gorm:"default:0" json:"age"`
+	IsActive  bool      `gorm:"default:true" json:"is_active"`
+	CreatedAt time.Time `gorm:"autoCreateTime" json:"created_at"`
+	UpdatedAt time.Time `gorm:"autoUpdateTime" json:"updated_at"`
+}
+
+// TableName 指定表名
+func (TestUser) TableName() string {
+	return "test_users"
+}
+
+// TestPostgreSQLIntegration 真实PostgreSQL连接和操作测试
+func TestPostgreSQLIntegration(t *testing.T) {
+	// 初始化日志系统
+	cfg := getTestConfig()
+	err := pkglog.InitLoggerEnhanced(&cfg.Logging)
+	require.NoError(t, err)
+
+	// 尝试连接真实PostgreSQL
+	err = InitDB(cfg)
+	if err != nil {
+		t.Skipf("跳过PostgreSQL集成测试：无法连接PostgreSQL服务器 (%v)", err)
+		return
+	}
+
+	// 确保测试结束后清理
+	defer func() {
+		if db := GetDB(); db != nil {
+			// 清理测试数据和表
+			db.Exec("DROP TABLE IF EXISTS test_users")
+			db.Exec("DROP TABLE IF EXISTS test_integration_table")
+		}
+		CloseDB()
+	}()
+
+	t.Run("真实连接验证", func(t *testing.T) {
+		assert.True(t, IsReady())
+		assert.NotNil(t, GetDB())
+
+		err := Ping()
+		assert.NoError(t, err)
+
+		err = CheckDBHealth()
+		assert.NoError(t, err)
+	})
+
+	t.Run("数据库统计信息", func(t *testing.T) {
+		stats, err := GetDBStats()
+		assert.NoError(t, err)
+		assert.NotNil(t, stats)
+		assert.True(t, stats.MaxOpenConnections > 0)
+		t.Logf("数据库统计: %+v", stats)
+	})
+
+	t.Run("表管理功能测试", func(t *testing.T) {
+		// 生成唯一表名
+		timestamp := time.Now().UnixNano()
+		tableName := fmt.Sprintf("test_integration_table_%d", timestamp)
+
+		// 定义表结构
+		tableDef := &TableDefinition{
+			Name: tableName,
+			Columns: []TableColumn{
+				{
+					Name:       "id",
+					Type:       "SERIAL",
+					PrimaryKey: true,
+					NotNull:    true,
+				},
+				{
+					Name:    "name",
+					Type:    "VARCHAR(100)",
+					NotNull: true,
+				},
+				{
+					Name:   "email",
+					Type:   "VARCHAR(100)",
+					Unique: true,
+				},
+				{
+					Name:         "age",
+					Type:         "INTEGER",
+					DefaultValue: "0",
+				},
+				{
+					Name:         "created_at",
+					Type:         "TIMESTAMP",
+					DefaultValue: "CURRENT_TIMESTAMP",
+				},
+			},
+		}
+
+		// 创建表
+		err := CreateTable(tableDef)
+		assert.NoError(t, err)
+
+		// 验证表存在
+		exists, err := TableExists(tableName)
+		assert.NoError(t, err)
+		assert.True(t, exists)
+
+		// 获取表信息
+		tableInfo, err := GetTableInfo(tableName)
+		assert.NoError(t, err)
+		assert.NotNil(t, tableInfo)
+		assert.Equal(t, tableName, tableInfo.Name)
+		t.Logf("表信息: %+v", tableInfo)
+
+		// 使用原生SQL插入数据
+		db := GetDB()
+		insertSQL := fmt.Sprintf(`
+			INSERT INTO %s (name, email, age) 
+			VALUES ('测试用户1', 'test1@example.com', 25),
+			       ('测试用户2', 'test2@example.com', 30),
+			       ('测试用户3', 'test3@example.com', 35)
+		`, tableName)
+
+		result := db.Exec(insertSQL)
+		assert.NoError(t, result.Error)
+		assert.Equal(t, int64(3), result.RowsAffected)
+
+		// 查询数据
+		var count int64
+		err = db.Raw(fmt.Sprintf("SELECT COUNT(*) FROM %s", tableName)).Scan(&count).Error
+		assert.NoError(t, err)
+		assert.Equal(t, int64(3), count)
+
+		// 查询特定数据
+		var users []map[string]interface{}
+		err = db.Raw(fmt.Sprintf("SELECT * FROM %s ORDER BY id", tableName)).Scan(&users).Error
+		assert.NoError(t, err)
+		assert.Equal(t, 3, len(users))
+
+		// 验证数据内容
+		assert.Equal(t, "测试用户1", users[0]["name"])
+		assert.Equal(t, "test1@example.com", users[0]["email"])
+
+		// 更新数据
+		updateSQL := fmt.Sprintf("UPDATE %s SET age = 26 WHERE email = 'test1@example.com'", tableName)
+		result = db.Exec(updateSQL)
+		assert.NoError(t, result.Error)
+		assert.Equal(t, int64(1), result.RowsAffected)
+
+		// 验证更新
+		var updatedAge int
+		err = db.Raw(fmt.Sprintf("SELECT age FROM %s WHERE email = 'test1@example.com'", tableName)).Scan(&updatedAge).Error
+		assert.NoError(t, err)
+		assert.Equal(t, 26, updatedAge)
+
+		// 删除数据
+		deleteSQL := fmt.Sprintf("DELETE FROM %s WHERE email = 'test3@example.com'", tableName)
+		result = db.Exec(deleteSQL)
+		assert.NoError(t, result.Error)
+		assert.Equal(t, int64(1), result.RowsAffected)
+
+		// 验证删除
+		err = db.Raw(fmt.Sprintf("SELECT COUNT(*) FROM %s", tableName)).Scan(&count).Error
+		assert.NoError(t, err)
+		assert.Equal(t, int64(2), count)
+
+		// 删除表
+		err = DropTable(tableName)
+		assert.NoError(t, err)
+
+		// 验证表已删除
+		exists, err = TableExists(tableName)
+		assert.NoError(t, err)
+		assert.False(t, exists)
+
+		t.Logf("表管理功能测试完成：创建 -> 插入 -> 查询 -> 更新 -> 删除 -> 删除表")
+	})
+
+	t.Run("GORM模型CRUD操作", func(t *testing.T) {
+		db := GetDB()
+
+		// 自动迁移创建表
+		err := db.AutoMigrate(&TestUser{})
+		assert.NoError(t, err)
+
+		// 验证表存在
+		exists, err := TableExists("test_users")
+		assert.NoError(t, err)
+		assert.True(t, exists)
+
+		// 创建用户数据
+		users := []TestUser{
+			{
+				Name:     "张三",
+				Email:    "zhangsan@example.com",
+				Age:      25,
+				IsActive: true,
+			},
+			{
+				Name:     "李四",
+				Email:    "lisi@example.com",
+				Age:      30,
+				IsActive: true,
+			},
+			{
+				Name:     "王五",
+				Email:    "wangwu@example.com",
+				Age:      35,
+				IsActive: false,
+			},
+		}
+
+		// 批量插入
+		err = db.Create(&users).Error
+		assert.NoError(t, err)
+		assert.True(t, users[0].ID > 0) // 验证ID已生成
+
+		// 查询单个用户
+		var user TestUser
+		err = db.Where("email = ?", "zhangsan@example.com").First(&user).Error
+		assert.NoError(t, err)
+		assert.Equal(t, "张三", user.Name)
+		assert.Equal(t, 25, user.Age)
+		assert.True(t, user.IsActive)
+
+		// 查询所有用户
+		var allUsers []TestUser
+		err = db.Find(&allUsers).Error
+		assert.NoError(t, err)
+		assert.Equal(t, 3, len(allUsers))
+
+		// 条件查询
+		var activeUsers []TestUser
+		err = db.Where("is_active = ?", true).Find(&activeUsers).Error
+		assert.NoError(t, err)
+		assert.Equal(t, 2, len(activeUsers))
+
+		// 更新用户
+		err = db.Model(&user).Update("age", 26).Error
+		assert.NoError(t, err)
+
+		// 验证更新
+		err = db.Where("email = ?", "zhangsan@example.com").First(&user).Error
+		assert.NoError(t, err)
+		assert.Equal(t, 26, user.Age)
+
+		// 批量更新
+		err = db.Model(&TestUser{}).Where("is_active = ?", false).Update("age", 40).Error
+		assert.NoError(t, err)
+
+		// 软删除（GORM特性）
+		err = db.Delete(&user).Error
+		assert.NoError(t, err)
+
+		// 验证软删除 - 正常查询不到
+		err = db.Where("email = ?", "zhangsan@example.com").First(&user).Error
+		assert.True(t, errors.Is(err, gorm.ErrRecordNotFound))
+
+		// 包含删除的查询
+		err = db.Unscoped().Where("email = ?", "zhangsan@example.com").First(&user).Error
+		assert.NoError(t, err)
+		assert.Equal(t, "张三", user.Name)
+
+		// 物理删除
+		err = db.Unscoped().Delete(&user).Error
+		assert.NoError(t, err)
+
+		// 验证物理删除
+		err = db.Unscoped().Where("email = ?", "zhangsan@example.com").First(&user).Error
+		assert.True(t, errors.Is(err, gorm.ErrRecordNotFound))
+
+		// 统计剩余用户
+		var count int64
+		err = db.Model(&TestUser{}).Count(&count).Error
+		assert.NoError(t, err)
+		assert.Equal(t, int64(2), count)
+
+		t.Logf("GORM CRUD操作测试完成：插入 -> 查询 -> 更新 -> 软删除 -> 物理删除")
+	})
+
+	t.Run("事务操作测试", func(t *testing.T) {
+		// 测试成功的事务
+		err := WithTransaction(func(tx *gorm.DB) error {
+			user1 := TestUser{
+				Name:     "事务用户1",
+				Email:    "tx1@example.com",
+				Age:      20,
+				IsActive: true,
+			}
+
+			user2 := TestUser{
+				Name:     "事务用户2",
+				Email:    "tx2@example.com",
+				Age:      25,
+				IsActive: true,
+			}
+
+			// 在事务中创建用户
+			if err := tx.Create(&user1).Error; err != nil {
+				return err
+			}
+
+			if err := tx.Create(&user2).Error; err != nil {
+				return err
+			}
+
+			return nil
+		})
+
+		assert.NoError(t, err)
+
+		// 验证事务成功 - 数据已提交
+		db := GetDB()
+		var count int64
+		err = db.Model(&TestUser{}).Where("email LIKE ?", "tx%@example.com").Count(&count).Error
+		assert.NoError(t, err)
+		assert.Equal(t, int64(2), count)
+
+		// 测试失败的事务（应该回滚）
+		err = WithTransaction(func(tx *gorm.DB) error {
+			user3 := TestUser{
+				Name:     "事务用户3",
+				Email:    "tx3@example.com",
+				Age:      30,
+				IsActive: true,
+			}
+
+			// 创建用户
+			if err := tx.Create(&user3).Error; err != nil {
+				return err
+			}
+
+			// 故意返回错误导致回滚
+			return errors.New("事务测试错误 - 应该回滚")
+		})
+
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "事务测试错误")
+
+		// 验证事务回滚 - 用户3不应该存在
+		var user TestUser
+		err = db.Where("email = ?", "tx3@example.com").First(&user).Error
+		assert.True(t, errors.Is(err, gorm.ErrRecordNotFound))
+
+		// 验证之前的数据仍然存在
+		err = db.Model(&TestUser{}).Where("email LIKE ?", "tx%@example.com").Count(&count).Error
+		assert.NoError(t, err)
+		assert.Equal(t, int64(2), count) // 仍然是2个，没有增加
+
+		t.Logf("事务操作测试完成：成功提交 + 失败回滚")
+	})
+
+	t.Run("CreateTestTable功能测试", func(t *testing.T) {
+		// 使用内置的CreateTestTable函数
+		tableName, err := CreateTestTable()
+		assert.NoError(t, err)
+		assert.NotEmpty(t, tableName)
+		assert.Contains(t, tableName, "test_")
+
+		// 验证表存在
+		exists, err := TableExists(tableName)
+		assert.NoError(t, err)
+		assert.True(t, exists)
+
+		// 插入测试数据
+		db := GetDB()
+		insertSQL := fmt.Sprintf(`
+			INSERT INTO %s (name, email, created_at) 
+			VALUES ('CreateTestTable用户', 'createtest@example.com', CURRENT_TIMESTAMP)
+		`, tableName)
+
+		result := db.Exec(insertSQL)
+		assert.NoError(t, result.Error)
+		assert.Equal(t, int64(1), result.RowsAffected)
+
+		// 查询数据
+		var count int64
+		err = db.Raw(fmt.Sprintf("SELECT COUNT(*) FROM %s", tableName)).Scan(&count).Error
+		assert.NoError(t, err)
+		assert.Equal(t, int64(1), count)
+
+		// 删除测试表
+		err = DropTable(tableName)
+		assert.NoError(t, err)
+
+		// 验证表已删除
+		exists, err = TableExists(tableName)
+		assert.NoError(t, err)
+		assert.False(t, exists)
+
+		t.Logf("CreateTestTable功能测试完成，表名: %s", tableName)
+	})
+
+	t.Run("复杂查询和聚合操作", func(t *testing.T) {
+		db := GetDB()
+
+		// 清理可能存在的测试数据
+		db.Unscoped().Where("email LIKE ?", "complex%@example.com").Delete(&TestUser{})
+
+		// 创建更多测试数据用于复杂查询
+		complexUsers := []TestUser{
+			{Name: "复杂查询用户1", Email: "complex1@example.com", Age: 20, IsActive: true},
+			{Name: "复杂查询用户2", Email: "complex2@example.com", Age: 25, IsActive: true},
+			{Name: "复杂查询用户3", Email: "complex3@example.com", Age: 30, IsActive: false},
+			{Name: "复杂查询用户4", Email: "complex4@example.com", Age: 35, IsActive: true},
+			{Name: "复杂查询用户5", Email: "complex5@example.com", Age: 40, IsActive: false},
+		}
+
+		err = db.Create(&complexUsers).Error
+		assert.NoError(t, err)
+
+		// 聚合查询 - 平均年龄
+		var avgAge float64
+		err = db.Model(&TestUser{}).Where("email LIKE ?", "complex%@example.com").
+			Select("AVG(age)").Scan(&avgAge).Error
+		assert.NoError(t, err)
+		assert.Equal(t, 30.0, avgAge)
+
+		// 分组统计
+		type AgeGroup struct {
+			IsActive bool    `json:"is_active"`
+			Count    int64   `json:"count"`
+			AvgAge   float64 `json:"avg_age"`
+		}
+
+		var ageGroups []AgeGroup
+		err = db.Model(&TestUser{}).Where("email LIKE ?", "complex%@example.com").
+			Select("is_active, COUNT(*) as count, AVG(age) as avg_age").
+			Group("is_active").Scan(&ageGroups).Error
+		assert.NoError(t, err)
+		assert.Equal(t, 2, len(ageGroups))
+
+		// 排序和分页
+		var orderedUsers []TestUser
+		err = db.Where("email LIKE ?", "complex%@example.com").
+			Order("age DESC").Limit(3).Find(&orderedUsers).Error
+		assert.NoError(t, err)
+		assert.Equal(t, 3, len(orderedUsers))
+		assert.Equal(t, 40, orderedUsers[0].Age) // 最大年龄在前
+
+		// 清理测试数据
+		db.Unscoped().Where("email LIKE ?", "complex%@example.com").Delete(&TestUser{})
+
+		t.Logf("复杂查询测试完成：聚合 -> 分组 -> 排序分页")
+	})
+}
+
+// TestPostgreSQLConcurrency 测试PostgreSQL并发操作
+func TestPostgreSQLConcurrency(t *testing.T) {
+	cfg := getTestConfig()
+	err := InitDB(cfg)
+	if err != nil {
+		t.Skipf("跳过PostgreSQL并发测试：无法连接PostgreSQL服务器 (%v)", err)
+		return
+	}
+
+	defer CloseDB()
+
+	// 确保测试表存在
+	db := GetDB()
+	err = db.AutoMigrate(&TestUser{})
+	require.NoError(t, err)
+
+	t.Run("并发读写测试", func(t *testing.T) {
+		const numGoroutines = 5
+		const numOperations = 10
+
+		var wg sync.WaitGroup
+		errors := make(chan error, numGoroutines*numOperations)
+
+		// 清理之前的测试数据
+		db.Unscoped().Where("email LIKE ?", "concurrent%@example.com").Delete(&TestUser{})
+
+		// 启动多个goroutine进行并发操作
+		for i := 0; i < numGoroutines; i++ {
+			wg.Add(1)
+			go func(goroutineID int) {
+				defer wg.Done()
+
+				for j := 0; j < numOperations; j++ {
+					// 添加小延迟减少数据库连接池压力
+					time.Sleep(time.Millisecond * 10)
+
+					user := TestUser{
+						Name:     fmt.Sprintf("并发用户_%d_%d", goroutineID, j),
+						Email:    fmt.Sprintf("concurrent%d_%d@example.com", goroutineID, j),
+						Age:      20 + (goroutineID*10 + j),
+						IsActive: j%2 == 0, // 交替设置活跃状态
+					}
+
+					// CREATE操作
+					if err := db.Create(&user).Error; err != nil {
+						errors <- fmt.Errorf("CREATE失败 [%d:%d]: %v", goroutineID, j, err)
+						continue
+					}
+
+					// READ操作
+					var readUser TestUser
+					if err := db.Where("email = ?", user.Email).First(&readUser).Error; err != nil {
+						errors <- fmt.Errorf("READ失败 [%d:%d]: %v", goroutineID, j, err)
+						continue
+					}
+
+					if readUser.Name != user.Name {
+						errors <- fmt.Errorf("数据不匹配 [%d:%d]: 期望 %s, 得到 %s",
+							goroutineID, j, user.Name, readUser.Name)
+						continue
+					}
+
+					// UPDATE操作
+					newAge := readUser.Age + 1
+					if err := db.Model(&readUser).Update("age", newAge).Error; err != nil {
+						errors <- fmt.Errorf("UPDATE失败 [%d:%d]: %v", goroutineID, j, err)
+						continue
+					}
+
+					// 验证UPDATE
+					if err := db.Where("email = ?", user.Email).First(&readUser).Error; err != nil {
+						errors <- fmt.Errorf("UPDATE验证失败 [%d:%d]: %v", goroutineID, j, err)
+						continue
+					}
+
+					if readUser.Age != newAge {
+						errors <- fmt.Errorf("UPDATE未生效 [%d:%d]: 期望 %d, 得到 %d",
+							goroutineID, j, newAge, readUser.Age)
+					}
+				}
+			}(i)
+		}
+
+		wg.Wait()
+		close(errors)
+
+		// 检查错误
+		var errorCount int
+		for err := range errors {
+			t.Errorf("并发操作错误: %v", err)
+			errorCount++
+		}
+
+		if errorCount > 0 {
+			t.Errorf("并发测试中发生了 %d 个错误", errorCount)
+		}
+
+		// 验证总数据量
+		var count int64
+		err = db.Model(&TestUser{}).Where("email LIKE ?", "concurrent%@example.com").Count(&count).Error
+		assert.NoError(t, err)
+		expectedCount := int64(numGoroutines * numOperations)
+		assert.Equal(t, expectedCount, count,
+			"应该创建了 %d 个用户，实际创建了 %d 个", expectedCount, count)
+
+		// 清理测试数据
+		db.Unscoped().Where("email LIKE ?", "concurrent%@example.com").Delete(&TestUser{})
+
+		t.Logf("并发测试成功：%d个goroutine，每个执行%d次操作", numGoroutines, numOperations)
+	})
+}
+
+// TestPostgreSQLPerformance 测试PostgreSQL性能
+func TestPostgreSQLPerformance(t *testing.T) {
+	cfg := getTestConfig()
+	err := InitDB(cfg)
+	if err != nil {
+		t.Skipf("跳过PostgreSQL性能测试：无法连接PostgreSQL服务器 (%v)", err)
+		return
+	}
+
+	defer CloseDB()
+
+	db := GetDB()
+	err = db.AutoMigrate(&TestUser{})
+	require.NoError(t, err)
+
+	t.Run("批量插入性能测试", func(t *testing.T) {
+		// 清理测试数据
+		db.Unscoped().Where("email LIKE ?", "perf%@example.com").Delete(&TestUser{})
+
+		const batchSize = 1000
+		users := make([]TestUser, batchSize)
+
+		for i := 0; i < batchSize; i++ {
+			users[i] = TestUser{
+				Name:     fmt.Sprintf("性能测试用户_%d", i),
+				Email:    fmt.Sprintf("perf%d@example.com", i),
+				Age:      20 + (i % 50),
+				IsActive: i%2 == 0,
+			}
+		}
+
+		// 记录开始时间
+		startTime := time.Now()
+
+		// 批量插入
+		err = db.CreateInBatches(users, 100).Error
+		assert.NoError(t, err)
+
+		duration := time.Since(startTime)
+
+		// 验证插入结果
+		var count int64
+		err = db.Model(&TestUser{}).Where("email LIKE ?", "perf%@example.com").Count(&count).Error
+		assert.NoError(t, err)
+		assert.Equal(t, int64(batchSize), count)
+
+		// 计算性能指标
+		opsPerSecond := float64(batchSize) / duration.Seconds()
+
+		t.Logf("批量插入性能: %d条记录，耗时: %v，速度: %.2f ops/sec",
+			batchSize, duration, opsPerSecond)
+
+		// 清理测试数据
+		db.Unscoped().Where("email LIKE ?", "perf%@example.com").Delete(&TestUser{})
+	})
+
+	t.Run("查询性能测试", func(t *testing.T) {
+		// 预先插入数据
+		const dataSize = 500
+		users := make([]TestUser, dataSize)
+
+		for i := 0; i < dataSize; i++ {
+			users[i] = TestUser{
+				Name:     fmt.Sprintf("查询测试用户_%d", i),
+				Email:    fmt.Sprintf("query%d@example.com", i),
+				Age:      20 + (i % 50),
+				IsActive: i%2 == 0,
+			}
+		}
+
+		err = db.CreateInBatches(users, 100).Error
+		require.NoError(t, err)
+
+		// 测试单条查询性能
+		const queryCount = 100
+		startTime := time.Now()
+
+		for i := 0; i < queryCount; i++ {
+			var user TestUser
+			email := fmt.Sprintf("query%d@example.com", i%dataSize)
+			err = db.Where("email = ?", email).First(&user).Error
+			assert.NoError(t, err)
+		}
+
+		duration := time.Since(startTime)
+		avgQueryTime := duration / queryCount
+
+		t.Logf("单条查询性能: %d次查询，总耗时: %v，平均: %v/query",
+			queryCount, duration, avgQueryTime)
+
+		// 测试批量查询性能
+		startTime = time.Now()
+
+		var allUsers []TestUser
+		err = db.Where("email LIKE ?", "query%@example.com").Find(&allUsers).Error
+		assert.NoError(t, err)
+		assert.Equal(t, dataSize, len(allUsers))
+
+		duration = time.Since(startTime)
+
+		t.Logf("批量查询性能: %d条记录，耗时: %v", dataSize, duration)
+
+		// 清理测试数据
+		db.Unscoped().Where("email LIKE ?", "query%@example.com").Delete(&TestUser{})
+	})
+}
+
+// BenchmarkPostgreSQLOperations PostgreSQL操作性能基准测试
+func BenchmarkPostgreSQLOperations(b *testing.B) {
+	cfg := getTestConfig()
+	err := InitDB(cfg)
+	if err != nil {
+		b.Skipf("跳过PostgreSQL基准测试：无法连接PostgreSQL服务器 (%v)", err)
+		return
+	}
+
+	defer CloseDB()
+
+	db := GetDB()
+	err = db.AutoMigrate(&TestUser{})
+	if err != nil {
+		b.Fatalf("Failed to migrate test table: %v", err)
+	}
+
+	b.Run("CREATE操作", func(b *testing.B) {
+		// 清理数据
+		db.Unscoped().Where("email LIKE ?", "bench_create%@example.com").Delete(&TestUser{})
+
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			user := TestUser{
+				Name:     fmt.Sprintf("基准测试用户_%d", i),
+				Email:    fmt.Sprintf("bench_create%d@example.com", i),
+				Age:      25,
+				IsActive: true,
+			}
+			db.Create(&user)
+		}
+	})
+
+	b.Run("READ操作", func(b *testing.B) {
+		// 预设数据
+		const dataSize = 1000
+		users := make([]TestUser, dataSize)
+		for i := 0; i < dataSize; i++ {
+			users[i] = TestUser{
+				Name:     fmt.Sprintf("基准测试读取用户_%d", i),
+				Email:    fmt.Sprintf("bench_read%d@example.com", i),
+				Age:      25,
+				IsActive: true,
+			}
+		}
+		db.CreateInBatches(users, 100)
+
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			var user TestUser
+			email := fmt.Sprintf("bench_read%d@example.com", i%dataSize)
+			db.Where("email = ?", email).First(&user)
+		}
+	})
+
+	b.Run("UPDATE操作", func(b *testing.B) {
+		// 预设数据
+		const dataSize = 1000
+		for i := 0; i < dataSize; i++ {
+			user := TestUser{
+				Name:     fmt.Sprintf("基准测试更新用户_%d", i),
+				Email:    fmt.Sprintf("bench_update%d@example.com", i),
+				Age:      25,
+				IsActive: true,
+			}
+			db.Create(&user)
+		}
+
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			email := fmt.Sprintf("bench_update%d@example.com", i%dataSize)
+			db.Model(&TestUser{}).Where("email = ?", email).Update("age", 26)
+		}
+	})
+
+	b.Run("DELETE操作", func(b *testing.B) {
+		// 为每次测试预设数据
+		for i := 0; i < b.N; i++ {
+			user := TestUser{
+				Name:     fmt.Sprintf("基准测试删除用户_%d", i),
+				Email:    fmt.Sprintf("bench_delete%d@example.com", i),
+				Age:      25,
+				IsActive: true,
+			}
+			db.Create(&user)
+		}
+
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			email := fmt.Sprintf("bench_delete%d@example.com", i)
+			db.Where("email = ?", email).Delete(&TestUser{})
+		}
+	})
+
+	b.Run("事务操作", func(b *testing.B) {
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			WithTransaction(func(tx *gorm.DB) error {
+				user := TestUser{
+					Name:     fmt.Sprintf("基准测试事务用户_%d", i),
+					Email:    fmt.Sprintf("bench_tx%d@example.com", i),
+					Age:      25,
+					IsActive: true,
+				}
+				return tx.Create(&user).Error
+			})
+		}
+	})
 }

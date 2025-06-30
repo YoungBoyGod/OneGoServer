@@ -100,7 +100,6 @@ func InitRedis(ctx context.Context, cfg *config.RedisConfig) error {
 // InitRedisWithRetry 带重试的Redis初始化
 func InitRedisWithRetry(ctx context.Context, cfg *config.RedisConfig, maxRetries int, retryInterval time.Duration) error {
 	var lastErr error
-
 	for i := 0; i < maxRetries; i++ {
 		// 重置once以允许重试
 		if i > 0 {
