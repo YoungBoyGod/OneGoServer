@@ -143,22 +143,21 @@ func validateKafkaConfig(cfg *config.KafkaConfig) error {
 
 // InitKafka 初始化Kafka连接
 func InitKafka(ctx context.Context, cfg *config.KafkaConfig) error {
+	// 先验证配置，无论是否已经初始化过
+	if err := validateKafkaConfig(cfg); err != nil {
+		return fmt.Errorf("invalid kafka config: %w", err)
+	}
+
 	var initErr error
 
 	once.Do(func() {
-		// 验证配置
-		if err := validateKafkaConfig(cfg); err != nil {
-			initErr = fmt.Errorf("invalid kafka config: %w", err)
-			return
-		}
-
 		// 创建Kafka管理器
 		kafkaManager = &KafkaManager{
 			config: cfg,
 		}
 
 		// 初始化连接
-		if err := kafkaManager.connect(ctx); err != nil {
+		if err := kafkaManager.connect(); err != nil {
 			initErr = fmt.Errorf("failed to connect to kafka: %w", err)
 			return
 		}
@@ -204,7 +203,12 @@ func InitKafkaWithRetry(ctx context.Context, cfg *config.KafkaConfig, maxRetries
 // === Kafka管理器方法 ===
 
 // connect 建立Kafka连接
-func (km *KafkaManager) connect(ctx context.Context) error {
+func (km *KafkaManager) connect() error {
+	// 打印调试信息，查看实际的broker地址
+	pkglog.LogInfo("Connecting to Kafka brokers",
+		zap.Strings("brokers", km.config.Brokers),
+		zap.String("client_id", km.config.ClientID))
+
 	// 创建Sarama配置
 	saramaConfig := sarama.NewConfig()
 

@@ -3,6 +3,7 @@ package queue
 import (
 	"context"
 	"fmt"
+	"os"
 	"strings"
 	"sync"
 	"testing"
@@ -18,8 +19,29 @@ import (
 
 // getTestKafkaConfig 获取测试用的Kafka配置
 func getTestKafkaConfig() *config.KafkaConfig {
+	// 支持多种环境的Kafka配置
+	kafkaHost := os.Getenv("KAFKA_HOST")
+	if kafkaHost == "" {
+		kafkaHost = "localhost" // 默认使用localhost
+	}
+
+	kafkaPort := os.Getenv("KAFKA_PORT")
+	if kafkaPort == "" {
+		kafkaPort = "9092" // 默认端口
+	}
+
+	// 支持多个broker地址，用于容错
+	brokers := []string{
+		fmt.Sprintf("%s:%s", kafkaHost, kafkaPort),
+	}
+
+	// 如果是localhost，也尝试kafka主机名（用于Docker环境）
+	if kafkaHost == "localhost" {
+		brokers = append(brokers, fmt.Sprintf("kafka:%s", kafkaPort))
+	}
+
 	return &config.KafkaConfig{
-		Brokers:                   []string{"localhost:9092"},
+		Brokers:                   brokers,
 		ClientID:                  "onegoserver-test-client",
 		Version:                   "2.6.0",
 		Username:                  "",
@@ -295,6 +317,10 @@ func TestKafkaRetryMechanism(t *testing.T) {
 	setupTest(t)
 
 	t.Run("重试配置验证", func(t *testing.T) {
+		// 重置状态确保独立测试
+		kafkaManager = nil
+		once = sync.Once{}
+
 		cfg := getTestKafkaConfig()
 		cfg.Brokers = []string{"invalid-host:9092"} // 使用无效主机
 
@@ -310,6 +336,10 @@ func TestKafkaRetryMechanism(t *testing.T) {
 	})
 
 	t.Run("配置错误重试", func(t *testing.T) {
+		// 重置状态确保独立测试
+		kafkaManager = nil
+		once = sync.Once{}
+
 		invalidCfg := &config.KafkaConfig{
 			Brokers: []string{}, // 空的brokers列表
 		}
@@ -558,7 +588,15 @@ func BenchmarkKafkaMessageCreation(b *testing.B) {
 
 // TestKafkaIntegration 真实Kafka连接和操作测试
 func TestKafkaIntegration(t *testing.T) {
+	if testing.Short() {
+		t.Skip("跳过集成测试：使用 -short 标志")
+	}
+
 	setupTest(t)
+
+	// 重置状态确保独立测试
+	kafkaManager = nil
+	once = sync.Once{}
 
 	// 尝试连接真实Kafka
 	kafkaCfg := getTestKafkaConfig()
@@ -660,9 +698,17 @@ func TestKafkaIntegration(t *testing.T) {
 
 // TestKafkaRetryWithRealConnection 测试真实连接的重试机制
 func TestKafkaRetryWithRealConnection(t *testing.T) {
+	if testing.Short() {
+		t.Skip("跳过集成测试：使用 -short 标志")
+	}
+
 	setupTest(t)
 
 	t.Run("无效主机重试测试", func(t *testing.T) {
+		// 重置状态确保独立测试
+		kafkaManager = nil
+		once = sync.Once{}
+
 		invalidCfg := &config.KafkaConfig{
 			Brokers:                   []string{"invalid-kafka-host-12345:9092"},
 			ClientID:                  "retry-test-client",
@@ -701,6 +747,10 @@ func TestKafkaRetryWithRealConnection(t *testing.T) {
 
 // BenchmarkKafkaOperations Kafka操作性能基准测试
 func BenchmarkKafkaOperations(b *testing.B) {
+	if testing.Short() {
+		b.Skip("跳过性能测试：使用 -short 标志")
+	}
+
 	// 初始化日志系统
 	cfg := getTestLoggingConfig()
 	err := pkglog.InitLoggerEnhanced(cfg)
@@ -708,6 +758,10 @@ func BenchmarkKafkaOperations(b *testing.B) {
 		b.Skipf("无法初始化日志系统: %v", err)
 		return
 	}
+
+	// 重置状态确保独立测试
+	kafkaManager = nil
+	once = sync.Once{}
 
 	kafkaCfg := getTestKafkaConfig()
 	ctx := context.Background()
