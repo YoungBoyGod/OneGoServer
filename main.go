@@ -11,12 +11,14 @@ import (
 
 func main() {
 	fmt.Println("Hello, World!")
+
 	// 加载配置文件
 	cfg, err := config.LoadConfig("config/config.yaml")
 	if err != nil {
 		log.Fatalf("Failed to load config: %v", err)
 	}
 	log.Printf("Server started on port %d", cfg.Server.Port)
+
 	// 打印配置文件内容
 	log.Printf("Database Config: %+v", cfg.Database)
 	log.Printf("Server Config: %+v", cfg.Server)
@@ -27,11 +29,11 @@ func main() {
 	}
 	log.Printf("Database DSN: %s", cfg.Database.GetDsn())
 
-	// 初始化日志系统
-	if err := pkglog.InitLogger(&cfg.Logging); err != nil {
-		log.Fatalf("Failed to initialize logger: %v", err)
+	// 初始化增强版日志系统
+	if err := pkglog.InitLoggerEnhanced(&cfg.Logging); err != nil {
+		log.Fatalf("Failed to initialize enhanced logger: %v", err)
 	}
-	log.Printf("Logger initialized successfully")
+	log.Printf("Enhanced Logger initialized successfully")
 
 	// 初始化数据库
 	sql.InitDB(cfg)
@@ -41,4 +43,7 @@ func main() {
 	logger.Info("Application started successfully")
 	logger.Info("Database connected successfully")
 
+	// 同步日志
+	pkglog.Sync()
+	log.Printf("Application setup completed")
 }

@@ -2,7 +2,6 @@ package config
 
 import (
 	"errors"
-	"fmt"
 	"log"
 	"os"
 
@@ -36,9 +35,21 @@ type ServerConfig struct {
 	Description string `yaml:"description" mapstructure:"description"`
 }
 
+type LoggingConfig struct {
+	Level      string `yaml:"level" mapstructure:"level"`
+	Format     string `yaml:"format" mapstructure:"format"`
+	Output     string `yaml:"output" mapstructure:"output"`
+	FilePath   string `yaml:"file_path" mapstructure:"file_path"`
+	MaxSize    int    `yaml:"max_size" mapstructure:"max_size"`
+	MaxBackups int    `yaml:"max_backups" mapstructure:"max_backups"`
+	MaxAge     int    `yaml:"max_age" mapstructure:"max_age"`
+	Compress   bool   `yaml:"compress" mapstructure:"compress"`
+}
+
 type Config struct {
 	Database DatabaseConfig `yaml:"database" mapstructure:"database"`
 	Server   ServerConfig   `yaml:"server" mapstructure:"server"`
+	Logging  LoggingConfig  `yaml:"logging" mapstructure:"logging"`
 }
 
 // 读取配置文件
@@ -101,23 +112,4 @@ func (c *Config) Validate() error {
 		return errors.New("server port is required and must be between 0 and 65535")
 	}
 	return nil
-}
-
-// GetDsn 获取数据库连接字符串
-func (c *DatabaseConfig) GetDsn() string {
-	switch c.Type {
-	case "mysql":
-		return fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=%s&parseTime=%v&loc=%s",
-			c.Username, c.Password, c.Host, c.Port, c.DBName, c.Charset, c.ParseTime, c.Loc)
-	case "postgres":
-		return fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%d sslmode=disable TimeZone=%s",
-			c.Host, c.Username, c.Password, c.DBName, c.Port, c.Loc)
-	case "sqlite":
-		if c.DBName == ":memory:" {
-			return ":memory:"
-		}
-		return c.DBName + ".db"
-	default:
-		return ""
-	}
 }

@@ -1,0 +1,2 @@
+{"level":"info","timestamp":"2025-06-30T14:44:54.683+0800","caller":"OneGoServer002/main.go:41","msg":"Application started successfully"}
+{"level":"info","timestamp":"2025-06-30T14:44:54.683+0800","caller":"OneGoServer002/main.go:42","msg":"Database connected successfully"}

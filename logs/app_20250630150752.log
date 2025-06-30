@@ -1,0 +1,26 @@
+{"level":"info","timestamp":"2025-06-30T15:07:52.542+0800","caller":"log/zap.go:154","msg":"Logger system initialized successfully","level":"info","format":"json","output":"both"}
+{"level":"info","timestamp":"2025-06-30T15:07:52.542+0800","caller":"OneGoServer002/main.go:59","msg":"Testing enhanced logging system"}
+{"level":"info","timestamp":"2025-06-30T15:07:52.542+0800","caller":"log/zap.go:154","msg":"User action","type":"user_action","action":"login","user_id":123,"timestamp":"2025-06-30T15:07:52.542+0800","ip":"192.168.1.100","device":"Chrome Browser"}
+{"level":"info","timestamp":"2025-06-30T15:07:52.542+0800","caller":"log/zap.go:154","msg":"Database operation completed","type":"db_operation","operation":"SELECT","table":"users","duration":0.15}
+{"level":"info","timestamp":"2025-06-30T15:07:52.543+0800","caller":"log/zap.go:154","msg":"API call completed","type":"api_call","method":"GET","endpoint":"/api/users","status_code":200,"duration":0.25}
+{"level":"info","timestamp":"2025-06-30T15:07:52.543+0800","caller":"log/zap.go:154","msg":"System event","type":"system_event","event":"server_start","component":"success","timestamp":"2025-06-30T15:07:52.543+0800","port":8080,"mode":"production"}
+{"level":"info","timestamp":"2025-06-30T15:07:52.543+0800","caller":"log/zap_enhanced.go:344","msg":"Processing user request","request_id":"req-12345","user_id":"user123","action":"get_profile","resource":"/api/profile"}
+{"level":"info","timestamp":"2025-06-30T15:07:52.543+0800","caller":"OneGoServer002/main.go:96","msg":"Info message for testing"}
+{"level":"warn","timestamp":"2025-06-30T15:07:52.543+0800","caller":"OneGoServer002/main.go:97","msg":"Warning message for testing"}
+{"level":"error","timestamp":"2025-06-30T15:07:52.543+0800","caller":"OneGoServer002/main.go:98","msg":"Error message for testing","stacktrace":"main.testEnhancedLogging\n\t/Users/haitang/code/OneGo/OneGoServer002/main.go:98\nmain.main\n\t/Users/haitang/code/OneGo/OneGoServer002/main.go:39\nruntime.main\n\t/usr/local/go/src/runtime/proc.go:272"}
+{"level":"info","timestamp":"2025-06-30T15:07:52.556+0800","caller":"OneGoServer002/main.go:46","msg":"Application started successfully"}
+{"level":"info","timestamp":"2025-06-30T15:07:52.556+0800","caller":"OneGoServer002/main.go:47","msg":"Database connected successfully"}
+{"level":"info","timestamp":"2025-06-30T15:07:52.556+0800","caller":"OneGoServer002/main.go:126","msg":"Test log entry","iteration":0}
+{"level":"error","timestamp":"2025-06-30T15:07:52.556+0800","caller":"OneGoServer002/main.go:128","msg":"Test error entry","iteration":0,"stacktrace":"main.testLoggerMonitoring\n\t/Users/haitang/code/OneGo/OneGoServer002/main.go:128\nmain.main\n\t/Users/haitang/code/OneGo/OneGoServer002/main.go:50\nruntime.main\n\t/usr/local/go/src/runtime/proc.go:272"}
+{"level":"info","timestamp":"2025-06-30T15:07:52.567+0800","caller":"OneGoServer002/main.go:126","msg":"Test log entry","iteration":1}
+{"level":"info","timestamp":"2025-06-30T15:07:52.578+0800","caller":"OneGoServer002/main.go:126","msg":"Test log entry","iteration":2}
+{"level":"info","timestamp":"2025-06-30T15:07:52.588+0800","caller":"OneGoServer002/main.go:126","msg":"Test log entry","iteration":3}
+{"level":"error","timestamp":"2025-06-30T15:07:52.588+0800","caller":"OneGoServer002/main.go:128","msg":"Test error entry","iteration":3,"stacktrace":"main.testLoggerMonitoring\n\t/Users/haitang/code/OneGo/OneGoServer002/main.go:128\nmain.main\n\t/Users/haitang/code/OneGo/OneGoServer002/main.go:50\nruntime.main\n\t/usr/local/go/src/runtime/proc.go:272"}
+{"level":"info","timestamp":"2025-06-30T15:07:52.599+0800","caller":"OneGoServer002/main.go:126","msg":"Test log entry","iteration":4}
+{"level":"info","timestamp":"2025-06-30T15:07:52.610+0800","caller":"OneGoServer002/main.go:126","msg":"Test log entry","iteration":5}
+{"level":"info","timestamp":"2025-06-30T15:07:52.622+0800","caller":"OneGoServer002/main.go:126","msg":"Test log entry","iteration":6}
+{"level":"error","timestamp":"2025-06-30T15:07:52.622+0800","caller":"OneGoServer002/main.go:128","msg":"Test error entry","iteration":6,"stacktrace":"main.testLoggerMonitoring\n\t/Users/haitang/code/OneGo/OneGoServer002/main.go:128\nmain.main\n\t/Users/haitang/code/OneGo/OneGoServer002/main.go:50\nruntime.main\n\t/usr/local/go/src/runtime/proc.go:272"}
+{"level":"info","timestamp":"2025-06-30T15:07:52.633+0800","caller":"OneGoServer002/main.go:126","msg":"Test log entry","iteration":7}
+{"level":"info","timestamp":"2025-06-30T15:07:52.644+0800","caller":"OneGoServer002/main.go:126","msg":"Test log entry","iteration":8}
+{"level":"info","timestamp":"2025-06-30T15:07:52.655+0800","caller":"OneGoServer002/main.go:126","msg":"Test log entry","iteration":9}
+{"level":"error","timestamp":"2025-06-30T15:07:52.655+0800","caller":"OneGoServer002/main.go:128","msg":"Test error entry","iteration":9,"stacktrace":"main.testLoggerMonitoring\n\t/Users/haitang/code/OneGo/OneGoServer002/main.go:128\nmain.main\n\t/Users/haitang/code/OneGo/OneGoServer002/main.go:50\nruntime.main\n\t/usr/local/go/src/runtime/proc.go:272"}

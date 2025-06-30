@@ -8,19 +8,13 @@ import (
 	"time"
 
 	"github.com/YoungBoyGod/OneGoServer/internal/config"
+	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"gopkg.in/natefinch/lumberjack.v2"
 )
 
 // 定义log的接口
-type Logger interface {
-	Info(msg string, args ...interface{})
-	Error(msg string, args ...interface{})
-	Debug(msg string, args ...interface{})
-	Warn(msg string, args ...interface{})
-	Fatal(msg string, args ...interface{})
-}
 
 var (
 	appLogger   *zap.Logger // 应用主日志
@@ -63,7 +57,6 @@ func InitLogger(cfg *config.LoggingConfig) error {
 }
 
 // 生成带时间戳的日志文件路径
-// 先从配置文件中获取日志路径
 func generateTimestampLogPath(originPath string, logType LoggerType) string {
 	// 解析原始路径
 	dir := filepath.Dir(originPath)
@@ -142,6 +135,51 @@ func GetErrorLogger() *zap.Logger {
 	return errorLogger
 }
 
+// Sync 刷新所有日志缓冲区
+func Sync() {
+	if appLogger != nil {
+		_ = appLogger.Sync()
+	}
+	if httpLogger != nil {
+		_ = httpLogger.Sync()
+	}
+	if errorLogger != nil {
+		_ = errorLogger.Sync()
+	}
+}
+
+// LogInfo 记录应用信息级别日志
+func LogInfo(msg string, fields ...zap.Field) {
+	if appLogger != nil {
+		appLogger.Info(msg, fields...)
+	}
+}
+
+// LogWarn 记录应用警告级别日志
+func LogWarn(msg string, fields ...zap.Field) {
+	if appLogger != nil {
+		appLogger.Warn(msg, fields...)
+	}
+}
+
+// LogError 记录应用错误级别日志
+func LogError(msg string, fields ...zap.Field) {
+	if appLogger != nil {
+		appLogger.Error(msg, fields...)
+		// 同时记录到错误日志文件
+		if errorLogger != nil {
+			errorLogger.Error(msg, fields...)
+		}
+	}
+}
+
+// LogDebug 记录应用调试级别日志
+func LogDebug(msg string, fields ...zap.Field) {
+	if appLogger != nil {
+		appLogger.Debug(msg, fields...)
+	}
+}
+
 // 创建指定级别的logger
 func createLogger(cfg *config.LoggingConfig, logType LoggerType) (*zap.Logger, error) {
 	// 创建zap core
@@ -217,4 +255,81 @@ func createLogger(cfg *config.LoggingConfig, logType LoggerType) (*zap.Logger, e
 	logger := zap.New(core, zap.AddCaller(), zap.AddStacktrace(zapcore.ErrorLevel))
 
 	return logger, nil
+}
+
+func Logger() gin.HandlerFunc {
+	// 如果logger未初始化，使用默认配置
+	if httpLogger == nil {
+		defaultConfig := &config.LoggingConfig{
+			Level:      "info",
+			Format:     "json",
+			Output:     "stdout",
+			FilePath:   "logs/http.log",
+			MaxSize:    100,
+			MaxBackups: 3,
+			MaxAge:     30,
+			Compress:   true,
+		}
+		InitLogger(defaultConfig)
+	}
+	return gin.HandlerFunc(func(c *gin.Context) {
+		// 记录请求开始时间
+		startTime := time.Now()
+		// 访问路径
+		accessPath := c.Request.URL.Path
+		// 请求方法
+		accessMethod := c.Request.Method
+		// 请求状态码
+		accessStatus := c.Writer.Status()
+		// 请求体大小
+		bodySize := c.Writer.Size()
+
+		// 请求参数
+		raw := c.Request.URL.RawQuery
+		// 请求头
+		userAgent := c.Request.UserAgent()
+		// 请求IP
+		accessIP := c.ClientIP()
+		realIP := c.GetHeader("X-Real-IP")
+		if raw != "" {
+			accessPath = accessPath + "?" + raw
+		}
+		// 处理请求
+		c.Next()
+
+		// 计算延迟
+		latency := time.Since(startTime)
+		// 获取错误信息
+		errorMessage := c.Errors.ByType(gin.ErrorTypePrivate).String()
+
+		// 记录HTTP访问日志
+		httpLogger.Info("HTTP请求",
+			zap.Int("status", accessStatus),
+			zap.String("method", accessMethod),
+			zap.String("path", accessPath),
+			zap.String("accessIP", accessIP),
+			zap.Duration("latency", latency),
+			zap.Int("size", bodySize),
+			zap.String("user_agent", userAgent),
+			zap.String("error", errorMessage),
+			zap.String("realIP", realIP),
+		)
+
+		// 如果是错误状态码，同时记录到错误日志
+		if accessStatus >= 400 && errorLogger != nil {
+			errorLogger.Error("HTTP错误",
+				zap.Int("status", accessStatus),
+				zap.String("method", accessMethod),
+				zap.String("path", accessPath),
+				zap.String("accessIP", accessIP),
+				zap.Duration("latency", latency),
+				zap.String("user_agent", userAgent),
+				zap.String("error", errorMessage),
+				zap.String("realIP", realIP),
+			)
+		}
+
+		// 记录请求日志
+		LogInfo(accessMethod, zap.String("path", accessPath), zap.Int("status", accessStatus), zap.Duration("duration", latency), zap.String("raw", raw))
+	})
 }
