@@ -60,11 +60,32 @@ type RedisConfig struct {
 	IdleTimeout  int    `yaml:"idle_timeout" mapstructure:"idle_timeout"`
 }
 
+type KafkaConfig struct {
+	Brokers                   []string `yaml:"brokers" mapstructure:"brokers"`
+	ClientID                  string   `yaml:"client_id" mapstructure:"client_id"`
+	Version                   string   `yaml:"version" mapstructure:"version"`
+	Username                  string   `yaml:"username" mapstructure:"username"`
+	Password                  string   `yaml:"password" mapstructure:"password"`
+	EnableSASL                bool     `yaml:"enable_sasl" mapstructure:"enable_sasl"`
+	SASLMechanism             string   `yaml:"sasl_mechanism" mapstructure:"sasl_mechanism"`
+	EnableTLS                 bool     `yaml:"enable_tls" mapstructure:"enable_tls"`
+	ProducerReturnSuccesses   bool     `yaml:"producer_return_successes" mapstructure:"producer_return_successes"`
+	ProducerReturnErrors      bool     `yaml:"producer_return_errors" mapstructure:"producer_return_errors"`
+	ProducerRequiredAcks      int      `yaml:"producer_required_acks" mapstructure:"producer_required_acks"`
+	ProducerRetryMax          int      `yaml:"producer_retry_max" mapstructure:"producer_retry_max"`
+	ProducerMaxMessageBytes   int      `yaml:"producer_max_message_bytes" mapstructure:"producer_max_message_bytes"`
+	ConsumerGroupID           string   `yaml:"consumer_group_id" mapstructure:"consumer_group_id"`
+	ConsumerOffsetInitial     string   `yaml:"consumer_offset_initial" mapstructure:"consumer_offset_initial"`
+	ConsumerSessionTimeout    int      `yaml:"consumer_session_timeout" mapstructure:"consumer_session_timeout"`
+	ConsumerHeartbeatInterval int      `yaml:"consumer_heartbeat_interval" mapstructure:"consumer_heartbeat_interval"`
+}
+
 type Config struct {
 	Database DatabaseConfig `yaml:"database" mapstructure:"database"`
 	Server   ServerConfig   `yaml:"server" mapstructure:"server"`
 	Logging  LoggingConfig  `yaml:"logging" mapstructure:"logging"`
 	Redis    RedisConfig    `yaml:"redis" mapstructure:"redis"`
+	Kafka    KafkaConfig    `yaml:"kafka" mapstructure:"kafka"`
 }
 
 // 读取配置文件
@@ -126,6 +147,25 @@ func bindEnvironmentVariables() {
 	viper.BindEnv("redis.read_timeout", "REDIS_READ_TIMEOUT")
 	viper.BindEnv("redis.write_timeout", "REDIS_WRITE_TIMEOUT")
 	viper.BindEnv("redis.idle_timeout", "REDIS_IDLE_TIMEOUT")
+
+	// Kafka配置环境变量绑定
+	viper.BindEnv("kafka.brokers", "KAFKA_BROKERS")
+	viper.BindEnv("kafka.client_id", "KAFKA_CLIENT_ID")
+	viper.BindEnv("kafka.version", "KAFKA_VERSION")
+	viper.BindEnv("kafka.username", "KAFKA_USERNAME")
+	viper.BindEnv("kafka.password", "KAFKA_PASSWORD")
+	viper.BindEnv("kafka.enable_sasl", "KAFKA_ENABLE_SASL")
+	viper.BindEnv("kafka.sasl_mechanism", "KAFKA_SASL_MECHANISM")
+	viper.BindEnv("kafka.enable_tls", "KAFKA_ENABLE_TLS")
+	viper.BindEnv("kafka.producer_return_successes", "KAFKA_PRODUCER_RETURN_SUCCESSES")
+	viper.BindEnv("kafka.producer_return_errors", "KAFKA_PRODUCER_RETURN_ERRORS")
+	viper.BindEnv("kafka.producer_required_acks", "KAFKA_PRODUCER_REQUIRED_ACKS")
+	viper.BindEnv("kafka.producer_retry_max", "KAFKA_PRODUCER_RETRY_MAX")
+	viper.BindEnv("kafka.producer_max_message_bytes", "KAFKA_PRODUCER_MAX_MESSAGE_BYTES")
+	viper.BindEnv("kafka.consumer_group_id", "KAFKA_CONSUMER_GROUP_ID")
+	viper.BindEnv("kafka.consumer_offset_initial", "KAFKA_CONSUMER_OFFSET_INITIAL")
+	viper.BindEnv("kafka.consumer_session_timeout", "KAFKA_CONSUMER_SESSION_TIMEOUT")
+	viper.BindEnv("kafka.consumer_heartbeat_interval", "KAFKA_CONSUMER_HEARTBEAT_INTERVAL")
 }
 
 // GetDsn 获取数据库连接字符串

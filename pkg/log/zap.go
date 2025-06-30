@@ -546,6 +546,21 @@ func LogRedisOperation(operation, key string, duration time.Duration, err error)
 	}
 }
 
+// LogKafkaOperation 记录Kafka操作
+func LogKafkaOperation(operation, topic string, duration time.Duration, fields ...zap.Field) {
+	baseFields := []zap.Field{
+		zap.String("type", "kafka_operation"),
+		zap.String("operation", operation),
+		zap.String("topic", topic),
+		zap.Duration("duration", duration),
+	}
+
+	// 合并额外字段
+	allFields := append(baseFields, fields...)
+
+	LogInfoWithStats("Kafka operation completed", allFields...)
+}
+
 // LogAPICall 记录API调用
 func LogAPICall(method, endpoint string, statusCode int, duration time.Duration, err error) {
 	fields := []zap.Field{
