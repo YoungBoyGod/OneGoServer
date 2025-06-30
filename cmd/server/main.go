@@ -4,10 +4,9 @@ import (
 	"log"
 
 	"github.com/YoungBoyGod/OneGoServer/internal/config"
-	"github.com/YoungBoyGod/OneGoServer/internal/data/kafka"
 	"github.com/YoungBoyGod/OneGoServer/internal/data/postgres"
 	"github.com/YoungBoyGod/OneGoServer/internal/data/redis"
-	"github.com/YoungBoyGod/OneGoServer/internal/server/router"
+	"github.com/YoungBoyGod/OneGoServer/internal/router"
 )
 
 func main() {
