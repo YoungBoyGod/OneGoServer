@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"strings"
 	"sync"
 	"time"
 
@@ -439,6 +440,229 @@ func RunMigrations(migrations []MigrationFunc) error {
 		zap.Int("total_migrations", len(migrations)))
 
 	return nil
+}
+
+// === 表管理功能 ===
+
+// TableColumn 表列定义
+type TableColumn struct {
+	Name         string `json:"name"`
+	Type         string `json:"type"`
+	NotNull      bool   `json:"not_null"`
+	PrimaryKey   bool   `json:"primary_key"`
+	Unique       bool   `json:"unique"`
+	DefaultValue string `json:"default_value,omitempty"`
+}
+
+// TableDefinition 表定义结构
+type TableDefinition struct {
+	Name    string        `json:"name"`
+	Columns []TableColumn `json:"columns"`
+}
+
+// CreateTable 创建表
+func CreateTable(tableDef *TableDefinition) error {
+	db := GetDB()
+	if db == nil {
+		return errors.New("database not initialized")
+	}
+
+	startTime := time.Now()
+
+	// 构建CREATE TABLE SQL语句
+	sql := buildCreateTableSQL(tableDef)
+
+	// 执行SQL
+	if err := db.Exec(sql).Error; err != nil {
+		pkglog.LogDBOperation("CREATE_TABLE", tableDef.Name, time.Since(startTime), err)
+		return fmt.Errorf("failed to create table %s: %w", tableDef.Name, err)
+	}
+
+	pkglog.LogDBOperation("CREATE_TABLE", tableDef.Name, time.Since(startTime), nil)
+	pkglog.LogInfo("Table created successfully", zap.String("table", tableDef.Name))
+
+	return nil
+}
+
+// DropTable 删除表
+func DropTable(tableName string) error {
+	db := GetDB()
+	if db == nil {
+		return errors.New("database not initialized")
+	}
+
+	startTime := time.Now()
+
+	// 构建DROP TABLE SQL语句
+	sql := fmt.Sprintf("DROP TABLE IF EXISTS %s", tableName)
+
+	// 执行SQL
+	if err := db.Exec(sql).Error; err != nil {
+		pkglog.LogDBOperation("DROP_TABLE", tableName, time.Since(startTime), err)
+		return fmt.Errorf("failed to drop table %s: %w", tableName, err)
+	}
+
+	pkglog.LogDBOperation("DROP_TABLE", tableName, time.Since(startTime), nil)
+	pkglog.LogInfo("Table dropped successfully", zap.String("table", tableName))
+
+	return nil
+}
+
+// TableExists 检查表是否存在
+func TableExists(tableName string) (bool, error) {
+	db := GetDB()
+	if db == nil {
+		return false, errors.New("database not initialized")
+	}
+
+	startTime := time.Now()
+
+	var count int64
+	sql := `SELECT COUNT(*) FROM information_schema.tables 
+			WHERE table_schema = 'public' AND table_name = ?`
+
+	if err := db.Raw(sql, tableName).Scan(&count).Error; err != nil {
+		pkglog.LogDBOperation("CHECK_TABLE", tableName, time.Since(startTime), err)
+		return false, fmt.Errorf("failed to check table existence %s: %w", tableName, err)
+	}
+
+	pkglog.LogDBOperation("CHECK_TABLE", tableName, time.Since(startTime), nil)
+
+	return count > 0, nil
+}
+
+// CreateTestTable 创建测试表（使用时间戳命名）
+func CreateTestTable() (string, error) {
+	timestamp := time.Now().UnixNano()
+	tableName := fmt.Sprintf("test_%d", timestamp)
+
+	// 定义测试表结构
+	tableDef := &TableDefinition{
+		Name: tableName,
+		Columns: []TableColumn{
+			{
+				Name:       "id",
+				Type:       "SERIAL",
+				PrimaryKey: true,
+				NotNull:    true,
+			},
+			{
+				Name:    "name",
+				Type:    "VARCHAR(255)",
+				NotNull: true,
+			},
+			{
+				Name:   "email",
+				Type:   "VARCHAR(255)",
+				Unique: true,
+			},
+			{
+				Name:         "created_at",
+				Type:         "TIMESTAMP",
+				DefaultValue: "CURRENT_TIMESTAMP",
+			},
+			{
+				Name:         "updated_at",
+				Type:         "TIMESTAMP",
+				DefaultValue: "CURRENT_TIMESTAMP",
+			},
+		},
+	}
+
+	if err := CreateTable(tableDef); err != nil {
+		return "", fmt.Errorf("failed to create test table: %w", err)
+	}
+
+	return tableName, nil
+}
+
+// buildCreateTableSQL 构建CREATE TABLE SQL语句
+func buildCreateTableSQL(tableDef *TableDefinition) string {
+	var columns []string
+
+	for _, col := range tableDef.Columns {
+		columnSQL := fmt.Sprintf("%s %s", col.Name, col.Type)
+
+		if col.PrimaryKey {
+			columnSQL += " PRIMARY KEY"
+		}
+
+		if col.NotNull && !col.PrimaryKey {
+			columnSQL += " NOT NULL"
+		}
+
+		if col.Unique && !col.PrimaryKey {
+			columnSQL += " UNIQUE"
+		}
+
+		if col.DefaultValue != "" {
+			columnSQL += fmt.Sprintf(" DEFAULT %s", col.DefaultValue)
+		}
+
+		columns = append(columns, columnSQL)
+	}
+
+	return fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (%s)",
+		tableDef.Name, strings.Join(columns, ", "))
+}
+
+// GetTableInfo 获取表信息
+func GetTableInfo(tableName string) (*TableDefinition, error) {
+	db := GetDB()
+	if db == nil {
+		return nil, errors.New("database not initialized")
+	}
+
+	startTime := time.Now()
+
+	// 查询表结构信息
+	sql := `
+		SELECT 
+			column_name,
+			data_type,
+			is_nullable,
+			column_default
+		FROM information_schema.columns 
+		WHERE table_schema = 'public' AND table_name = ?
+		ORDER BY ordinal_position
+	`
+
+	rows, err := db.Raw(sql, tableName).Rows()
+	if err != nil {
+		pkglog.LogDBOperation("GET_TABLE_INFO", tableName, time.Since(startTime), err)
+		return nil, fmt.Errorf("failed to get table info %s: %w", tableName, err)
+	}
+	defer rows.Close()
+
+	tableDef := &TableDefinition{
+		Name:    tableName,
+		Columns: []TableColumn{},
+	}
+
+	for rows.Next() {
+		var colName, dataType, isNullable string
+		var columnDefault *string
+
+		if err := rows.Scan(&colName, &dataType, &isNullable, &columnDefault); err != nil {
+			continue
+		}
+
+		column := TableColumn{
+			Name:    colName,
+			Type:    dataType,
+			NotNull: isNullable == "NO",
+		}
+
+		if columnDefault != nil {
+			column.DefaultValue = *columnDefault
+		}
+
+		tableDef.Columns = append(tableDef.Columns, column)
+	}
+
+	pkglog.LogDBOperation("GET_TABLE_INFO", tableName, time.Since(startTime), nil)
+
+	return tableDef, nil
 }
 
 // === 工具函数 ===
