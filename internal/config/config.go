@@ -46,10 +46,24 @@ type LoggingConfig struct {
 	Compress   bool   `yaml:"compress" mapstructure:"compress"`
 }
 
+type RedisConfig struct {
+	Host         string `yaml:"host" mapstructure:"host"`
+	Port         int    `yaml:"port" mapstructure:"port"`
+	Password     string `yaml:"password" mapstructure:"password"`
+	DB           int    `yaml:"db" mapstructure:"db"`
+	PoolSize     int    `yaml:"pool_size" mapstructure:"pool_size"`
+	MinIdleConns int    `yaml:"min_idle_conns" mapstructure:"min_idle_conns"`
+	DialTimeout  int    `yaml:"dial_timeout" mapstructure:"dial_timeout"`
+	ReadTimeout  int    `yaml:"read_timeout" mapstructure:"read_timeout"`
+	WriteTimeout int    `yaml:"write_timeout" mapstructure:"write_timeout"`
+	IdleTimeout  int    `yaml:"idle_timeout" mapstructure:"idle_timeout"`
+}
+
 type Config struct {
 	Database DatabaseConfig `yaml:"database" mapstructure:"database"`
 	Server   ServerConfig   `yaml:"server" mapstructure:"server"`
 	Logging  LoggingConfig  `yaml:"logging" mapstructure:"logging"`
+	Redis    RedisConfig    `yaml:"redis" mapstructure:"redis"`
 }
 
 // 读取配置文件

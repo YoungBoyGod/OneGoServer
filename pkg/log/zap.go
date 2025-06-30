@@ -529,6 +529,23 @@ func LogDBOperation(operation, table string, duration time.Duration, err error) 
 	}
 }
 
+// LogRedisOperation 记录Redis操作
+func LogRedisOperation(operation, key string, duration time.Duration, err error) {
+	fields := []zap.Field{
+		zap.String("type", "redis_operation"),
+		zap.String("operation", operation),
+		zap.String("key", key),
+		zap.Duration("duration", duration),
+	}
+
+	if err != nil {
+		fields = append(fields, zap.Error(err))
+		LogErrorWithStats("Redis operation failed", fields...)
+	} else {
+		LogInfoWithStats("Redis operation completed", fields...)
+	}
+}
+
 // LogAPICall 记录API调用
 func LogAPICall(method, endpoint string, statusCode int, duration time.Duration, err error) {
 	fields := []zap.Field{
