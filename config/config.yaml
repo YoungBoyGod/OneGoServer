@@ -1,0 +1,99 @@
+# OneGoServer 默认配置文件
+server:
+  host: "0.0.0.0"
+  port: 8080
+  mode: "debug"  # debug, release, test
+  name: "OneGoServer"
+  version: "v0.1.0"
+  description: "分布式任务管理平台"
+
+# 数据库配置
+database:
+  type: "postgres"
+  host: "localhost"
+  port: 5432
+  username: ""
+  password: ""
+  dbname: "" 
+  charset: "utf8" # 字符集
+  max_idle_conns: 10 # 最大空闲连接数
+  max_open_conns: 100 # 最大连接数
+  conn_max_lifetime: "1h" # 连接最大生命周期
+  auto_migrate: true # 是否自动迁移
+  parse_time: false # 是否解析时间
+  loc: "Asia/Shanghai" # 时区
+
+# Redis配置
+redis:
+  host: "localhost"
+  port: 6379
+  password: ""
+  db: 0
+  pool_size: 10
+  min_idle_conns: 5
+  dial_timeout: 5
+  read_timeout: 3
+  write_timeout: 3
+  idle_timeout: 5
+
+# Kafka配置
+kafka:
+  brokers: ["localhost:9092"]
+  topics:
+    task_events: "task-events"
+    device_events: "device-events"
+    alert_events: "alert-events"
+  consumer:
+    group_id: "onego-server"
+    auto_offset_reset: "earliest"
+  producer:
+    retry_max: 3
+    batch_timeout: "10ms"
+
+# JWT配置
+jwt:
+  secret: "your-super-secret-jwt-key"
+  expire_hours: 24
+  issuer: "OneGoServer"
+  refresh_expire_hours: 168  # 7天
+
+# 日志配置
+logging:
+  level: "info"
+  format: "json"
+  output: "both"  # console, file, both
+  file_path: "logs/app_{timestamp}.log"
+  max_size: 100   # MB
+  max_backups: 10
+  max_age: 30     # days
+  compress: true
+
+# 安全配置
+security:
+  cors:
+    allow_origins: ["*"]
+    allow_methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
+    allow_headers: ["*"]
+    expose_headers: []
+    max_age: 86400
+  rate_limit:
+    enabled: true
+    requests_per_minute: 60
+    burst: 10
+
+# 业务配置
+business:
+  user:
+    password_min_length: 8
+    username_min_length: 3
+    max_login_attempts: 5
+    account_lockout_duration: 300  # 5分钟
+  task:
+    max_retry_count: 3
+    default_timeout: 3600  # 1小时
+  device:
+    heartbeat_interval: 30  # 30秒
+    offline_timeout: 300    # 5分钟
+  alert:
+    max_alerts_per_device: 100
+    cleanup_days: 30 
