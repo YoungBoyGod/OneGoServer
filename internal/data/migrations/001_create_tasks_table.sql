@@ -1,28 +1,28 @@
 -- 创建任务主表
 CREATE TABLE IF NOT EXISTS tasks (
-    id              BIGSERIAL PRIMARY KEY,
-    name            VARCHAR(255) NOT NULL,
-    description     TEXT,
-    type            VARCHAR(50) NOT NULL,
-    status          VARCHAR(20) NOT NULL DEFAULT 'pending',
-    priority        INTEGER NOT NULL DEFAULT 5,
+    id              BIGSERIAL PRIMARY KEY, -- 任务ID
+    name            VARCHAR(255) NOT NULL, -- 任务名称
+    description     TEXT, -- 任务描述
+    type            VARCHAR(50) NOT NULL, -- 任务类型 （如：shell 文件传输 数据库操作） 
+    status          VARCHAR(20) NOT NULL DEFAULT 'pending', -- 任务状态 （如：pending running completed failed canceled）
+    priority        INTEGER NOT NULL DEFAULT 5, -- 任务优先级 （如：1-10）
     
     -- 执行配置
-    execute_time    TIMESTAMP,
-    timeout         INTEGER DEFAULT 300,
-    retry_count     INTEGER DEFAULT 0,
-    max_retries     INTEGER DEFAULT 3,
-    is_urgent       BOOLEAN DEFAULT FALSE,
+    execute_time    TIMESTAMP, -- 执行时间
+    timeout         INTEGER DEFAULT 86400, -- 超时时间(秒) 默认24小时
+    retry_count     INTEGER DEFAULT 0, -- 重试次数
+    max_retries     INTEGER DEFAULT 3, -- 最大重试次数
+    is_urgent       BOOLEAN DEFAULT FALSE, -- 是否紧急
     
     -- 任务参数和结果 (JSON格式)
-    parameters      JSONB,
-    result          JSONB,
-    error_message   TEXT,
+    parameters      JSONB, -- 任务参数 （如：{"command": "ls -l", "args": ["-l"]}）
+    result          JSONB, -- 任务结果 （如：{"output": "ls -l", "exit_code": 0}）
+    error_message   TEXT, -- 错误信息 （如："command not found"）
     
     -- 执行信息
-    executor_type   VARCHAR(50),
-    executor_id     VARCHAR(100),
-    device_id       BIGINT,
+    executor_type   VARCHAR(50), -- 执行器类型 （如：shell 文件传输 数据库操作） shell python test_executor
+    executor_id     VARCHAR(100), -- 执行器ID 
+    device_id       BIGINT, -- 设备ID 
     
     -- 审计字段
     created_at      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -33,27 +33,30 @@ CREATE TABLE IF NOT EXISTS tasks (
 
 -- 创建任务执行记录表
 CREATE TABLE IF NOT EXISTS task_executions (
-    id              BIGSERIAL PRIMARY KEY,
-    task_id         BIGINT NOT NULL,
-    execution_id    VARCHAR(100) NOT NULL UNIQUE,
+    id              BIGSERIAL PRIMARY KEY, -- 数据库主键ID
+    task_id         BIGINT NOT NULL, -- 关联的任务ID
+    execution_id    VARCHAR(100) NOT NULL UNIQUE, -- 业务执行记录唯一标识
     
     -- 执行状态
-    status          VARCHAR(20) NOT NULL DEFAULT 'started',
-    start_time      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    end_time        TIMESTAMP,
-    duration        INTEGER, -- 执行耗时(秒)
+    status          VARCHAR(20) NOT NULL DEFAULT 'started', -- 执行状态 （如：pending running completed failed canceled）
+    start_time      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, -- 开始时间
+    end_time        TIMESTAMP, -- 结束时间
+    duration        INTEGER, -- 执行耗时(秒) 计算方式：end_time - start_time
     
     -- 执行详情
-    executor_info   JSONB,
-    logs            TEXT,
-    metrics         JSONB,
-    output          JSONB,
-    error_details   JSONB,
+    executor_info   JSONB, -- 执行器信息 （如：{"executor_type": "shell", "executor_id": "123"}）
+    logs            TEXT, -- 执行日志
+    metrics         JSONB, -- 执行指标 （如：{"cpu_usage": 0.5, "memory_usage": 1024, "io_operations": 100}）
+    output          JSONB, -- 执行输出 （如：{"output": "ls -l", "exit_code": 0}）
+    error_details   JSONB, -- 错误详情 （如：{"error_message": "command not found", "error_code": 123}）
     
-    -- 资源使用
-    cpu_usage       NUMERIC(5,2),
-    memory_usage    NUMERIC(10,2),
-    io_operations   BIGINT,
+    -- 资源使用统计 (聚合数据)
+    cpu_usage_avg    NUMERIC(5,2), -- CPU平均使用率(%)
+    cpu_usage_peak   NUMERIC(5,2), -- CPU峰值使用率(%)
+    memory_usage_avg NUMERIC(10,2), -- 内存平均使用量(MB)
+    memory_usage_peak NUMERIC(10,2), -- 内存峰值使用量(MB)
+    io_operations_total BIGINT, -- IO操作总次数
+    io_bytes_total   BIGINT, -- IO字节总数
     
     created_at      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     
