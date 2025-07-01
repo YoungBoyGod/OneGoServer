@@ -8,6 +8,7 @@ import (
 	"github.com/YoungBoyGod/OneGoServer/internal/config"
 	"github.com/YoungBoyGod/OneGoServer/pkg/cache"
 	pkglog "github.com/YoungBoyGod/OneGoServer/pkg/log"
+	"github.com/YoungBoyGod/OneGoServer/pkg/queue"
 	"github.com/YoungBoyGod/OneGoServer/pkg/sql"
 	"go.uber.org/zap"
 )
@@ -84,6 +85,13 @@ func main() {
 	}
 
 	logger.Info("🎉 Redis Context增强功能已就绪！所有函数都支持Context参数")
+
+	// 增加kafka初始化 - 临时跳过Kafka，因为容器未运行
+	// logger.Info("⚠️ 跳过Kafka初始化 - Kafka容器未运行")
+	if err := queue.InitKafka(context.Background(), &cfg.Kafka); err != nil {
+		log.Fatalf("Failed to initialize Kafka: %v", err)
+	}
+	logger.Info("Kafka initialized successfully")
 
 	// 应用程序启动完成，可以开始处理业务逻辑
 	// TODO: 添加HTTP服务器启动、API路由等业务逻辑

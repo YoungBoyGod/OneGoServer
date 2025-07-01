@@ -172,7 +172,7 @@ func bindEnvironmentVariables() {
 func (d *DatabaseConfig) GetDsn() string {
 	switch d.Type {
 	case "postgres":
-		return fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
+		return fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable TimeZone=Asia/Shanghai connect_timeout=10",
 			d.Host, d.Port, d.Username, d.Password, d.DBName)
 	case "mysql":
 		return fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=%s&parseTime=%t&loc=%s",

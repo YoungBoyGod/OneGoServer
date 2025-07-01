@@ -23,9 +23,9 @@ database:
   type: "postgres"
   host: "localhost"
   port: 5432
-  username: ""
-  password: ""
-  dbname: "" 
+  username: "admin"
+  password: "onegoserver@123"
+  dbname: "onegoserver" 
   charset: "utf8" # 字符集
   max_idle_conns: 10 # 最大空闲连接数
   max_open_conns: 100 # 最大连接数
@@ -50,16 +50,22 @@ redis:
 # Kafka配置
 kafka:
   brokers: ["localhost:9092"]
-  topics:
-    task_events: "task-events"
-    device_events: "device-events"
-    alert_events: "alert-events"
-  consumer:
-    group_id: "onego-server"
-    auto_offset_reset: "earliest"
-  producer:
-    retry_max: 3
-    batch_timeout: "10ms"
+  client_id: "onego-server"
+  version: "2.8.1"
+  username: ""
+  password: ""
+  enable_sasl: false
+  sasl_mechanism: "PLAIN"
+  enable_tls: false
+  producer_return_successes: true
+  producer_return_errors: true
+  producer_required_acks: 1
+  producer_retry_max: 3
+  producer_max_message_bytes: 1000000
+  consumer_group_id: "onego-server"
+  consumer_offset_initial: "earliest"
+  consumer_session_timeout: 30000
+  consumer_heartbeat_interval: 3000
 
 # JWT配置
 jwt:
