@@ -49,7 +49,7 @@ redis:
 
 # Kafka配置
 kafka:
-  brokers: ["localhost:9094"]
+  brokers: ["localhost:9094"] # 使用docker-compose.kafka-ui-final.yml中的9094端口
   client_id: "onego-server"
   version: "2.8.1"
   username: ""
