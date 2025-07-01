@@ -101,10 +101,13 @@ type TaskExecution struct {
 	Output       *JSONB  `gorm:"type:jsonb" json:"output,omitempty"`
 	ErrorDetails *JSONB  `gorm:"type:jsonb" json:"error_details,omitempty"`
 
-	// 资源使用
-	CPUUsage     *float64 `gorm:"type:numeric(5,2)" json:"cpu_usage,omitempty"`
-	MemoryUsage  *float64 `gorm:"type:numeric(10,2)" json:"memory_usage,omitempty"`
-	IOOperations *int64   `json:"io_operations,omitempty"`
+	// 资源使用统计 (聚合数据)
+	CPUUsageAvg       *float64 `gorm:"type:numeric(5,2)" json:"cpu_usage_avg,omitempty"`
+	CPUUsagePeak      *float64 `gorm:"type:numeric(5,2)" json:"cpu_usage_peak,omitempty"`
+	MemoryUsageAvg    *float64 `gorm:"type:numeric(10,2)" json:"memory_usage_avg,omitempty"`
+	MemoryUsagePeak   *float64 `gorm:"type:numeric(10,2)" json:"memory_usage_peak,omitempty"`
+	IOOperationsTotal *int64   `json:"io_operations_total,omitempty"`
+	IOBytesTotal      *int64   `json:"io_bytes_total,omitempty"`
 
 	CreatedAt time.Time `gorm:"not null;default:CURRENT_TIMESTAMP" json:"created_at"`
 
