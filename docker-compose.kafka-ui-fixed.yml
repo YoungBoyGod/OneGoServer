@@ -4,6 +4,7 @@ services:
     container_name: kafka
     ports:
       - "9092:9092"
+
     environment:
       # KRaft 模式配置（简化版）
       KAFKA_CFG_PROCESS_ROLES: "controller,broker"
@@ -11,7 +12,7 @@ services:
       KAFKA_CFG_CONTROLLER_QUORUM_VOTERS: "1@localhost:9093"
       KAFKA_CFG_CONTROLLER_LISTENER_NAMES: "CONTROLLER"
       
-      # 监听器配置
+      # 监听器配置 - 统一使用localhost
       KAFKA_CFG_LISTENERS: "PLAINTEXT://:9092,CONTROLLER://:9093"
       KAFKA_CFG_ADVERTISED_LISTENERS: "PLAINTEXT://localhost:9092"
       KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP: "CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT"
@@ -36,8 +37,10 @@ services:
       timeout: 10s
       retries: 5
       start_period: 30s
+    networks:
+      - kafka-network
   
-  # Kafka UI 管理界面（可选）
+  # Kafka UI 管理界面
   kafka-ui:
     image: provectuslabs/kafka-ui:latest
     container_name: kafka-ui
@@ -50,6 +53,12 @@ services:
       kafka:
         condition: service_healthy
     restart: unless-stopped
+    networks:
+      - kafka-network
+
+networks:
+  kafka-network:
+    driver: bridge
 
 volumes:
   kafka_data:

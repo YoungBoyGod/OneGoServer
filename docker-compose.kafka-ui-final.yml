@@ -4,17 +4,18 @@ services:
     container_name: kafka
     ports:
       - "9092:9092"
+      - "9094:9094"
     environment:
-      # KRaft 模式配置（简化版）
+      # KRaft 模式配置
       KAFKA_CFG_PROCESS_ROLES: "controller,broker"
       KAFKA_CFG_NODE_ID: "1"
       KAFKA_CFG_CONTROLLER_QUORUM_VOTERS: "1@localhost:9093"
       KAFKA_CFG_CONTROLLER_LISTENER_NAMES: "CONTROLLER"
       
-      # 监听器配置
-      KAFKA_CFG_LISTENERS: "PLAINTEXT://:9092,CONTROLLER://:9093"
-      KAFKA_CFG_ADVERTISED_LISTENERS: "PLAINTEXT://localhost:9092"
-      KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP: "CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT"
+      # 双监听器配置 - 同时支持容器内和主机访问
+      KAFKA_CFG_LISTENERS: "PLAINTEXT://:9092,CONTROLLER://:9093,EXTERNAL://:9094"
+      KAFKA_CFG_ADVERTISED_LISTENERS: "PLAINTEXT://kafka:9092,EXTERNAL://localhost:9094"
+      KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP: "CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,EXTERNAL:PLAINTEXT"
       KAFKA_CFG_INTER_BROKER_LISTENER_NAME: "PLAINTEXT"
       
       # 开发环境设置
@@ -23,7 +24,7 @@ services:
       KAFKA_CFG_DEFAULT_REPLICATION_FACTOR: "1"
       KAFKA_CFG_MIN_INSYNC_REPLICAS: "1"
       
-      # 固定cluster ID避免重复初始化
+      # 固定cluster ID
       KAFKA_CLUSTER_ID: "onego-kafka-cluster"
       
       # JVM优化
@@ -36,8 +37,10 @@ services:
       timeout: 10s
       retries: 5
       start_period: 30s
+    networks:
+      - kafka-network
   
-  # Kafka UI 管理界面（可选）
+  # Kafka UI 管理界面
   kafka-ui:
     image: provectuslabs/kafka-ui:latest
     container_name: kafka-ui
@@ -45,11 +48,17 @@ services:
       - "8081:8080"
     environment:
       KAFKA_CLUSTERS_0_NAME: "onego-kafka"
-      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: "kafka:9092"
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: "kafka:9092"  # 使用容器内网络连接
     depends_on:
       kafka:
         condition: service_healthy
     restart: unless-stopped
+    networks:
+      - kafka-network
+
+networks:
+  kafka-network:
+    driver: bridge
 
 volumes:
   kafka_data:
