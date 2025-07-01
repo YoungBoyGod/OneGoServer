@@ -53,9 +53,21 @@ func registerTaskRoutes(rg *gin.RouterGroup) {
 		tasks.PUT("/:id", taskController.UpdateTask)    // PUT /api/v1/tasks/:id
 		tasks.DELETE("/:id", taskController.DeleteTask) // DELETE /api/v1/tasks/:id
 
-		// 任务状态和执行操作
-		tasks.GET("/:id/status", taskController.GetTaskStatus) // GET /api/v1/tasks/:id/status
-		tasks.POST("/:id/execute", taskController.ExecuteTask) // POST /api/v1/tasks/:id/execute
+		// 任务状态管理
+		tasks.GET("/:id/status", taskController.GetTaskStatus)    // GET /api/v1/tasks/:id/status
+		tasks.PUT("/:id/status", taskController.UpdateTaskStatus) // PUT /api/v1/tasks/:id/status
+
+		// 任务执行控制
+		tasks.POST("/:id/execute", taskController.ExecuteTask)   // POST /api/v1/tasks/:id/execute
+		tasks.POST("/:id/cancel", taskController.CancelTask)     // POST /api/v1/tasks/:id/cancel
+		tasks.POST("/:id/dispatch", taskController.DispatchTask) // POST /api/v1/tasks/:id/dispatch
+
+		// 任务信息查询
+		tasks.GET("/query", taskController.QueryTask)                // GET /api/v1/tasks/query
+		tasks.GET("/:id/detail", taskController.GetTaskDetail)       // GET /api/v1/tasks/:id/detail
+		tasks.GET("/:id/result", taskController.GetTaskResult)       // GET /api/v1/tasks/:id/result
+		tasks.GET("/:id/execution", taskController.GetTaskExecution) // GET /api/v1/tasks/:id/execution
+		tasks.GET("/:id/stats", taskController.GetTaskStats)         // GET /api/v1/tasks/:id/stats
 	}
 }
 
@@ -73,11 +85,20 @@ func registerDeviceRoutes(rg *gin.RouterGroup) {
 		devices.PUT("/:id", deviceController.UpdateDevice)    // PUT /api/v1/devices/:id
 		devices.DELETE("/:id", deviceController.DeleteDevice) // DELETE /api/v1/devices/:id
 
-		// 设备状态和控制操作
-		devices.GET("/:id/status", deviceController.GetDeviceStatus)           // GET /api/v1/devices/:id/status
+		// 设备状态管理
+		devices.GET("/:id/status", deviceController.GetDeviceStatus) // GET /api/v1/devices/:id/status
+		devices.POST("/online", deviceController.DeviceOnline)       // POST /api/v1/devices/online
+		devices.POST("/offline", deviceController.DeviceOffline)     // POST /api/v1/devices/offline
+
+		// 设备控制操作
 		devices.POST("/:id/command", deviceController.SendCommand)             // POST /api/v1/devices/:id/command
 		devices.GET("/:id/heartbeat", deviceController.GetDeviceHeartbeat)     // GET /api/v1/devices/:id/heartbeat
 		devices.POST("/:id/heartbeat", deviceController.UpdateDeviceHeartbeat) // POST /api/v1/devices/:id/heartbeat
+
+		// 设备信息查询
+		devices.GET("/query", deviceController.QueryDevice)        // GET /api/v1/devices/query
+		devices.GET("/:id/logs", deviceController.GetDeviceLogs)   // GET /api/v1/devices/:id/logs
+		devices.GET("/:id/stats", deviceController.GetDeviceStats) // GET /api/v1/devices/:id/stats
 	}
 }
 
