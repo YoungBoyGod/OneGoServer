@@ -37,6 +37,9 @@ CREATE TABLE IF NOT EXISTS task_executions (
     task_id         BIGINT NOT NULL, -- 关联的任务ID
     execution_id    VARCHAR(100) NOT NULL UNIQUE, -- 业务执行记录唯一标识
     
+    --分配信息
+    device_esn      VARCHAR(100), -- 设备编号
+
     -- 执行状态
     status          VARCHAR(20) NOT NULL DEFAULT 'started', -- 执行状态 （如：pending running completed failed canceled）
     start_time      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, -- 开始时间
@@ -55,7 +58,7 @@ CREATE TABLE IF NOT EXISTS task_executions (
     cpu_usage_peak   NUMERIC(5,2), -- CPU峰值使用率(%)
     memory_usage_avg NUMERIC(10,2), -- 内存平均使用量(MB)
     memory_usage_peak NUMERIC(10,2), -- 内存峰值使用量(MB)
-    io_operations_total BIGINT, -- IO操作总次数
+    io_operations_total BIGINT, -- IO操作总次数 
     io_bytes_total   BIGINT, -- IO字节总数
     
     created_at      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,

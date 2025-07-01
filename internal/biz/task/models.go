@@ -88,6 +88,9 @@ type TaskExecution struct {
 	TaskID      int64  `gorm:"not null;index" json:"task_id"`
 	ExecutionID string `gorm:"type:varchar(100);uniqueIndex;not null" json:"execution_id"`
 
+	// 分配信息
+	DeviceESN *string `gorm:"type:varchar(100)" json:"device_esn,omitempty"`
+
 	// 执行状态
 	Status    string     `gorm:"type:varchar(20);not null;default:started" json:"status"`
 	StartTime time.Time  `gorm:"not null;default:CURRENT_TIMESTAMP" json:"start_time"`
@@ -155,11 +158,15 @@ func (Device) TableName() string {
 
 // 任务状态常量
 const (
-	TaskStatusPending   = "pending"
-	TaskStatusRunning   = "running"
-	TaskStatusCompleted = "completed"
-	TaskStatusFailed    = "failed"
-	TaskStatusCanceled  = "canceled"
+	TaskStatusPending     = "pending"
+	TaskStatusQueued      = "queued"      // 已入队待分配
+	TaskStatusAssigning   = "assigning"   // 分配中
+	TaskStatusAssigned    = "assigned"    // 已分配待执行
+	TaskStatusDispatching = "dispatching" // 派发中
+	TaskStatusRunning     = "running"
+	TaskStatusCompleted   = "completed"
+	TaskStatusFailed      = "failed"
+	TaskStatusCanceled    = "canceled"
 )
 
 // 任务类型常量
@@ -287,4 +294,172 @@ type PaginationInfo struct {
 	Size       int   `json:"size"`
 	Total      int64 `json:"total"`
 	TotalPages int   `json:"total_pages"`
+}
+
+// ===== 任务分配队列相关模型 =====
+
+// TaskAssignmentQueue 任务分配队列模型
+type TaskAssignmentQueue struct {
+	ID          int64  `gorm:"primaryKey;autoIncrement" json:"id"`
+	TaskID      int64  `gorm:"not null;uniqueIndex" json:"task_id"`
+	Priority    int    `gorm:"not null;default:5" json:"priority"`
+	QueueStatus string `gorm:"type:varchar(20);not null;default:queued" json:"queue_status"`
+
+	// 分配条件
+	RequiredDeviceType   *string `gorm:"type:varchar(50)" json:"required_device_type,omitempty"`
+	RequiredCapabilities *JSONB  `gorm:"type:jsonb" json:"required_capabilities,omitempty"`
+	PreferredDeviceIds   *string `gorm:"type:text" json:"preferred_device_ids,omitempty"` // 以逗号分隔的ID列表
+	ExcludedDeviceIds    *string `gorm:"type:text" json:"excluded_device_ids,omitempty"`  // 以逗号分隔的ID列表
+
+	// 分配结果
+	AssignedDeviceID  *int64     `gorm:"index" json:"assigned_device_id,omitempty"`
+	AssignedDeviceESN *string    `gorm:"type:varchar(100)" json:"assigned_device_esn,omitempty"`
+	AssignedAt        *time.Time `gorm:"type:timestamp" json:"assigned_at,omitempty"`
+	AssignmentScore   *float64   `gorm:"type:numeric(5,2)" json:"assignment_score,omitempty"`
+
+	// 队列信息
+	QueuePosition     *int `json:"queue_position,omitempty"`
+	EstimatedWaitTime *int `json:"estimated_wait_time,omitempty"`
+	RetryCount        int  `gorm:"default:0" json:"retry_count"`
+	MaxRetries        int  `gorm:"default:3" json:"max_retries"`
+
+	// 时间戳
+	QueuedAt  time.Time `gorm:"not null;default:CURRENT_TIMESTAMP" json:"queued_at"`
+	UpdatedAt time.Time `gorm:"not null;default:CURRENT_TIMESTAMP" json:"updated_at"`
+
+	// 关联关系
+	Task           *Task   `gorm:"foreignKey:TaskID;references:ID" json:"task,omitempty"`
+	AssignedDevice *Device `gorm:"foreignKey:AssignedDeviceID;references:ID" json:"assigned_device,omitempty"`
+}
+
+// TableName 指定表名
+func (TaskAssignmentQueue) TableName() string {
+	return "task_assignment_queue"
+}
+
+// DeviceLoadMonitor 设备负载监控模型
+type DeviceLoadMonitor struct {
+	ID        int64  `gorm:"primaryKey;autoIncrement" json:"id"`
+	DeviceID  int64  `gorm:"not null;index" json:"device_id"`
+	DeviceESN string `gorm:"type:varchar(100);not null" json:"device_esn"`
+
+	// 负载指标
+	CurrentTasks       int      `gorm:"default:0" json:"current_tasks"`
+	MaxConcurrentTasks int      `gorm:"default:1" json:"max_concurrent_tasks"`
+	CPULoad            *float64 `gorm:"type:numeric(5,2)" json:"cpu_load,omitempty"`
+	MemoryUsage        *float64 `gorm:"type:numeric(5,2)" json:"memory_usage,omitempty"`
+	DiskUsage          *float64 `gorm:"type:numeric(5,2)" json:"disk_usage,omitempty"`
+	NetworkLatency     *int     `json:"network_latency,omitempty"`
+
+	// 设备状态
+	Status        string     `gorm:"type:varchar(20);not null;default:online" json:"status"`
+	LastHeartbeat *time.Time `gorm:"type:timestamp" json:"last_heartbeat,omitempty"`
+	LoadScore     *float64   `gorm:"type:numeric(5,2)" json:"load_score,omitempty"`
+
+	// 统计信息
+	TotalAssigned  int      `gorm:"default:0" json:"total_assigned"`
+	TotalCompleted int      `gorm:"default:0" json:"total_completed"`
+	TotalFailed    int      `gorm:"default:0" json:"total_failed"`
+	SuccessRate    *float64 `gorm:"type:numeric(5,2)" json:"success_rate,omitempty"`
+
+	UpdatedAt time.Time `gorm:"not null;default:CURRENT_TIMESTAMP" json:"updated_at"`
+
+	// 关联关系
+	Device *Device `gorm:"foreignKey:DeviceID;references:ID" json:"device,omitempty"`
+}
+
+// TableName 指定表名
+func (DeviceLoadMonitor) TableName() string {
+	return "device_load_monitor"
+}
+
+// TaskAssignmentHistory 任务分配历史记录模型
+type TaskAssignmentHistory struct {
+	ID        int64   `gorm:"primaryKey;autoIncrement" json:"id"`
+	TaskID    int64   `gorm:"not null;index" json:"task_id"`
+	DeviceID  *int64  `gorm:"index" json:"device_id,omitempty"`
+	DeviceESN *string `gorm:"type:varchar(100)" json:"device_esn,omitempty"`
+
+	Action         string  `gorm:"type:varchar(20);not null" json:"action"`
+	PreviousStatus *string `gorm:"type:varchar(20)" json:"previous_status,omitempty"`
+	NewStatus      *string `gorm:"type:varchar(20)" json:"new_status,omitempty"`
+	Reason         *string `gorm:"type:varchar(255)" json:"reason,omitempty"`
+	Details        *JSONB  `gorm:"type:jsonb" json:"details,omitempty"`
+
+	CreatedAt time.Time `gorm:"not null;default:CURRENT_TIMESTAMP" json:"created_at"`
+
+	// 关联关系
+	Task   *Task   `gorm:"foreignKey:TaskID;references:ID" json:"task,omitempty"`
+	Device *Device `gorm:"foreignKey:DeviceID;references:ID" json:"device,omitempty"`
+}
+
+// TableName 指定表名
+func (TaskAssignmentHistory) TableName() string {
+	return "task_assignment_history"
+}
+
+// 队列状态常量
+const (
+	QueueStatusQueued    = "queued"
+	QueueStatusAssigning = "assigning"
+	QueueStatusAssigned  = "assigned"
+	QueueStatusFailed    = "failed"
+	QueueStatusCanceled  = "canceled"
+)
+
+// 设备负载状态常量
+const (
+	DeviceStatusOnline      = "online"
+	DeviceStatusOffline     = "offline"
+	DeviceStatusBusy        = "busy"
+	DeviceStatusMaintenance = "maintenance"
+)
+
+// 分配历史动作常量
+const (
+	AssignmentActionQueued     = "queued"
+	AssignmentActionAssigned   = "assigned"
+	AssignmentActionReassigned = "reassigned"
+	AssignmentActionFailed     = "failed"
+	AssignmentActionCompleted  = "completed"
+	AssignmentActionCanceled   = "canceled"
+)
+
+// TaskQueueFilter 任务队列查询过滤器
+type TaskQueueFilter struct {
+	QueueStatus    []string   `json:"queue_status,omitempty"`
+	Priority       *int       `json:"priority,omitempty"`
+	DeviceType     *string    `json:"device_type,omitempty"`
+	AssignedDevice *int64     `json:"assigned_device,omitempty"`
+	QueuedAfter    *time.Time `json:"queued_after,omitempty"`
+	QueuedBefore   *time.Time `json:"queued_before,omitempty"`
+}
+
+// DeviceLoadFilter 设备负载查询过滤器
+type DeviceLoadFilter struct {
+	Status         []string `json:"status,omitempty"`
+	MinLoadScore   *float64 `json:"min_load_score,omitempty"`
+	MaxLoadScore   *float64 `json:"max_load_score,omitempty"`
+	MinSuccessRate *float64 `json:"min_success_rate,omitempty"`
+	DeviceType     *string  `json:"device_type,omitempty"`
+}
+
+// QueueStatistics 队列统计信息
+type QueueStatistics struct {
+	Total         int64            `json:"total"`
+	ByStatus      map[string]int64 `json:"by_status"`
+	ByPriority    map[string]int64 `json:"by_priority"`
+	AvgWaitTime   float64          `json:"avg_wait_time"`
+	TotalAssigned int64            `json:"total_assigned"`
+	TotalFailed   int64            `json:"total_failed"`
+}
+
+// DeviceLoadSummary 设备负载汇总
+type DeviceLoadSummary struct {
+	TotalDevices   int64   `json:"total_devices"`
+	OnlineDevices  int64   `json:"online_devices"`
+	BusyDevices    int64   `json:"busy_devices"`
+	OfflineDevices int64   `json:"offline_devices"`
+	AvgLoadScore   float64 `json:"avg_load_score"`
+	AvgSuccessRate float64 `json:"avg_success_rate"`
 }
