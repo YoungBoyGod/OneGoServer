@@ -1,10 +1,11 @@
 -- 创建任务主表
 CREATE TABLE IF NOT EXISTS tasks (
-    id              BIGSERIAL PRIMARY KEY, -- 任务ID
+    id              BIGSERIAL PRIMARY KEY, -- 数据库主键ID
+    task_id         VARCHAR(100) NOT NULL UNIQUE, -- 任务ID
     name            VARCHAR(255) NOT NULL, -- 任务名称
     description     TEXT, -- 任务描述
     type            VARCHAR(50) NOT NULL, -- 任务类型 （如：shell 文件传输 数据库操作） 
-    status          VARCHAR(20) NOT NULL DEFAULT 'pending', -- 任务状态 （如：pending running completed failed canceled）
+    status          VARCHAR(20) NOT NULL DEFAULT 'pending', -- 任务状态 （如：pending  running completed failed canceled）
     priority        INTEGER NOT NULL DEFAULT 5, -- 任务优先级 （如：1-10）
     
     -- 执行配置
@@ -66,8 +67,8 @@ CREATE TABLE IF NOT EXISTS task_executions (
     io_bytes_total   BIGINT, -- IO字节总数
     
     created_at      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
-    
-    -- 注意：移除外键约束，改为应用层维护数据一致性
+    updated_at      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+
 );
 
 

@@ -1,19 +1,18 @@
 -- 创建任务分配队列表
 CREATE TABLE IF NOT EXISTS task_assignment_queue (
     id              BIGSERIAL PRIMARY KEY,
-    task_id         BIGINT NOT NULL UNIQUE,
+    task_id         VARCHAR(100) NOT NULL UNIQUE,  -- 任务ID 
     priority        INTEGER NOT NULL DEFAULT 5, -- 队列优先级
     queue_status    VARCHAR(20) NOT NULL DEFAULT 'queued', -- 队列状态
     
     -- 分配条件
-    required_device_type VARCHAR(50), -- 需要的设备类型
+    required_device_type VARCHAR(50), -- 需要的设备类型   
     required_capabilities JSONB, -- 设备能力要求 （如：{"min_cpu": 2, "min_memory": 4096, "supported_protocols": ["http", "mqtt"]}）
     preferred_device_ids BIGINT[], -- 首选设备ID列表
     excluded_device_ids BIGINT[], -- 排除设备ID列表
     
     -- 分配结果
     assigned_device_id BIGINT, -- 分配的设备ID
-    assigned_device_esn VARCHAR(100), -- 分配的设备编号
     assigned_at      TIMESTAMP, -- 分配时间
     assignment_score NUMERIC(5,2), -- 分配得分(算法评估)
     
@@ -34,7 +33,6 @@ CREATE TABLE IF NOT EXISTS task_assignment_queue (
 CREATE TABLE IF NOT EXISTS device_load_monitor (
     id              BIGSERIAL PRIMARY KEY,
     device_id       BIGINT NOT NULL,
-    device_esn      VARCHAR(100) NOT NULL,
     
     -- 负载指标
     current_tasks   INTEGER DEFAULT 0, -- 当前任务数
@@ -63,9 +61,8 @@ CREATE TABLE IF NOT EXISTS device_load_monitor (
 -- 创建分配历史记录表
 CREATE TABLE IF NOT EXISTS task_assignment_history (
     id              BIGSERIAL PRIMARY KEY,
-    task_id         BIGINT NOT NULL,
+    task_id         VARCHAR(100) NOT NULL,
     device_id       BIGINT,
-    device_esn      VARCHAR(100),
     
     action          VARCHAR(20) NOT NULL, -- queued, assigned, reassigned, failed, completed
     previous_status VARCHAR(20), -- 前一个状态
@@ -92,7 +89,6 @@ CREATE INDEX IF NOT EXISTS idx_task_assignment_queue_device_type ON task_assignm
 
 -- 创建设备负载监控索引
 CREATE INDEX IF NOT EXISTS idx_device_load_monitor_device_id ON device_load_monitor(device_id);
-CREATE INDEX IF NOT EXISTS idx_device_load_monitor_esn ON device_load_monitor(device_esn);
 CREATE INDEX IF NOT EXISTS idx_device_load_monitor_status ON device_load_monitor(status);
 CREATE INDEX IF NOT EXISTS idx_device_load_monitor_load_score ON device_load_monitor(load_score);
 CREATE INDEX IF NOT EXISTS idx_device_load_monitor_heartbeat ON device_load_monitor(last_heartbeat);

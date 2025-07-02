@@ -1,328 +1,420 @@
--- 创建设备任务队列表
+-- ============================================================================
+-- 设备任务队列表优化设计 (v2.0)
+-- 特性：简化设计、重发机制、模块化触发器、数据类型统一
+-- ============================================================================
+
+-- 1. 通用触发器函数：自动更新 updated_at
+CREATE OR REPLACE FUNCTION fn_update_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.updated_at = CURRENT_TIMESTAMP;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- 2. 主队列表：device_task_queue
 CREATE TABLE IF NOT EXISTS device_task_queue (
-    id              BIGSERIAL PRIMARY KEY,
-    device_id       BIGINT NOT NULL,
-    device_esn      VARCHAR(100) NOT NULL,
-    task_id         BIGINT NOT NULL,
-    
-    -- 队列管理
-    queue_priority  INTEGER NOT NULL DEFAULT 5, -- 任务优先级(1-100, 数字越小优先级越高) （如：1, 2, 3...100）
-    queue_position  INTEGER NOT NULL, -- 在该设备上的队列位置(1, 2, 3...) （如：1, 2, 3...）
-    original_priority INTEGER, -- 原始优先级(用于重置) （如：1-100，数字越小优先级越高）
-    is_manual_priority BOOLEAN DEFAULT FALSE, -- 是否手动调整过优先级 （如：true, false）
-    is_manual_position BOOLEAN DEFAULT FALSE, -- 是否手动调整过位置 （如：true, false）
-    
-    -- 状态信息
-    status          VARCHAR(20) NOT NULL DEFAULT 'queued', -- queued, executing, paused, completed, failed, canceled
-    estimated_start_time TIMESTAMP, -- 预估开始时间 （如：2025-01-01 12:00:00）
-    estimated_duration INTEGER, -- 预估执行时长(秒) （如：3600）
-    actual_start_time TIMESTAMP, -- 实际开始时间 （如：2025-01-01 12:00:00）
-    actual_end_time TIMESTAMP, -- 实际结束时间 （如：2025-01-01 12:00:00）
-    
-    -- 执行配置
-    max_retry_count INTEGER DEFAULT 3, -- 最大重试次数 （如：3）
-    current_retry   INTEGER DEFAULT 0, -- 当前重试次数 （如：0）
-    timeout_seconds INTEGER DEFAULT 3600, -- 超时时间(秒) （如：3600）
-    
-    -- 依赖关系
-    depends_on_task_ids BIGINT[], -- 依赖的任务ID列表 （如：[1, 2, 3]）
-    blocks_task_ids    BIGINT[], -- 阻塞的任务ID列表 （如：[1, 2, 3]）
-    
-    -- 操作记录
-    created_at      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    queued_by       BIGINT, -- 入队操作者
-    last_modified_by BIGINT, -- 最后修改者
-    last_action     VARCHAR(50), -- 最后操作 (added, priority_changed, position_changed, started, paused, etc.)
-    
-    -- 唯一约束
-    UNIQUE(device_id, task_id), -- 同一设备上的同一任务只能有一条记录
-    UNIQUE(device_id, queue_position), -- 同一设备上队列位置唯一
-    
-    -- 注意：移除外键约束，改为应用层维护数据一致性
-    -- FOREIGN KEY (device_id) REFERENCES devices(id) ON DELETE CASCADE,
-    -- FOREIGN KEY (task_id) REFERENCES tasks(id) ON DELETE CASCADE,
-    -- FOREIGN KEY (queued_by) REFERENCES users(id) ON DELETE SET NULL,
-    -- FOREIGN KEY (last_modified_by) REFERENCES users(id) ON DELETE SET NULL
+  id                       BIGSERIAL   PRIMARY KEY,
+  device_id                BIGINT      NOT NULL,            -- 关联 devices(id)，应用层校验
+  task_id                  VARCHAR(100) NOT NULL,           -- 业务层唯一任务标识
+  queue_priority           INTEGER     NOT NULL DEFAULT 5,  -- 1–100，数字越小优先级越高
+  original_priority        INTEGER,                         -- 初始优先级
+  is_manual_priority       BOOLEAN     NOT NULL DEFAULT FALSE,
+  queue_position           INTEGER,                         -- 1,2,3...，队列位置
+  is_manual_position       BOOLEAN     NOT NULL DEFAULT FALSE,
+  status                   VARCHAR(20) NOT NULL DEFAULT 'queued',
+  estimated_start_time     TIMESTAMP,
+  estimated_duration       INTEGER,                         -- 秒
+  actual_start_time        TIMESTAMP,
+  actual_end_time          TIMESTAMP,
+
+  max_retry_count          INTEGER     NOT NULL DEFAULT 3,
+  current_retry            INTEGER     NOT NULL DEFAULT 0,
+  timeout_seconds          INTEGER     NOT NULL DEFAULT 3600,
+
+  depends_on_task_ids      VARCHAR(100)[], -- 依赖的任务ID列表（业务ID）
+  blocks_task_ids          VARCHAR(100)[], -- 阻塞的任务ID列表（业务ID）
+
+  -- 重发 / 取消
+  requeue_count            INTEGER     NOT NULL DEFAULT 0,
+  last_requeue_at          TIMESTAMP,
+  is_requeued              BOOLEAN     NOT NULL DEFAULT FALSE,
+  cancel_reason            TEXT,
+
+  -- 手动调整时间戳
+  last_priority_change_at  TIMESTAMP,
+  last_position_change_at  TIMESTAMP,
+
+  -- 审计
+  queued_by                BIGINT,                          -- 入队者
+  last_modified_by         BIGINT,
+  last_action              VARCHAR(50),
+
+  created_at               TIMESTAMP   NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at               TIMESTAMP   NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+  UNIQUE(device_id, task_id),
+  UNIQUE(device_id, queue_position)
 );
 
--- 创建设备队列操作历史表
+-- 3. 操作历史：device_queue_operation_history
 CREATE TABLE IF NOT EXISTS device_queue_operation_history (
-    id              BIGSERIAL PRIMARY KEY,
-    device_id       BIGINT NOT NULL,
-    device_esn      VARCHAR(100) NOT NULL,
-    task_id         BIGINT,
-    
-    -- 操作信息
-    operation_type  VARCHAR(30) NOT NULL, -- add, remove, priority_change, position_change, start, pause, resume, cancel
-    operation_by    BIGINT, -- 操作者ID
-    operation_time  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    
-    -- 变更详情
-    old_priority    INTEGER, -- 变更前优先级
-    new_priority    INTEGER, -- 变更后优先级
-    old_position    INTEGER, -- 变更前位置
-    new_position    INTEGER, -- 变更后位置
-    old_status      VARCHAR(20), -- 变更前状态
-    new_status      VARCHAR(20), -- 变更后状态
-    
-    -- 操作原因和备注
-    reason          VARCHAR(255), -- 操作原因
-    notes           TEXT, -- 操作备注
-    operation_source VARCHAR(20) DEFAULT 'manual', -- manual, system, api, scheduler
-    
-    -- 批量操作支持
-    batch_id        VARCHAR(50), -- 批量操作ID
-    is_batch_operation BOOLEAN DEFAULT FALSE -- 是否为批量操作
-    
-    -- 注意：移除外键约束，改为应用层维护数据一致性
-    -- FOREIGN KEY (device_id) REFERENCES devices(id) ON DELETE CASCADE,
-    -- FOREIGN KEY (task_id) REFERENCES tasks(id) ON DELETE CASCADE,
-    -- FOREIGN KEY (operation_by) REFERENCES users(id) ON DELETE SET NULL
+  id                   BIGSERIAL   PRIMARY KEY,
+  device_id            BIGINT      NOT NULL,
+  task_id              VARCHAR(100),
+  operation_type       VARCHAR(30) NOT NULL,          -- add/remove/priority_change/position_change/requeue/status_change
+  operation_by         BIGINT,
+  operation_time       TIMESTAMP   NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  old_priority         INTEGER,
+  new_priority         INTEGER,
+  old_position         INTEGER,
+  new_position         INTEGER,
+  old_status           VARCHAR(20),
+  new_status           VARCHAR(20),
+  reason               VARCHAR(255),
+  notes                TEXT,
+  operation_source     VARCHAR(20) NOT NULL DEFAULT 'system',
+  batch_id             VARCHAR(50),
+  is_batch_operation   BOOLEAN     NOT NULL DEFAULT FALSE
 );
 
--- 创建设备队列配置表
-CREATE TABLE IF NOT EXISTS device_queue_config (
-    id              BIGSERIAL PRIMARY KEY,
-    device_id       BIGINT NOT NULL UNIQUE,
-    device_esn      VARCHAR(100) NOT NULL,
-    
-    -- 队列配置
-    max_queue_size  INTEGER DEFAULT 100, -- 最大队列长度
-    max_concurrent_tasks INTEGER DEFAULT 1, -- 最大并发任务数
-    auto_start_tasks BOOLEAN DEFAULT TRUE, -- 是否自动开始任务
-    priority_scheduling BOOLEAN DEFAULT TRUE, -- 是否启用优先级调度
-    
-    -- 调度策略
-    scheduling_strategy VARCHAR(20) DEFAULT 'priority_first', -- priority_first, fifo, lifo, weighted
-    load_balancing BOOLEAN DEFAULT TRUE, -- 是否启用负载均衡
-    
-    -- 时间窗口配置
-    work_start_time TIME, -- 工作开始时间
-    work_end_time   TIME, -- 工作结束时间
-    timezone        VARCHAR(50) DEFAULT 'UTC', -- 时区
-    
-    -- 资源限制
-    max_cpu_usage   NUMERIC(5,2) DEFAULT 80.0, -- 最大CPU使用率
-    max_memory_usage NUMERIC(5,2) DEFAULT 80.0, -- 最大内存使用率
-    min_free_disk   BIGINT DEFAULT 1073741824, -- 最小可用磁盘空间(字节)
-    
-    -- 通知配置
-    notify_on_completion BOOLEAN DEFAULT FALSE, -- 完成时通知
-    notify_on_failure   BOOLEAN DEFAULT TRUE, -- 失败时通知
-    notification_webhook VARCHAR(255), -- 通知webhook地址
-    
-    created_at      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
-    
-    -- 注意：移除外键约束，改为应用层维护数据一致性
-    -- FOREIGN KEY (device_id) REFERENCES devices(id) ON DELETE CASCADE
-);
-
--- 创建索引
--- 设备任务队列表索引
-CREATE INDEX IF NOT EXISTS idx_device_task_queue_device_id ON device_task_queue(device_id);
-CREATE INDEX IF NOT EXISTS idx_device_task_queue_device_esn ON device_task_queue(device_esn);
-CREATE INDEX IF NOT EXISTS idx_device_task_queue_task_id ON device_task_queue(task_id);
-CREATE INDEX IF NOT EXISTS idx_device_task_queue_status ON device_task_queue(status);
-CREATE INDEX IF NOT EXISTS idx_device_task_queue_priority ON device_task_queue(queue_priority);
-CREATE INDEX IF NOT EXISTS idx_device_task_queue_position ON device_task_queue(queue_position);
-CREATE INDEX IF NOT EXISTS idx_device_task_queue_start_time ON device_task_queue(estimated_start_time);
+-- 4. 索引
+CREATE INDEX IF NOT EXISTS idx_dtq_device        ON device_task_queue(device_id);
+CREATE INDEX IF NOT EXISTS idx_dtq_task          ON device_task_queue(task_id);
+CREATE INDEX IF NOT EXISTS idx_dtq_status        ON device_task_queue(status);
+CREATE INDEX IF NOT EXISTS idx_dtq_priority      ON device_task_queue(queue_priority);
+CREATE INDEX IF NOT EXISTS idx_dtq_position      ON device_task_queue(queue_position);
+CREATE INDEX IF NOT EXISTS idx_dtq_requeued      ON device_task_queue(is_requeued);
+CREATE INDEX IF NOT EXISTS idx_dtq_requeue_time  ON device_task_queue(last_requeue_at);
+CREATE INDEX IF NOT EXISTS idx_dtq_estimated_start ON device_task_queue(estimated_start_time);
 
 -- 复合索引
-CREATE INDEX IF NOT EXISTS idx_device_task_queue_device_status ON device_task_queue(device_id, status);
-CREATE INDEX IF NOT EXISTS idx_device_task_queue_device_priority ON device_task_queue(device_id, queue_priority DESC);
-CREATE INDEX IF NOT EXISTS idx_device_task_queue_device_position ON device_task_queue(device_id, queue_position);
-CREATE INDEX IF NOT EXISTS idx_device_task_queue_device_manual ON device_task_queue(device_id, is_manual_priority, is_manual_position);
+CREATE INDEX IF NOT EXISTS idx_dtq_device_status     ON device_task_queue(device_id, status);
+CREATE INDEX IF NOT EXISTS idx_dtq_device_priority   ON device_task_queue(device_id, queue_priority DESC);
+CREATE INDEX IF NOT EXISTS idx_dtq_device_position   ON device_task_queue(device_id, queue_position);
 
--- 操作历史表索引
-CREATE INDEX IF NOT EXISTS idx_device_queue_history_device_id ON device_queue_operation_history(device_id);
-CREATE INDEX IF NOT EXISTS idx_device_queue_history_task_id ON device_queue_operation_history(task_id);
-CREATE INDEX IF NOT EXISTS idx_device_queue_history_operation_type ON device_queue_operation_history(operation_type);
-CREATE INDEX IF NOT EXISTS idx_device_queue_history_operation_time ON device_queue_operation_history(operation_time);
-CREATE INDEX IF NOT EXISTS idx_device_queue_history_operation_by ON device_queue_operation_history(operation_by);
-CREATE INDEX IF NOT EXISTS idx_device_queue_history_batch_id ON device_queue_operation_history(batch_id);
+-- 历史表索引
+CREATE INDEX IF NOT EXISTS idx_hist_device       ON device_queue_operation_history(device_id);
+CREATE INDEX IF NOT EXISTS idx_hist_task         ON device_queue_operation_history(task_id);
+CREATE INDEX IF NOT EXISTS idx_hist_type         ON device_queue_operation_history(operation_type);
+CREATE INDEX IF NOT EXISTS idx_hist_time         ON device_queue_operation_history(operation_time);
+CREATE INDEX IF NOT EXISTS idx_hist_batch        ON device_queue_operation_history(batch_id);
 
--- 设备队列配置表索引
-CREATE INDEX IF NOT EXISTS idx_device_queue_config_device_id ON device_queue_config(device_id);
-CREATE INDEX IF NOT EXISTS idx_device_queue_config_device_esn ON device_queue_config(device_esn);
-
--- 创建触发器函数：自动更新队列位置
-CREATE OR REPLACE FUNCTION auto_update_device_queue_position()
+-- 5. 触发器：自动分配/调整 queue_position 与 标记手动 priority／position 
+CREATE OR REPLACE FUNCTION fn_auto_position_and_manual_flags()
 RETURNS TRIGGER AS $$
 BEGIN
-    -- 插入新任务时，自动分配队列位置
-    IF TG_OP = 'INSERT' THEN
-        -- 如果没有指定位置，自动分配到队列末尾
-        IF NEW.queue_position IS NULL OR NEW.queue_position = 0 THEN
-            SELECT COALESCE(MAX(queue_position), 0) + 1 
-            INTO NEW.queue_position 
-            FROM device_task_queue 
-            WHERE device_id = NEW.device_id AND status = 'queued' AND id != NEW.id;
-        ELSE
-            -- 如果指定了位置，需要调整其他任务的位置
-            UPDATE device_task_queue 
-            SET queue_position = queue_position + 1,
-                updated_at = CURRENT_TIMESTAMP
-            WHERE device_id = NEW.device_id 
-              AND queue_position >= NEW.queue_position 
-              AND id != NEW.id
-              AND status = 'queued';
-        END IF;
+  -- INSERT 时自动分配位置
+  IF TG_OP = 'INSERT' THEN
+    IF NEW.queue_position IS NULL OR NEW.queue_position <= 0 THEN
+      SELECT COALESCE(MAX(queue_position),0) + 1
+      INTO NEW.queue_position
+      FROM device_task_queue
+      WHERE device_id = NEW.device_id
+        AND status = 'queued'
+        AND id != NEW.id;
+    ELSE
+      -- 如果指定了位置，需要调整其他任务的位置
+      UPDATE device_task_queue
+      SET queue_position = queue_position + 1,
+          updated_at = CURRENT_TIMESTAMP
+      WHERE device_id = NEW.device_id
+        AND queue_position >= NEW.queue_position
+        AND status = 'queued'
+        AND id != NEW.id;
     END IF;
     
-    -- 更新时处理位置变更
-    IF TG_OP = 'UPDATE' AND OLD.queue_position != NEW.queue_position THEN
-        -- 记录这是手动调整的位置
-        NEW.is_manual_position := TRUE;
-        NEW.last_action := 'position_changed';
-        
-        -- 调整其他任务位置
-        IF NEW.queue_position > OLD.queue_position THEN
-            -- 向后移动，前面的任务位置减1
-            UPDATE device_task_queue 
-            SET queue_position = queue_position - 1,
-                updated_at = CURRENT_TIMESTAMP
-            WHERE device_id = NEW.device_id 
-              AND queue_position > OLD.queue_position 
-              AND queue_position <= NEW.queue_position
-              AND id != NEW.id
-              AND status = 'queued';
-        ELSE
-            -- 向前移动，后面的任务位置加1
-            UPDATE device_task_queue 
-            SET queue_position = queue_position + 1,
-                updated_at = CURRENT_TIMESTAMP
-            WHERE device_id = NEW.device_id 
-              AND queue_position >= NEW.queue_position 
-              AND queue_position < OLD.queue_position
-              AND id != NEW.id
-              AND status = 'queued';
-        END IF;
+    -- 设置初始优先级
+    IF NEW.original_priority IS NULL THEN
+      NEW.original_priority := NEW.queue_priority;
     END IF;
-    
-    -- 优先级变更
-    IF TG_OP = 'UPDATE' AND OLD.queue_priority != NEW.queue_priority THEN
-        NEW.is_manual_priority := TRUE;
-        NEW.last_action := 'priority_changed';
+  END IF;
+
+  -- UPDATE 时处理手动优先级/位置调整
+  IF TG_OP = 'UPDATE' THEN
+    -- 位置变动
+    IF OLD.queue_position IS DISTINCT FROM NEW.queue_position THEN
+      NEW.is_manual_position := TRUE;
+      NEW.last_action := 'position_changed';
+      NEW.last_position_change_at := CURRENT_TIMESTAMP;
+      
+      -- 调整其他行
+      IF NEW.queue_position > OLD.queue_position THEN
+        UPDATE device_task_queue
+        SET queue_position = queue_position - 1,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE device_id = NEW.device_id
+          AND queue_position > OLD.queue_position
+          AND queue_position <= NEW.queue_position
+          AND id != NEW.id
+          AND status = 'queued';
+      ELSE
+        UPDATE device_task_queue
+        SET queue_position = queue_position + 1,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE device_id = NEW.device_id
+          AND queue_position >= NEW.queue_position
+          AND queue_position < OLD.queue_position
+          AND id != NEW.id
+          AND status = 'queued';
+      END IF;
     END IF;
-    
-    RETURN NEW;
+
+    -- 优先级变动
+    IF OLD.queue_priority IS DISTINCT FROM NEW.queue_priority THEN
+      NEW.is_manual_priority := TRUE;
+      NEW.last_action := 'priority_changed';
+      NEW.last_priority_change_at := CURRENT_TIMESTAMP;
+    END IF;
+  END IF;
+
+  RETURN NEW;
 END;
-$$ language 'plpgsql';
+$$ LANGUAGE plpgsql;
 
--- 创建队列位置自动更新触发器
-CREATE TRIGGER auto_update_device_queue_position_trigger 
-    BEFORE INSERT OR UPDATE ON device_task_queue 
-    FOR EACH ROW 
-    EXECUTE FUNCTION auto_update_device_queue_position();
+DROP TRIGGER IF EXISTS trg_auto_position ON device_task_queue;
+CREATE TRIGGER trg_auto_position
+  BEFORE INSERT OR UPDATE ON device_task_queue
+  FOR EACH ROW EXECUTE FUNCTION fn_auto_position_and_manual_flags();
 
--- 创建操作历史记录触发器函数
-CREATE OR REPLACE FUNCTION log_device_queue_operation()
+-- 6. 触发器：处理重发（requeue）
+CREATE OR REPLACE FUNCTION fn_handle_requeue()
 RETURNS TRIGGER AS $$
 BEGIN
-    -- 插入操作历史记录
-    IF TG_OP = 'INSERT' THEN
-        INSERT INTO device_queue_operation_history (
-            device_id, device_esn, task_id, operation_type,
-            new_priority, new_position, new_status,
-            reason, operation_source
-        ) VALUES (
-            NEW.device_id, NEW.device_esn, NEW.task_id, 'add',
-            NEW.queue_priority, NEW.queue_position, NEW.status,
-            'Task added to device queue', 'system'
-        );
-        RETURN NEW;
-    END IF;
-    
-    IF TG_OP = 'UPDATE' THEN
-        -- 优先级变更
-        IF OLD.queue_priority != NEW.queue_priority THEN
-            INSERT INTO device_queue_operation_history (
-                device_id, device_esn, task_id, operation_type,
-                old_priority, new_priority, operation_source
-            ) VALUES (
-                NEW.device_id, NEW.device_esn, NEW.task_id, 'priority_change',
-                OLD.queue_priority, NEW.queue_priority,
-                CASE WHEN NEW.is_manual_priority THEN 'manual' ELSE 'system' END
-            );
-        END IF;
-        
-        -- 位置变更
-        IF OLD.queue_position != NEW.queue_position THEN
-            INSERT INTO device_queue_operation_history (
-                device_id, device_esn, task_id, operation_type,
-                old_position, new_position, operation_source
-            ) VALUES (
-                NEW.device_id, NEW.device_esn, NEW.task_id, 'position_change',
-                OLD.queue_position, NEW.queue_position,
-                CASE WHEN NEW.is_manual_position THEN 'manual' ELSE 'system' END
-            );
-        END IF;
-        
-        -- 状态变更
-        IF OLD.status != NEW.status THEN
-            INSERT INTO device_queue_operation_history (
-                device_id, device_esn, task_id, operation_type,
-                old_status, new_status, operation_source
-            ) VALUES (
-                NEW.device_id, NEW.device_esn, NEW.task_id, NEW.status,
-                OLD.status, NEW.status, 'system'
-            );
-        END IF;
-        
-        RETURN NEW;
-    END IF;
-    
-    IF TG_OP = 'DELETE' THEN
-        INSERT INTO device_queue_operation_history (
-            device_id, device_esn, task_id, operation_type,
-            old_priority, old_position, old_status,
-            reason, operation_source
-        ) VALUES (
-            OLD.device_id, OLD.device_esn, OLD.task_id, 'remove',
-            OLD.queue_priority, OLD.queue_position, OLD.status,
-            'Task removed from device queue', 'system'
-        );
-        RETURN OLD;
-    END IF;
-    
-    RETURN NULL;
+  IF TG_OP = 'UPDATE'
+     AND OLD.status IN ('canceled','failed')
+     AND NEW.status = 'queued'
+  THEN
+    NEW.requeue_count   := OLD.requeue_count + 1;
+    NEW.is_requeued     := TRUE;
+    NEW.last_requeue_at := CURRENT_TIMESTAMP;
+    NEW.last_action     := 'requeued';
+    NEW.current_retry   := 0; -- 重置重试次数
+    NEW.actual_start_time := NULL; -- 清除之前的开始时间
+    NEW.actual_end_time := NULL;   -- 清除之前的结束时间
+  END IF;
+  RETURN NEW;
 END;
-$$ language 'plpgsql';
+$$ LANGUAGE plpgsql;
 
--- 创建操作历史记录触发器
-CREATE TRIGGER log_device_queue_operation_trigger 
-    AFTER INSERT OR UPDATE OR DELETE ON device_task_queue 
-    FOR EACH ROW 
-    EXECUTE FUNCTION log_device_queue_operation();
+DROP TRIGGER IF EXISTS trg_requeue ON device_task_queue;
+CREATE TRIGGER trg_requeue
+  BEFORE UPDATE ON device_task_queue
+  FOR EACH ROW EXECUTE FUNCTION fn_handle_requeue();
 
--- 为队列配置表创建自动更新触发器
-CREATE TRIGGER update_device_queue_config_updated_at 
-    BEFORE UPDATE ON device_queue_config 
-    FOR EACH ROW 
-    EXECUTE FUNCTION update_updated_at_column();
+-- 7. 触发器：写入操作历史
+CREATE OR REPLACE FUNCTION fn_log_device_queue_op()
+RETURNS TRIGGER AS $$
+BEGIN
+  IF TG_OP = 'INSERT' THEN
+    INSERT INTO device_queue_operation_history(
+      device_id, task_id, operation_type,
+      new_priority, new_position, new_status,
+      operation_source
+    ) VALUES (
+      NEW.device_id, NEW.task_id, 'add',
+      NEW.queue_priority, NEW.queue_position, NEW.status,
+      'system'
+    );
 
--- 为设备队列表创建自动更新触发器  
-CREATE TRIGGER update_device_task_queue_updated_at 
-    BEFORE UPDATE ON device_task_queue 
-    FOR EACH ROW 
-    EXECUTE FUNCTION update_updated_at_column();
+  ELSIF TG_OP = 'UPDATE' THEN
+    -- priority_change
+    IF OLD.queue_priority != NEW.queue_priority THEN
+      INSERT INTO device_queue_operation_history(
+        device_id, task_id, operation_type,
+        old_priority, new_priority, operation_source
+      ) VALUES (
+        NEW.device_id, NEW.task_id, 'priority_change',
+        OLD.queue_priority, NEW.queue_priority,
+        CASE WHEN NEW.is_manual_priority THEN 'manual' ELSE 'system' END
+      );
+    END IF;
+    
+    -- position_change
+    IF OLD.queue_position != NEW.queue_position THEN
+      INSERT INTO device_queue_operation_history(
+        device_id, task_id, operation_type,
+        old_position, new_position, operation_source
+      ) VALUES (
+        NEW.device_id, NEW.task_id, 'position_change',
+        OLD.queue_position, NEW.queue_position,
+        CASE WHEN NEW.is_manual_position THEN 'manual' ELSE 'system' END
+      );
+    END IF;
+    
+    -- requeue
+    IF NEW.last_action = 'requeued' THEN
+      INSERT INTO device_queue_operation_history(
+        device_id, task_id, operation_type,
+        old_status, new_status, operation_source,
+        reason
+      ) VALUES (
+        NEW.device_id, NEW.task_id, 'requeue',
+        OLD.status, NEW.status, 'system',
+        'Task requeued after failure'
+      );
+    END IF;
+    
+    -- status_change (其他状态变更)
+    IF OLD.status != NEW.status AND COALESCE(NEW.last_action,'') != 'requeued' THEN
+      INSERT INTO device_queue_operation_history(
+        device_id, task_id, operation_type,
+        old_status, new_status, operation_source
+      ) VALUES (
+        NEW.device_id, NEW.task_id, 'status_change',
+        OLD.status, NEW.status, 'system'
+      );
+    END IF;
 
--- 创建设备队列状态视图
+  ELSIF TG_OP = 'DELETE' THEN
+    INSERT INTO device_queue_operation_history(
+      device_id, task_id, operation_type,
+      old_priority, old_position, old_status, operation_source,
+      reason
+    ) VALUES (
+      OLD.device_id, OLD.task_id, 'remove',
+      OLD.queue_priority, OLD.queue_position, OLD.status, 'system',
+      'Task removed from device queue'
+    );
+  END IF;
+
+  RETURN CASE WHEN TG_OP = 'DELETE' THEN OLD ELSE NEW END;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trg_log_queue_op ON device_task_queue;
+CREATE TRIGGER trg_log_queue_op
+  AFTER INSERT OR UPDATE OR DELETE ON device_task_queue
+  FOR EACH ROW EXECUTE FUNCTION fn_log_device_queue_op();
+
+-- 8. 自动更新时间触发器
+CREATE TRIGGER trg_update_dtq_updated_at
+  BEFORE UPDATE ON device_task_queue
+  FOR EACH ROW EXECUTE FUNCTION fn_update_updated_at();
+
+-- 9. 聚合视图：device_queue_status
 CREATE OR REPLACE VIEW device_queue_status AS
-SELECT 
-    d.id as device_id,
-    d.device_id as device_esn,
-    d.name as device_name,
-    COUNT(dtq.id) as total_queued_tasks,
-    COUNT(CASE WHEN dtq.status = 'queued' THEN 1 END) as pending_tasks,
-    COUNT(CASE WHEN dtq.status = 'executing' THEN 1 END) as executing_tasks,
-    COUNT(CASE WHEN dtq.is_manual_priority = true THEN 1 END) as manual_priority_tasks,
-    COUNT(CASE WHEN dtq.is_manual_position = true THEN 1 END) as manual_position_tasks,
-    MIN(dtq.estimated_start_time) as next_task_start_time,
-    SUM(dtq.estimated_duration) as total_estimated_duration,
-    MAX(dtq.updated_at) as last_queue_update
+SELECT
+  d.id                                                          AS device_id,
+  d.device_id                                                   AS device_esn,
+  d.name                                                        AS device_name,
+  COUNT(dtq.id)                                                 AS total_tasks,
+  COUNT(dtq.id) FILTER (WHERE dtq.status = 'queued')           AS pending_tasks,
+  COUNT(dtq.id) FILTER (WHERE dtq.status = 'executing')        AS executing_tasks,
+  COUNT(dtq.id) FILTER (WHERE dtq.status = 'completed')        AS completed_tasks,
+  COUNT(dtq.id) FILTER (WHERE dtq.status = 'failed')           AS failed_tasks,
+  COUNT(dtq.id) FILTER (WHERE dtq.status = 'canceled')         AS canceled_tasks,
+  COUNT(dtq.id) FILTER (WHERE dtq.is_requeued = true)          AS requeued_tasks,
+  COUNT(dtq.id) FILTER (WHERE dtq.is_manual_priority = true)   AS manual_priority_tasks,
+  COUNT(dtq.id) FILTER (WHERE dtq.is_manual_position = true)   AS manual_position_tasks,
+  MAX(dtq.last_requeue_at)                                      AS last_requeue_time,
+  MIN(dtq.estimated_start_time) FILTER (WHERE dtq.status = 'queued') AS next_task_start_time,
+  SUM(dtq.estimated_duration) FILTER (WHERE dtq.status = 'queued')   AS total_estimated_duration,
+  MAX(dtq.updated_at)                                           AS last_queue_update,
+  AVG(dtq.queue_priority) FILTER (WHERE dtq.status = 'queued') AS avg_queue_priority
 FROM devices d
 LEFT JOIN device_task_queue dtq ON d.id = dtq.device_id
-GROUP BY d.id, d.device_id, d.name; 
+GROUP BY d.id, d.device_id, d.name;
+
+-- 10. 有用的查询视图：队列详情
+CREATE OR REPLACE VIEW device_queue_details AS
+SELECT 
+  dtq.id,
+  dtq.device_id,
+  d.device_id as device_esn,
+  d.name as device_name,
+  dtq.task_id,
+  dtq.queue_priority,
+  dtq.original_priority,
+  dtq.queue_position,
+  dtq.status,
+  dtq.estimated_start_time,
+  dtq.estimated_duration,
+  dtq.actual_start_time,
+  dtq.actual_end_time,
+  dtq.current_retry,
+  dtq.max_retry_count,
+  dtq.requeue_count,
+  dtq.is_requeued,
+  dtq.is_manual_priority,
+  dtq.is_manual_position,
+  dtq.last_action,
+  dtq.created_at,
+  dtq.updated_at,
+  -- 计算等待时间
+  CASE 
+    WHEN dtq.status = 'queued' AND dtq.estimated_start_time IS NOT NULL 
+    THEN GREATEST(0, EXTRACT(EPOCH FROM (dtq.estimated_start_time - CURRENT_TIMESTAMP)))
+    ELSE NULL 
+  END as estimated_wait_seconds,
+  -- 计算执行时长
+  CASE 
+    WHEN dtq.actual_start_time IS NOT NULL AND dtq.actual_end_time IS NOT NULL
+    THEN EXTRACT(EPOCH FROM (dtq.actual_end_time - dtq.actual_start_time))
+    ELSE NULL 
+  END as actual_duration_seconds
+FROM device_task_queue dtq
+JOIN devices d ON d.id = dtq.device_id;
+
+-- ============================================================================
+-- 队列管理函数示例
+-- ============================================================================
+
+-- 重新排队函数
+CREATE OR REPLACE FUNCTION requeue_failed_task(
+  p_device_id BIGINT,
+  p_task_id VARCHAR(100),
+  p_reason TEXT DEFAULT 'Manual requeue'
+)
+RETURNS BOOLEAN AS $$
+DECLARE
+  v_count INTEGER;
+BEGIN
+  UPDATE device_task_queue 
+  SET status = 'queued',
+      cancel_reason = p_reason,
+      last_modified_by = 0 -- 系统操作
+  WHERE device_id = p_device_id 
+    AND task_id = p_task_id 
+    AND status IN ('failed', 'canceled');
+    
+  GET DIAGNOSTICS v_count = ROW_COUNT;
+  RETURN v_count > 0;
+END;
+$$ LANGUAGE plpgsql;
+
+-- 批量调整优先级函数
+CREATE OR REPLACE FUNCTION batch_update_priority(
+  p_device_id BIGINT,
+  p_task_ids VARCHAR(100)[],
+  p_new_priority INTEGER,
+  p_operator_id BIGINT DEFAULT NULL
+)
+RETURNS INTEGER AS $$
+DECLARE
+  v_count INTEGER;
+  v_batch_id VARCHAR(50);
+BEGIN
+  v_batch_id := 'batch_' || EXTRACT(epoch FROM CURRENT_TIMESTAMP)::bigint;
+  
+  -- 记录批量操作历史
+  INSERT INTO device_queue_operation_history(
+    device_id, operation_type, operation_by, 
+    batch_id, is_batch_operation, reason
+  ) VALUES (
+    p_device_id, 'batch_priority_change', p_operator_id,
+    v_batch_id, true, 'Batch priority update for ' || array_length(p_task_ids, 1) || ' tasks'
+  );
+  
+  -- 批量更新优先级
+  UPDATE device_task_queue 
+  SET queue_priority = p_new_priority,
+      last_modified_by = p_operator_id
+  WHERE device_id = p_device_id 
+    AND task_id = ANY(p_task_ids)
+    AND status = 'queued';
+    
+  GET DIAGNOSTICS v_count = ROW_COUNT;
+  RETURN v_count;
+END;
+$$ LANGUAGE plpgsql;

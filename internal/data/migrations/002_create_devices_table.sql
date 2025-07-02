@@ -82,7 +82,7 @@ CREATE TABLE IF NOT EXISTS device_heartbeats (
 -- 创建设备日志表
 CREATE TABLE IF NOT EXISTS device_logs (
     id              BIGSERIAL PRIMARY KEY,
-    device_id       BIGINT NOT NULL,
+    device_id       VARCHAR(100) NOT NULL,
     log_time        TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     
     -- 日志分类
@@ -97,14 +97,14 @@ CREATE TABLE IF NOT EXISTS device_logs (
     source          VARCHAR(100),
     correlation_id  VARCHAR(100)
     
-    -- 注意：移除外键约束，改为应用层维护数据一致性
+    
 );
 
 -- 创建设备命令表
 CREATE TABLE IF NOT EXISTS device_commands (
     id              BIGSERIAL PRIMARY KEY, -- 命令ID
-    device_id       BIGINT NOT NULL, -- 设备编号
-    command_id      VARCHAR(100) NOT NULL UNIQUE, -- 命令ID
+    device_id       VARCHAR(100) NOT NULL, -- 设备编号
+   
     
     -- 命令信息
     command_type    VARCHAR(50) NOT NULL, -- 命令类型 （如：shell 文件传输 数据库操作）
@@ -121,9 +121,10 @@ CREATE TABLE IF NOT EXISTS device_commands (
     error_message   TEXT, -- 错误信息 （如："command not found"）
     
     -- 审计信息
+    created_at      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     created_by      BIGINT -- 创建者
     
-    -- 注意：移除外键约束，改为应用层维护数据一致性
+   
 );
 
 -- 创建设备任务表
@@ -132,8 +133,9 @@ CREATE TABLE IF NOT EXISTS device_tasks (
     device_id       BIGINT NOT NULL, -- 设备编号
     task_id      VARCHAR(100) NOT NULL UNIQUE, -- 任务ID
 
-    
-    
+    created_at      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_by      BIGINT -- 创建者
+   
 );
 
 -- 创建设备基础查询索引
