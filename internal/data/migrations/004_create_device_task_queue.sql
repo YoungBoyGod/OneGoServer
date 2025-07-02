@@ -22,39 +22,39 @@ CREATE TABLE IF NOT EXISTS device_task_queue (
   is_manual_priority       BOOLEAN     NOT NULL DEFAULT FALSE,
   queue_position           INTEGER,                         -- 1,2,3...，队列位置
   is_manual_position       BOOLEAN     NOT NULL DEFAULT FALSE,
-  status                   VARCHAR(20) NOT NULL DEFAULT 'queued',
-  estimated_start_time     TIMESTAMP,
-  estimated_duration       INTEGER,                         -- 秒
-  actual_start_time        TIMESTAMP,
-  actual_end_time          TIMESTAMP,
+  status                   VARCHAR(20) NOT NULL DEFAULT 'queued', -- 任务状态 （如：pending queued running completed failed canceled）
+  estimated_start_time     TIMESTAMP, -- 预估开始时间
+  estimated_duration       INTEGER,                         -- 预估执行时长(秒)
+  actual_start_time        TIMESTAMP, -- 实际开始时间
+  actual_end_time          TIMESTAMP, -- 实际结束时间
 
-  max_retry_count          INTEGER     NOT NULL DEFAULT 3,
-  current_retry            INTEGER     NOT NULL DEFAULT 0,
-  timeout_seconds          INTEGER     NOT NULL DEFAULT 3600,
+  max_retry_count          INTEGER     NOT NULL DEFAULT 3, -- 最大重试次数
+  current_retry            INTEGER     NOT NULL DEFAULT 0, -- 当前重试次数
+  timeout_seconds          INTEGER     NOT NULL DEFAULT 3600, -- 超时时间(秒)
 
-  depends_on_task_ids      VARCHAR(100)[], -- 依赖的任务ID列表（业务ID）
-  blocks_task_ids          VARCHAR(100)[], -- 阻塞的任务ID列表（业务ID）
+  depends_on_task_ids      VARCHAR(100)[],                        -- 依赖任务ID列表
+  blocks_task_ids          VARCHAR(100)[],                        -- 阻塞任务ID列表
 
   -- 重发 / 取消
-  requeue_count            INTEGER     NOT NULL DEFAULT 0,
-  last_requeue_at          TIMESTAMP,
-  is_requeued              BOOLEAN     NOT NULL DEFAULT FALSE,
-  cancel_reason            TEXT,
+  requeue_count            INTEGER     NOT NULL DEFAULT 0, -- 重发次数
+  last_requeue_at          TIMESTAMP, -- 最后重发时间
+  is_requeued              BOOLEAN     NOT NULL DEFAULT FALSE, -- 是否重发
+  cancel_reason            TEXT, -- 取消原因
 
   -- 手动调整时间戳
-  last_priority_change_at  TIMESTAMP,
-  last_position_change_at  TIMESTAMP,
+  last_priority_change_at  TIMESTAMP, -- 最后优先级调整时间
+  last_position_change_at  TIMESTAMP, -- 最后位置调整时间
 
   -- 审计
-  queued_by                BIGINT,                          -- 入队者
-  last_modified_by         BIGINT,
-  last_action              VARCHAR(50),
+  queued_by                BIGINT, -- 入队者
+  last_modified_by         BIGINT, -- 最后修改者
+  last_action              VARCHAR(50), -- 最后操作
 
   created_at               TIMESTAMP   NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at               TIMESTAMP   NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
-  UNIQUE(device_id, task_id),
-  UNIQUE(device_id, queue_position)
+  UNIQUE(device_id, task_id), -- 同一设备上任务ID唯一
+  UNIQUE(device_id, queue_position) -- 同一设备上队列位置唯一
 );
 
 -- 3. 操作历史：device_queue_operation_history
@@ -63,20 +63,21 @@ CREATE TABLE IF NOT EXISTS device_queue_operation_history (
   device_id            BIGINT      NOT NULL,
   task_id              VARCHAR(100),
   operation_type       VARCHAR(30) NOT NULL,          -- add/remove/priority_change/position_change/requeue/status_change
-  operation_by         BIGINT,
-  operation_time       TIMESTAMP   NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  old_priority         INTEGER,
-  new_priority         INTEGER,
-  old_position         INTEGER,
-  new_position         INTEGER,
-  old_status           VARCHAR(20),
-  new_status           VARCHAR(20),
-  reason               VARCHAR(255),
-  notes                TEXT,
-  operation_source     VARCHAR(20) NOT NULL DEFAULT 'system',
-  batch_id             VARCHAR(50),
-  is_batch_operation   BOOLEAN     NOT NULL DEFAULT FALSE
+  operation_by         BIGINT, -- 操作人
+  operation_time       TIMESTAMP   NOT NULL DEFAULT CURRENT_TIMESTAMP, -- 操作时间
+  old_priority         INTEGER, -- 旧优先级
+  new_priority         INTEGER, -- 新优先级
+  old_position         INTEGER, -- 旧位置
+  new_position         INTEGER, -- 新位置
+  old_status           VARCHAR(20), -- 旧状态
+  new_status           VARCHAR(20), -- 新状态
+  reason               VARCHAR(255), -- 操作原因
+  notes                TEXT, -- 备注
+  operation_source     VARCHAR(20) NOT NULL DEFAULT 'system', -- 操作来源
+  batch_id             VARCHAR(50), -- 批量ID
+  is_batch_operation   BOOLEAN     NOT NULL DEFAULT FALSE -- 是否为批量操作
 );
+
 
 -- 4. 索引
 CREATE INDEX IF NOT EXISTS idx_dtq_device        ON device_task_queue(device_id);
