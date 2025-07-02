@@ -32,11 +32,11 @@ X-Signature: <request-signature>      // 请求签名验证
 
 ## 1. 设备注册阶段 (Device Registration)
 
-### API端点: POST /api/v1/devices
+### API端点: POST /api/v1/devices/register
 
 #### 请求示例
 ```bash
-curl -X POST http://localhost:8080/api/v1/devices \
+curl -X POST http://localhost:8080/api/v1/devices/register \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." \
   -H "X-Request-ID: 550e8400-e29b-41d4-a716-446655440000" \
@@ -59,6 +59,7 @@ curl -X POST http://localhost:8080/api/v1/devices \
       "environment": "production",
       "location": "datacenter-A",
       "department": "IT"
+      
     },
     "tags": {
       "critical": "yes",

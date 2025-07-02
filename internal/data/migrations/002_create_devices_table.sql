@@ -2,11 +2,11 @@
 CREATE TABLE IF NOT EXISTS devices (
     -- 设备信息
     id              BIGSERIAL PRIMARY KEY,   -- 设备ID
-    device_esn      VARCHAR(100) NOT NULL UNIQUE, -- 设备编号
+    device_id      VARCHAR(100) NOT NULL UNIQUE, -- 设备编号
     name            VARCHAR(255) NOT NULL, -- 设备名称 
     type            VARCHAR(50) NOT NULL, -- 设备类型 （如：普通pc 服务器）
-    model           VARCHAR(100), -- 设备型号 （如：NA）
-    manufacturer    VARCHAR(100), -- 设备厂商 （如：NA）
+    model           VARCHAR(100), -- 设备型号 （如：host，soc）
+    board_id        VARCHAR(100), -- 板卡ESN （如：1234567890）
 
    -- 状态信息
     status          VARCHAR(20) NOT NULL DEFAULT 'unkown', -- 设备状态 （如：online offline maintenance 从未上线过为unkown）
@@ -26,17 +26,11 @@ CREATE TABLE IF NOT EXISTS devices (
 
     -- 认证信息
     reg_time        TIMESTAMP, -- 注册时间
-    reg_type        VARCHAR(20),  -- 认证类型 （如：密码 密钥）
-    reg_token       VARCHAR(100), -- 注册token
-
- 
 
     -- 配置信息
     metadata        JSONB, -- 设备元数据 （如：{"cpu": "4", "memory": "8", "disk": "100"}）
     tags            JSONB, -- 设备标签 （如：{"tag1": "value1", "tag2": "value2"}）
-    
-
-
+   
     -- 统计信息
     uptime_hours    NUMERIC(10,2) DEFAULT 0, -- 在线时长(h) 计算方式：每次下线时间减去上线时间
     first_online_time TIMESTAMP, -- 首次上线时间
@@ -47,7 +41,6 @@ CREATE TABLE IF NOT EXISTS devices (
     total_offline_duration BIGINT DEFAULT 0, -- 离线时长(h) 总离线时长 计算方式：每次上线时间减去下线时间
 
     total_heartbeats BIGINT DEFAULT 0, -- 总心跳数
-    total_tasks BIGINT DEFAULT 0, -- 总任务数
     total_alerts BIGINT DEFAULT 0, -- 总告警数
 
     -- 任务信息
@@ -67,29 +60,29 @@ CREATE TABLE IF NOT EXISTS devices (
     updated_by      VARCHAR(100) NOT NULL DEFAULT 'system' -- 更新者
 );
 
+
 -- 创建设备心跳表
 CREATE TABLE IF NOT EXISTS device_heartbeats (
     
     id              BIGSERIAL PRIMARY KEY, -- 心跳ID
-    device_esn      VARCHAR(100) NOT NULL, -- 设备编号
+    device_id      VARCHAR(100) NOT NULL, -- 设备编号
     heartbeat_time  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, -- 心跳时间
     
     -- 心跳数据
     status          VARCHAR(20) NOT NULL, -- 心跳状态 （如：online offline maintenance 从未上线过为unkown）
-    metrics         JSONB,  -- 心跳数据 （如：{"cpu": "4", "memory": "8", "disk": "100"} ） 心跳数据为设备上报的指标数据，如cpu使用率，内存使用率，磁盘使用率等
-    current_task_id VARCHAR(100), -- 当前任务ID
+    metadata         JSONB,  -- 心跳数据 （如：{"cpu": "4", "memory": "8", "disk": "100"} ） 心跳数据为设备上报的指标数据，如cpu使用率，内存使用率，磁盘使用率等
 
     -- 网络信息
     ip_address      INET, -- 设备IP地址
-    response_time   INTEGER, -- 响应时间(毫秒) 心跳响应时间
+    response_time   INTEGER -- 响应时间(毫秒) 心跳响应时间
     
-    FOREIGN KEY (device_esn) REFERENCES devices(id) ON DELETE CASCADE
+    -- 注意：移除外键约束，改为应用层维护数据一致性
 );
 
 -- 创建设备日志表
 CREATE TABLE IF NOT EXISTS device_logs (
     id              BIGSERIAL PRIMARY KEY,
-    device_esn       BIGINT NOT NULL,
+    device_id       BIGINT NOT NULL,
     log_time        TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     
     -- 日志分类
@@ -102,15 +95,15 @@ CREATE TABLE IF NOT EXISTS device_logs (
     
     -- 上下文信息
     source          VARCHAR(100),
-    correlation_id  VARCHAR(100),
+    correlation_id  VARCHAR(100)
     
-    FOREIGN KEY (device_esn) REFERENCES devices(id) ON DELETE CASCADE
+    -- 注意：移除外键约束，改为应用层维护数据一致性
 );
 
 -- 创建设备命令表
 CREATE TABLE IF NOT EXISTS device_commands (
     id              BIGSERIAL PRIMARY KEY, -- 命令ID
-    device_esn       BIGINT NOT NULL, -- 设备编号
+    device_id       BIGINT NOT NULL, -- 设备编号
     command_id      VARCHAR(100) NOT NULL UNIQUE, -- 命令ID
     
     -- 命令信息
@@ -128,15 +121,15 @@ CREATE TABLE IF NOT EXISTS device_commands (
     error_message   TEXT, -- 错误信息 （如："command not found"）
     
     -- 审计信息
-    created_by      BIGINT, -- 创建者
+    created_by      BIGINT -- 创建者
     
-    FOREIGN KEY (device_esn) REFERENCES devices(id) ON DELETE CASCADE
+    -- 注意：移除外键约束，改为应用层维护数据一致性
 );
 
 -- 创建设备任务表
 CREATE TABLE IF NOT EXISTS device_tasks (
     id              BIGSERIAL PRIMARY KEY, -- 任务ID
-    device_esn       BIGINT NOT NULL, -- 设备编号
+    device_id       BIGINT NOT NULL, -- 设备编号
     task_id      VARCHAR(100) NOT NULL UNIQUE, -- 任务ID
 
     
@@ -144,28 +137,28 @@ CREATE TABLE IF NOT EXISTS device_tasks (
 );
 
 -- 创建设备基础查询索引
-CREATE UNIQUE INDEX IF NOT EXISTS idx_devices_device_esn ON devices(device_esn);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_devices_device_id ON devices(device_id);
 CREATE INDEX IF NOT EXISTS idx_devices_type ON devices(type);
 CREATE INDEX IF NOT EXISTS idx_devices_status ON devices(status);
 CREATE INDEX IF NOT EXISTS idx_devices_ip_address ON devices(ip_address);
-CREATE INDEX IF NOT EXISTS idx_devices_last_seen ON devices(last_seen);
+CREATE INDEX IF NOT EXISTS idx_devices_last_online_time ON devices(last_online_time);
 
 -- 创建设备复合索引
 CREATE INDEX IF NOT EXISTS idx_devices_type_status ON devices(type, status);
-CREATE INDEX IF NOT EXISTS idx_devices_status_last_seen ON devices(status, last_seen);
+CREATE INDEX IF NOT EXISTS idx_devices_status_last_online ON devices(status, last_online_time);
 
 -- 创建设备心跳索引
-CREATE INDEX IF NOT EXISTS idx_device_heartbeats_device_esn ON device_heartbeats(device_esn);
+CREATE INDEX IF NOT EXISTS idx_device_heartbeats_device_id ON device_heartbeats(device_id);
 CREATE INDEX IF NOT EXISTS idx_device_heartbeats_heartbeat_time ON device_heartbeats(heartbeat_time);
 
 -- 创建设备日志索引
-CREATE INDEX IF NOT EXISTS idx_device_logs_device_esn ON device_logs(device_esn);
+CREATE INDEX IF NOT EXISTS idx_device_logs_device_id ON device_logs(device_id);
 CREATE INDEX IF NOT EXISTS idx_device_logs_level ON device_logs(level);
 CREATE INDEX IF NOT EXISTS idx_device_logs_log_time ON device_logs(log_time);
 CREATE INDEX IF NOT EXISTS idx_device_logs_category ON device_logs(category);
 
 -- 创建设备命令索引
-CREATE INDEX IF NOT EXISTS idx_device_commands_device_esn ON device_commands(device_esn);
+CREATE INDEX IF NOT EXISTS idx_device_commands_device_id ON device_commands(device_id);
 CREATE INDEX IF NOT EXISTS idx_device_commands_status ON device_commands(status);
 CREATE UNIQUE INDEX IF NOT EXISTS idx_device_commands_command_id ON device_commands(command_id);
 
@@ -175,7 +168,7 @@ CREATE TRIGGER update_devices_updated_at
     FOR EACH ROW 
     EXECUTE FUNCTION update_updated_at_column();
 
--- 添加任务表与设备表的外键关联
-ALTER TABLE tasks 
-ADD CONSTRAINT fk_tasks_device_esn 
-FOREIGN KEY (device_esn) REFERENCES devices(id) ON DELETE SET NULL; 
+-- 注意：移除外键约束，任务表与设备表的关联改为应用层维护数据一致性
+-- ALTER TABLE tasks 
+-- ADD CONSTRAINT fk_tasks_device_id 
+-- FOREIGN KEY (device_id) REFERENCES devices(id) ON DELETE SET NULL; 

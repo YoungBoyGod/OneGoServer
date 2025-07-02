@@ -40,8 +40,12 @@ CREATE TABLE IF NOT EXISTS task_executions (
     --分配信息
     device_esn      VARCHAR(100), -- 设备编号
 
+
+
     -- 执行状态
     status          VARCHAR(20) NOT NULL DEFAULT 'started', -- 执行状态 （如：pending running completed failed canceled）
+   
+
     start_time      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, -- 开始时间
     end_time        TIMESTAMP, -- 结束时间
     duration        INTEGER, -- 执行耗时(秒) 计算方式：end_time - start_time
@@ -61,10 +65,27 @@ CREATE TABLE IF NOT EXISTS task_executions (
     io_operations_total BIGINT, -- IO操作总次数 
     io_bytes_total   BIGINT, -- IO字节总数
     
-    created_at      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_at      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
     
-    FOREIGN KEY (task_id) REFERENCES tasks(id) ON DELETE CASCADE
+    -- 注意：移除外键约束，改为应用层维护数据一致性
 );
+
+
+
+-- 设备队列信息
+CREATE TABLE IF NOT EXISTS device_queues (
+    id              BIGSERIAL PRIMARY KEY, -- 数据库主键ID
+    device_esn      VARCHAR(100) NOT NULL, -- 设备编号
+    queue_name      VARCHAR(100) NOT NULL, -- 队列名称
+    queue_priority  INTEGER NOT NULL, -- 队列优先级
+    queue_size      INTEGER NOT NULL, -- 队列大小
+    queue_remaining INTEGER NOT NULL, -- 队列剩余大小
+    queue_position  INTEGER NOT NULL, -- 队列位置
+
+);
+
+
+
 
 -- 创建基础查询索引
 CREATE INDEX IF NOT EXISTS idx_tasks_status ON tasks(status);

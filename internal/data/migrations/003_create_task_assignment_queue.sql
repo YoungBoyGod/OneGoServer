@@ -25,10 +25,9 @@ CREATE TABLE IF NOT EXISTS task_assignment_queue (
     
     -- 时间戳
     queued_at        TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at       TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at       TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
     
-    FOREIGN KEY (task_id) REFERENCES tasks(id) ON DELETE CASCADE,
-    FOREIGN KEY (assigned_device_id) REFERENCES devices(id) ON DELETE SET NULL
+    -- 注意：移除外键约束，改为应用层维护数据一致性
 );
 
 -- 创建设备负载监控表
@@ -56,9 +55,9 @@ CREATE TABLE IF NOT EXISTS device_load_monitor (
     total_failed    INTEGER DEFAULT 0, -- 累计失败任务数
     success_rate    NUMERIC(5,2), -- 成功率(%)
     
-    updated_at      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
     
-    FOREIGN KEY (device_id) REFERENCES devices(id) ON DELETE CASCADE
+    -- 注意：移除外键约束，改为应用层维护数据一致性
 );
 
 -- 创建分配历史记录表
@@ -74,10 +73,9 @@ CREATE TABLE IF NOT EXISTS task_assignment_history (
     reason          VARCHAR(255), -- 操作原因
     details         JSONB, -- 详细信息 （如：{"algorithm_score": 85.5, "retry_count": 2, "device_selection_reason": "best_load"}）
     
-    created_at      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_at      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
     
-    FOREIGN KEY (task_id) REFERENCES tasks(id) ON DELETE CASCADE,
-    FOREIGN KEY (device_id) REFERENCES devices(id) ON DELETE SET NULL
+    -- 注意：移除外键约束，改为应用层维护数据一致性
 );
 
 -- 创建队列管理索引

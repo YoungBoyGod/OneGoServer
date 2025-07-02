@@ -6,27 +6,27 @@ CREATE TABLE IF NOT EXISTS device_task_queue (
     task_id         BIGINT NOT NULL,
     
     -- 队列管理
-    queue_priority  INTEGER NOT NULL DEFAULT 5, -- 任务优先级(1-10, 数字越小优先级越高)
-    queue_position  INTEGER NOT NULL, -- 在该设备上的队列位置(1, 2, 3...)
-    original_priority INTEGER, -- 原始优先级(用于重置)
-    is_manual_priority BOOLEAN DEFAULT FALSE, -- 是否手动调整过优先级
-    is_manual_position BOOLEAN DEFAULT FALSE, -- 是否手动调整过位置
+    queue_priority  INTEGER NOT NULL DEFAULT 5, -- 任务优先级(1-100, 数字越小优先级越高) （如：1, 2, 3...100）
+    queue_position  INTEGER NOT NULL, -- 在该设备上的队列位置(1, 2, 3...) （如：1, 2, 3...）
+    original_priority INTEGER, -- 原始优先级(用于重置) （如：1-100，数字越小优先级越高）
+    is_manual_priority BOOLEAN DEFAULT FALSE, -- 是否手动调整过优先级 （如：true, false）
+    is_manual_position BOOLEAN DEFAULT FALSE, -- 是否手动调整过位置 （如：true, false）
     
     -- 状态信息
     status          VARCHAR(20) NOT NULL DEFAULT 'queued', -- queued, executing, paused, completed, failed, canceled
-    estimated_start_time TIMESTAMP, -- 预估开始时间
-    estimated_duration INTEGER, -- 预估执行时长(秒)
-    actual_start_time TIMESTAMP, -- 实际开始时间
-    actual_end_time TIMESTAMP, -- 实际结束时间
+    estimated_start_time TIMESTAMP, -- 预估开始时间 （如：2025-01-01 12:00:00）
+    estimated_duration INTEGER, -- 预估执行时长(秒) （如：3600）
+    actual_start_time TIMESTAMP, -- 实际开始时间 （如：2025-01-01 12:00:00）
+    actual_end_time TIMESTAMP, -- 实际结束时间 （如：2025-01-01 12:00:00）
     
     -- 执行配置
-    max_retry_count INTEGER DEFAULT 3, -- 最大重试次数
-    current_retry   INTEGER DEFAULT 0, -- 当前重试次数
-    timeout_seconds INTEGER DEFAULT 3600, -- 超时时间(秒)
+    max_retry_count INTEGER DEFAULT 3, -- 最大重试次数 （如：3）
+    current_retry   INTEGER DEFAULT 0, -- 当前重试次数 （如：0）
+    timeout_seconds INTEGER DEFAULT 3600, -- 超时时间(秒) （如：3600）
     
     -- 依赖关系
-    depends_on_task_ids BIGINT[], -- 依赖的任务ID列表
-    blocks_task_ids    BIGINT[], -- 阻塞的任务ID列表
+    depends_on_task_ids BIGINT[], -- 依赖的任务ID列表 （如：[1, 2, 3]）
+    blocks_task_ids    BIGINT[], -- 阻塞的任务ID列表 （如：[1, 2, 3]）
     
     -- 操作记录
     created_at      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -35,15 +35,15 @@ CREATE TABLE IF NOT EXISTS device_task_queue (
     last_modified_by BIGINT, -- 最后修改者
     last_action     VARCHAR(50), -- 最后操作 (added, priority_changed, position_changed, started, paused, etc.)
     
-    -- 外键约束
-    FOREIGN KEY (device_id) REFERENCES devices(id) ON DELETE CASCADE,
-    FOREIGN KEY (task_id) REFERENCES tasks(id) ON DELETE CASCADE,
-    FOREIGN KEY (queued_by) REFERENCES users(id) ON DELETE SET NULL,
-    FOREIGN KEY (last_modified_by) REFERENCES users(id) ON DELETE SET NULL,
-    
     -- 唯一约束
     UNIQUE(device_id, task_id), -- 同一设备上的同一任务只能有一条记录
-    UNIQUE(device_id, queue_position) -- 同一设备上队列位置唯一
+    UNIQUE(device_id, queue_position), -- 同一设备上队列位置唯一
+    
+    -- 注意：移除外键约束，改为应用层维护数据一致性
+    -- FOREIGN KEY (device_id) REFERENCES devices(id) ON DELETE CASCADE,
+    -- FOREIGN KEY (task_id) REFERENCES tasks(id) ON DELETE CASCADE,
+    -- FOREIGN KEY (queued_by) REFERENCES users(id) ON DELETE SET NULL,
+    -- FOREIGN KEY (last_modified_by) REFERENCES users(id) ON DELETE SET NULL
 );
 
 -- 创建设备队列操作历史表
@@ -73,12 +73,12 @@ CREATE TABLE IF NOT EXISTS device_queue_operation_history (
     
     -- 批量操作支持
     batch_id        VARCHAR(50), -- 批量操作ID
-    is_batch_operation BOOLEAN DEFAULT FALSE, -- 是否为批量操作
+    is_batch_operation BOOLEAN DEFAULT FALSE -- 是否为批量操作
     
-    -- 外键约束
-    FOREIGN KEY (device_id) REFERENCES devices(id) ON DELETE CASCADE,
-    FOREIGN KEY (task_id) REFERENCES tasks(id) ON DELETE CASCADE,
-    FOREIGN KEY (operation_by) REFERENCES users(id) ON DELETE SET NULL
+    -- 注意：移除外键约束，改为应用层维护数据一致性
+    -- FOREIGN KEY (device_id) REFERENCES devices(id) ON DELETE CASCADE,
+    -- FOREIGN KEY (task_id) REFERENCES tasks(id) ON DELETE CASCADE,
+    -- FOREIGN KEY (operation_by) REFERENCES users(id) ON DELETE SET NULL
 );
 
 -- 创建设备队列配置表
@@ -113,9 +113,10 @@ CREATE TABLE IF NOT EXISTS device_queue_config (
     notification_webhook VARCHAR(255), -- 通知webhook地址
     
     created_at      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
     
-    FOREIGN KEY (device_id) REFERENCES devices(id) ON DELETE CASCADE
+    -- 注意：移除外键约束，改为应用层维护数据一致性
+    -- FOREIGN KEY (device_id) REFERENCES devices(id) ON DELETE CASCADE
 );
 
 -- 创建索引

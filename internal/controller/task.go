@@ -69,6 +69,28 @@ func (tc *TaskController) CreateTask(c *gin.Context) {
 	})
 }
 
+// func (tc *TaskController) CreateTask(c *gin.Context) {
+//     // 1. 参数解析
+//     var req CreateTaskRequest
+//     if err := c.ShouldBindJSON(&req); err != nil {
+//         c.JSON(400, gin.H{"error": "参数错误"})
+//         return
+//     }
+
+//     // 2. 调用Service层
+//     task, err := tc.taskService.CreateTask(c.Request.Context(), &req)
+//     if err != nil {
+//         c.JSON(500, gin.H{"error": err.Error()})
+//         return
+//     }
+
+//     // 3. 返回响应
+//     c.JSON(201, gin.H{
+//         "message": "创建任务成功",
+//         "data":    task,
+//     })
+// }
+
 // UpdateTask 更新任务
 // @Summary 更新任务
 // @Description 更新任务信息
