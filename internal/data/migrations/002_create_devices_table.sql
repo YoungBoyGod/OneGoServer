@@ -162,7 +162,6 @@ CREATE INDEX IF NOT EXISTS idx_device_logs_category ON device_logs(category);
 -- 创建设备命令索引
 CREATE INDEX IF NOT EXISTS idx_device_commands_device_id ON device_commands(device_id);
 CREATE INDEX IF NOT EXISTS idx_device_commands_status ON device_commands(status);
-CREATE UNIQUE INDEX IF NOT EXISTS idx_device_commands_command_id ON device_commands(command_id);
 
 -- 为devices表创建自动更新触发器
 CREATE TRIGGER update_devices_updated_at 
