@@ -6,6 +6,7 @@ import (
 	"net"
 	"time"
 
+	"github.com/YoungBoyGod/OneGoServer/pkg/utils"
 	"gorm.io/gorm"
 )
 
@@ -236,17 +237,7 @@ const (
 
 // generateCommandID 生成唯一的命令ID
 func generateCommandID() string {
-	return "cmd_" + time.Now().Format("20060102_150405") + "_" + generateRandomString(6)
-}
-
-// generateRandomString 生成随机字符串
-func generateRandomString(length int) string {
-	const charset = "abcdefghijklmnopqrstuvwxyz0123456789"
-	b := make([]byte, length)
-	for i := range b {
-		b[i] = charset[time.Now().UnixNano()%int64(len(charset))]
-	}
-	return string(b)
+	return "cmd_" + utils.GenerateExecutionID()
 }
 
 // DeviceFilter 设备查询过滤器
