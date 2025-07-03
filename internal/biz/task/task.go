@@ -15,8 +15,8 @@ func (b *TaskBiz) ValidateTask(ctx context.Context, task *Task) error {
 		return errors.New("任务优先级不能超过10")
 	}
 
-	// 业务状态检查
-	if task.ExecuteTime.Before(time.Now()) {
+	// 业务状态检查 - 修复空指针风险
+	if task.ExecuteTime != nil && task.ExecuteTime.Before(time.Now()) {
 		return errors.New("执行时间不能早于当前时间")
 	}
 

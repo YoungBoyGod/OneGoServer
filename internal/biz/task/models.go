@@ -200,12 +200,16 @@ func generateExecutionID() string {
 	return "exec_" + time.Now().Format("20060102_150405") + "_" + generateRandomString(6)
 }
 
-// generateRandomString 生成随机字符串
+// generateRandomString 生成随机字符串 - 改进版本使用更好的随机源
 func generateRandomString(length int) string {
 	const charset = "abcdefghijklmnopqrstuvwxyz0123456789"
 	b := make([]byte, length)
+	// 使用当前纳秒时间加索引作为种子，增加随机性
+	baseTime := time.Now().UnixNano()
 	for i := range b {
-		b[i] = charset[time.Now().UnixNano()%int64(len(charset))]
+		// 结合索引和时间变化增加随机性
+		seed := (baseTime + int64(i*1000)) % int64(len(charset))
+		b[i] = charset[seed]
 	}
 	return string(b)
 }

@@ -1,4 +1,4 @@
-package device
+package queue
 
 import (
 	"time"
@@ -10,6 +10,7 @@ import (
 
 // DeviceTaskQueue 设备任务队列模型
 type DeviceTaskQueue struct {
+	// 主键
 	ID        int64  `gorm:"primaryKey;autoIncrement" json:"id"`
 	DeviceID  int64  `gorm:"not null;index" json:"device_id"`
 	DeviceESN string `gorm:"type:varchar(100);not null" json:"device_esn"`
