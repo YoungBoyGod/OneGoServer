@@ -531,17 +531,8 @@ func (r *deviceRepositoryImpl) CreateLog(ctx context.Context, log *device.Device
 	return nil
 }
 
-// LogFilter 日志过滤器
-type LogFilter struct {
-	Level     *string
-	Category  *string
-	StartTime *time.Time
-	EndTime   *time.Time
-	Keyword   *string
-}
-
 // GetLogs 获取设备日志
-func (r *deviceRepositoryImpl) GetLogs(ctx context.Context, deviceID int64, filter *LogFilter) ([]device.DeviceLog, error) {
+func (r *deviceRepositoryImpl) GetLogs(ctx context.Context, deviceID int64, filter *device.LogFilter) ([]device.DeviceLog, error) {
 	var logs []device.DeviceLog
 
 	query := r.db.WithContext(ctx).

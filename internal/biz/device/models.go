@@ -368,3 +368,12 @@ type DeviceStatusResponse struct {
 	Uptime      float64    `json:"uptime_hours"`
 	Online      bool       `json:"online"`
 }
+
+// LogFilter 日志过滤器
+type LogFilter struct {
+	Level     *string    `json:"level,omitempty"`
+	Category  *string    `json:"category,omitempty"`
+	StartTime *time.Time `json:"start_time,omitempty"`
+	EndTime   *time.Time `json:"end_time,omitempty"`
+	Keyword   *string    `json:"keyword,omitempty"`
+}

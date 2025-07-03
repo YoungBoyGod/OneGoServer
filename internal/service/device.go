@@ -68,7 +68,7 @@ type DeviceService interface {
 	// 创建设备日志
 	CreateDeviceLog(ctx context.Context, deviceID string, req *device.DeviceLogRequest) error
 	// 获取设备日志
-	GetDeviceLogs(ctx context.Context, deviceID string, filter *repository.LogFilter) ([]device.DeviceLog, error)
+	GetDeviceLogs(ctx context.Context, deviceID string, filter *device.LogFilter) ([]device.DeviceLog, error)
 	// 根据级别获取日志
 	GetLogsByLevel(ctx context.Context, level string, limit int) ([]device.DeviceLog, error)
 
@@ -950,7 +950,7 @@ func (s *deviceServiceImpl) CreateDeviceLog(ctx context.Context, deviceID string
 }
 
 // GetDeviceLogs 获取设备日志
-func (s *deviceServiceImpl) GetDeviceLogs(ctx context.Context, deviceID string, filter *repository.LogFilter) ([]device.DeviceLog, error) {
+func (s *deviceServiceImpl) GetDeviceLogs(ctx context.Context, deviceID string, filter *device.LogFilter) ([]device.DeviceLog, error) {
 	if deviceID == "" {
 		return nil, fmt.Errorf("设备ID不能为空")
 	}
