@@ -171,7 +171,14 @@ func recordMigration(db *sql.DB, m Migration, startTime time.Time, success bool,
 	_, err := db.Exec(`
 		INSERT INTO schema_migrations (
 			version, name, checksum, execution_time, is_success, error_message
-		) VALUES ($1, $2, $3, $4, $5, $6)`,
+		) VALUES ($1, $2, $3, $4, $5, $6)
+		ON CONFLICT (version) DO UPDATE SET
+			name = EXCLUDED.name,
+			checksum = EXCLUDED.checksum,
+			execution_time = EXCLUDED.execution_time,
+			is_success = EXCLUDED.is_success,
+			error_message = EXCLUDED.error_message,
+			applied_at = CURRENT_TIMESTAMP`,
 		m.Version, m.Name, m.Checksum, execTime, success, errorMsg)
 
 	return err
