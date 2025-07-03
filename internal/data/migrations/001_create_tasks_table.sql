@@ -1,7 +1,7 @@
 -- 创建任务主表
 CREATE TABLE IF NOT EXISTS tasks (
     id              BIGSERIAL PRIMARY KEY, -- 数据库主键ID
-    task_id         VARCHAR(100) NOT NULL UNIQUE, -- 任务ID
+    task_id         VARCHAR(100) NOT NULL UNIQUE, -- 任务ID 
     name            VARCHAR(255) NOT NULL, -- 任务名称
     description     TEXT, -- 任务描述
     type            VARCHAR(50) NOT NULL, -- 任务类型 （如：shell 文件传输 数据库操作） 
@@ -66,7 +66,7 @@ CREATE TABLE IF NOT EXISTS task_executions (
     io_operations_total BIGINT, -- IO操作总次数 
     io_bytes_total   BIGINT, -- IO字节总数
     
-    created_at      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    created_at      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 
 );
