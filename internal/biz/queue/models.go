@@ -2,9 +2,33 @@ package queue
 
 import (
 	"time"
+
+	"github.com/YoungBoyGod/OneGoServer/internal/consts"
 )
 
-// 注意：JSONB、Device、Task等类型在其他包中已定义，这里创建局部引用
+// 类型别名，用于引用其他包中的类型
+type Device struct {
+	ID       int64  `gorm:"primaryKey;autoIncrement" json:"id"`
+	DeviceID string `gorm:"type:varchar(100);uniqueIndex;not null" json:"device_id"`
+	Name     string `gorm:"type:varchar(255);not null" json:"name"`
+	Type     string `gorm:"type:varchar(50);not null" json:"type"`
+	Status   string `gorm:"type:varchar(20);not null;default:offline" json:"status"`
+}
+
+type Task struct {
+	ID       int64  `gorm:"primaryKey;autoIncrement" json:"id"`
+	Name     string `gorm:"type:varchar(255);not null" json:"name"`
+	Type     string `gorm:"type:varchar(50);not null" json:"type"`
+	Status   string `gorm:"type:varchar(20);not null;default:pending" json:"status"`
+	Priority int    `gorm:"not null;default:5" json:"priority"`
+}
+
+type PaginationInfo struct {
+	Page       int   `json:"page"`
+	Size       int   `json:"size"`
+	Total      int64 `json:"total"`
+	TotalPages int   `json:"total_pages"`
+}
 
 // ===== 设备队列相关模型 =====
 
@@ -140,42 +164,42 @@ func (DeviceQueueConfig) TableName() string {
 
 // ===== 状态常量 =====
 
-// 设备队列任务状态常量
+// 设备队列任务状态常量 - 使用统一常量
 const (
-	DeviceQueueStatusQueued    = "queued"
-	DeviceQueueStatusExecuting = "executing"
-	DeviceQueueStatusPaused    = "paused"
-	DeviceQueueStatusCompleted = "completed"
-	DeviceQueueStatusFailed    = "failed"
-	DeviceQueueStatusCanceled  = "canceled"
+	DeviceQueueStatusQueued    = consts.DeviceQueueStatusQueued
+	DeviceQueueStatusExecuting = consts.DeviceQueueStatusExecuting
+	DeviceQueueStatusPaused    = consts.DeviceQueueStatusPaused
+	DeviceQueueStatusCompleted = consts.DeviceQueueStatusCompleted
+	DeviceQueueStatusFailed    = consts.DeviceQueueStatusFailed
+	DeviceQueueStatusCanceled  = consts.DeviceQueueStatusCanceled
 )
 
-// 队列操作类型常量
+// 队列操作类型常量 - 使用统一常量
 const (
-	QueueOperationAdd            = "add"
-	QueueOperationRemove         = "remove"
-	QueueOperationPriorityChange = "priority_change"
-	QueueOperationPositionChange = "position_change"
-	QueueOperationStart          = "start"
-	QueueOperationPause          = "pause"
-	QueueOperationResume         = "resume"
-	QueueOperationCancel         = "cancel"
+	QueueOperationAdd            = consts.QueueOperationAdd
+	QueueOperationRemove         = consts.QueueOperationRemove
+	QueueOperationPriorityChange = consts.QueueOperationPriorityChange
+	QueueOperationPositionChange = consts.QueueOperationPositionChange
+	QueueOperationStart          = consts.QueueOperationStart
+	QueueOperationPause          = consts.QueueOperationPause
+	QueueOperationResume         = consts.QueueOperationResume
+	QueueOperationCancel         = consts.QueueOperationCancel
 )
 
-// 调度策略常量
+// 调度策略常量 - 使用统一常量
 const (
-	SchedulingStrategyPriorityFirst = "priority_first"
-	SchedulingStrategyFIFO          = "fifo"
-	SchedulingStrategyLIFO          = "lifo"
-	SchedulingStrategyWeighted      = "weighted"
+	SchedulingStrategyPriorityFirst = consts.SchedulingStrategyPriorityFirst
+	SchedulingStrategyFIFO          = consts.SchedulingStrategyFIFO
+	SchedulingStrategyLIFO          = consts.SchedulingStrategyLIFO
+	SchedulingStrategyWeighted      = consts.SchedulingStrategyWeighted
 )
 
-// 操作来源常量
+// 操作来源常量 - 使用统一常量
 const (
-	OperationSourceManual    = "manual"
-	OperationSourceSystem    = "system"
-	OperationSourceAPI       = "api"
-	OperationSourceScheduler = "scheduler"
+	OperationSourceManual    = consts.OperationSourceManual
+	OperationSourceSystem    = consts.OperationSourceSystem
+	OperationSourceAPI       = consts.OperationSourceAPI
+	OperationSourceScheduler = consts.OperationSourceScheduler
 )
 
 // ===== 数据传输对象 =====

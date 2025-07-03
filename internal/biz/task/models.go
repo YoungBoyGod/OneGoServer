@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"time"
 
+	"github.com/YoungBoyGod/OneGoServer/internal/consts"
 	"github.com/YoungBoyGod/OneGoServer/pkg/utils"
 	"gorm.io/gorm"
 )
@@ -157,42 +158,42 @@ func (Device) TableName() string {
 	return "devices"
 }
 
-// 任务状态常量
+// 任务状态常量 - 使用统一常量
 const (
-	TaskStatusPending     = "pending"
-	TaskStatusQueued      = "queued"      // 已入队待分配
-	TaskStatusAssigning   = "assigning"   // 分配中
-	TaskStatusAssigned    = "assigned"    // 已分配待执行
-	TaskStatusDispatching = "dispatching" // 派发中
-	TaskStatusRunning     = "running"
-	TaskStatusCompleted   = "completed"
-	TaskStatusFailed      = "failed"
-	TaskStatusCanceled    = "canceled"
+	TaskStatusPending     = consts.TaskStatusPending
+	TaskStatusQueued      = consts.TaskStatusQueued
+	TaskStatusAssigning   = consts.TaskStatusAssigning
+	TaskStatusAssigned    = consts.TaskStatusAssigned
+	TaskStatusDispatching = consts.TaskStatusDispatching
+	TaskStatusRunning     = consts.TaskStatusRunning
+	TaskStatusCompleted   = consts.TaskStatusCompleted
+	TaskStatusFailed      = consts.TaskStatusFailed
+	TaskStatusCanceled    = consts.TaskStatusCanceled
 )
 
-// 任务类型常量
+// 任务类型常量 - 使用统一常量
 const (
-	TaskTypeBackup  = "backup"
-	TaskTypeSync    = "sync"
-	TaskTypeMonitor = "monitor"
-	TaskTypeCustom  = "custom"
+	TaskTypeBackup  = consts.TaskTypeBackup
+	TaskTypeSync    = consts.TaskTypeSync
+	TaskTypeMonitor = consts.TaskTypeMonitor
+	TaskTypeCustom  = consts.TaskTypeCustom
 )
 
-// 执行器类型常量
+// 执行器类型常量 - 使用统一常量
 const (
-	ExecutorTypeLocal     = "local"
-	ExecutorTypeRemote    = "remote"
-	ExecutorTypeContainer = "container"
-	ExecutorTypeLambda    = "lambda"
+	ExecutorTypeLocal     = consts.ExecutorTypeLocal
+	ExecutorTypeRemote    = consts.ExecutorTypeRemote
+	ExecutorTypeContainer = consts.ExecutorTypeContainer
+	ExecutorTypeLambda    = consts.ExecutorTypeLambda
 )
 
-// 执行状态常量
+// 执行状态常量 - 使用统一常量
 const (
-	ExecutionStatusStarted   = "started"
-	ExecutionStatusRunning   = "running"
-	ExecutionStatusCompleted = "completed"
-	ExecutionStatusFailed    = "failed"
-	ExecutionStatusCanceled  = "canceled"
+	ExecutionStatusStarted   = consts.ExecutionStatusStarted
+	ExecutionStatusRunning   = consts.ExecutionStatusRunning
+	ExecutionStatusCompleted = consts.ExecutionStatusCompleted
+	ExecutionStatusFailed    = consts.ExecutionStatusFailed
+	ExecutionStatusCanceled  = consts.ExecutionStatusCanceled
 )
 
 // TaskFilter 任务查询过滤器
@@ -383,31 +384,31 @@ func (TaskAssignmentHistory) TableName() string {
 	return "task_assignment_history"
 }
 
-// 队列状态常量
+// 队列状态常量 - 使用统一常量
 const (
-	QueueStatusQueued    = "queued"
-	QueueStatusAssigning = "assigning"
-	QueueStatusAssigned  = "assigned"
-	QueueStatusFailed    = "failed"
-	QueueStatusCanceled  = "canceled"
+	QueueStatusQueued    = consts.QueueStatusQueued
+	QueueStatusAssigning = consts.QueueStatusAssigning
+	QueueStatusAssigned  = consts.QueueStatusAssigned
+	QueueStatusFailed    = consts.QueueStatusFailed
+	QueueStatusCanceled  = consts.QueueStatusCanceled
 )
 
-// 设备负载状态常量
+// 设备负载状态常量 - 使用统一常量
 const (
-	DeviceStatusOnline      = "online"
-	DeviceStatusOffline     = "offline"
-	DeviceStatusBusy        = "busy"
-	DeviceStatusMaintenance = "maintenance"
+	DeviceStatusOnline      = consts.DeviceStatusOnline
+	DeviceStatusOffline     = consts.DeviceStatusOffline
+	DeviceStatusBusy        = "busy" // 保持原有定义
+	DeviceStatusMaintenance = consts.DeviceStatusMaintenance
 )
 
-// 分配历史动作常量
+// 分配历史动作常量 - 使用统一常量
 const (
-	AssignmentActionQueued     = "queued"
-	AssignmentActionAssigned   = "assigned"
-	AssignmentActionReassigned = "reassigned"
-	AssignmentActionFailed     = "failed"
-	AssignmentActionCompleted  = "completed"
-	AssignmentActionCanceled   = "canceled"
+	AssignmentActionQueued     = consts.AssignmentActionQueued
+	AssignmentActionAssigned   = consts.AssignmentActionAssigned
+	AssignmentActionReassigned = consts.AssignmentActionReassigned
+	AssignmentActionFailed     = consts.AssignmentActionFailed
+	AssignmentActionCompleted  = consts.AssignmentActionCompleted
+	AssignmentActionCanceled   = consts.AssignmentActionCanceled
 )
 
 // TaskQueueFilter 任务队列查询过滤器

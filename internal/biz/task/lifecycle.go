@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"sync"
 	"time"
+
+	"github.com/YoungBoyGod/OneGoServer/internal/consts"
 )
 
 // TaskLifecycleManager 任务生命周期管理器
@@ -33,11 +35,11 @@ type TaskDependency struct {
 	CreatedAt       time.Time `json:"created_at"`
 }
 
-// 依赖类型常量
+// 依赖类型常量 - 使用统一常量
 const (
-	DependencyTypeBefore   = "before"   // 前置依赖
-	DependencyTypeAfter    = "after"    // 后置依赖
-	DependencyTypeParallel = "parallel" // 并行依赖
+	DependencyTypeBefore   = consts.DependencyTypeBefore   // 前置依赖
+	DependencyTypeAfter    = consts.DependencyTypeAfter    // 后置依赖
+	DependencyTypeParallel = consts.DependencyTypeParallel // 并行依赖
 )
 
 // NewTaskLifecycleManager 创建任务生命周期管理器

@@ -6,6 +6,7 @@ import (
 	"net"
 	"time"
 
+	"github.com/YoungBoyGod/OneGoServer/internal/consts"
 	"github.com/YoungBoyGod/OneGoServer/pkg/utils"
 	"gorm.io/gorm"
 )
@@ -185,54 +186,54 @@ func (dc *DeviceCommand) BeforeCreate(tx *gorm.DB) (err error) {
 	return
 }
 
-// 设备状态常量
+// 设备状态常量 - 使用统一常量
 const (
-	DeviceStatusOnline      = "online"
-	DeviceStatusOffline     = "offline"
-	DeviceStatusMaintenance = "maintenance"
-	DeviceStatusError       = "error"
+	DeviceStatusOnline      = consts.DeviceStatusOnline
+	DeviceStatusOffline     = consts.DeviceStatusOffline
+	DeviceStatusMaintenance = consts.DeviceStatusMaintenance
+	DeviceStatusError       = consts.DeviceStatusError
 )
 
-// 设备类型常量
+// 设备类型常量 - 使用统一常量
 const (
-	DeviceTypeSensor   = "sensor"
-	DeviceTypeCamera   = "camera"
-	DeviceTypeActuator = "actuator"
-	DeviceTypeGateway  = "gateway"
+	DeviceTypeSensor   = consts.DeviceTypeSensor
+	DeviceTypeCamera   = consts.DeviceTypeCamera
+	DeviceTypeActuator = consts.DeviceTypeActuator
+	DeviceTypeGateway  = consts.DeviceTypeGateway
 )
 
-// 认证类型常量
+// 认证类型常量 - 使用统一常量
 const (
-	AuthTypeNone        = "none"
-	AuthTypeBasic       = "basic"
-	AuthTypeToken       = "token"
-	AuthTypeCertificate = "certificate"
+	AuthTypeNone        = consts.AuthTypeNone
+	AuthTypeBasic       = consts.AuthTypeBasic
+	AuthTypeToken       = consts.AuthTypeToken
+	AuthTypeCertificate = consts.AuthTypeCertificate
 )
 
-// 通信协议常量
+// 通信协议常量 - 使用统一常量
 const (
-	ProtocolHTTP = "HTTP"
-	ProtocolMQTT = "MQTT"
-	ProtocolTCP  = "TCP"
-	ProtocolUDP  = "UDP"
+	ProtocolHTTP = consts.ProtocolHTTP
+	ProtocolMQTT = consts.ProtocolMQTT
+	ProtocolTCP  = consts.ProtocolTCP
+	ProtocolUDP  = consts.ProtocolUDP
 )
 
-// 日志级别常量
+// 日志级别常量 - 使用统一常量
 const (
-	LogLevelDEBUG = "DEBUG"
+	LogLevelDEBUG = "DEBUG" // 保持原有大写格式
 	LogLevelINFO  = "INFO"
 	LogLevelWARN  = "WARN"
 	LogLevelERROR = "ERROR"
 )
 
-// 命令状态常量
+// 命令状态常量 - 使用统一常量
 const (
-	CommandStatusPending   = "pending"
-	CommandStatusSent      = "sent"
-	CommandStatusExecuted  = "executed"
-	CommandStatusCompleted = "completed"
-	CommandStatusFailed    = "failed"
-	CommandStatusTimeout   = "timeout"
+	CommandStatusPending   = consts.CommandStatusPending
+	CommandStatusSent      = consts.CommandStatusSent
+	CommandStatusExecuted  = consts.CommandStatusExecuted
+	CommandStatusCompleted = consts.CommandStatusCompleted
+	CommandStatusFailed    = consts.CommandStatusFailed
+	CommandStatusTimeout   = consts.CommandStatusTimeout
 )
 
 // generateCommandID 生成唯一的命令ID
