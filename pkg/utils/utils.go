@@ -523,9 +523,11 @@ func getDiskTotalDarwin() uint64 {
 				}
 			}
 		}
+		fmt.Println("diskutil list -plist failed, using df -k /")
+
 		return 0
 	}
-
+	fmt.Println(string(output))
 	// 这里可以解析plist输出，暂时使用简单方法
 	var stat syscall.Statfs_t
 	err = syscall.Statfs("/", &stat)

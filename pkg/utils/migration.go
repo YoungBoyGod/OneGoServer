@@ -5,7 +5,7 @@ import (
 	"database/sql"
 	"encoding/hex"
 	"fmt"
-	"io/ioutil"
+	"os"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -90,7 +90,7 @@ func RunMigrations(db *sql.DB) error {
 
 // createMigrationsTable 创建migrations表
 func createMigrationsTable(db *sql.DB) error {
-	sql, err := ioutil.ReadFile("internal/data/migrations/000_create_migrations_table.sql")
+	sql, err := os.ReadFile("internal/data/migrations/000_create_migrations_table.sql")
 	if err != nil {
 		return err
 	}
@@ -124,7 +124,7 @@ func getAppliedMigrations(db *sql.DB) (map[string]Migration, error) {
 func loadMigrationFiles(dir string) ([]Migration, error) {
 	var migrations []Migration
 
-	files, err := ioutil.ReadDir(dir)
+	files, err := os.ReadDir(dir)
 	if err != nil {
 		return nil, err
 	}
@@ -139,7 +139,7 @@ func loadMigrationFiles(dir string) ([]Migration, error) {
 			continue
 		}
 
-		content, err := ioutil.ReadFile(filepath.Join(dir, file.Name()))
+		content, err := os.ReadFile(filepath.Join(dir, file.Name()))
 		if err != nil {
 			return nil, err
 		}
