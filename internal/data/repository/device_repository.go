@@ -1,4 +1,4 @@
-package data
+package repository
 
 import (
 	"context"
@@ -14,48 +14,78 @@ import (
 // DeviceRepository 设备数据访问层接口
 type DeviceRepository interface {
 	// 基础CRUD操作
+	// 创建设备
 	Create(ctx context.Context, device *device.Device) error
+	// 根据ID获取设备
 	GetByID(ctx context.Context, id int64) (*device.Device, error)
+	// 根据设备ID获取设备
 	GetByDeviceID(ctx context.Context, deviceID string) (*device.Device, error)
+	// 更新设备
 	Update(ctx context.Context, device *device.Device) error
+	// 删除设备
 	Delete(ctx context.Context, id int64) error
 
 	// 查询操作
+	// 获取设备列表
 	List(ctx context.Context, filter *device.DeviceFilter, sort *device.DeviceSortOption, pagination *device.PaginationOption) ([]device.Device, int64, error)
+	// 根据设备类型获取设备
 	GetByType(ctx context.Context, deviceType []string) ([]device.Device, error)
+	// 根据状态获取设备
 	GetByStatus(ctx context.Context, status []string) ([]device.Device, error)
+	// 获取在线设备
 	GetOnlineDevices(ctx context.Context) ([]device.Device, error)
+	// 获取离线设备
 	GetOfflineDevices(ctx context.Context, duration time.Duration) ([]device.Device, error)
-
 	// 状态管理
+	// 更新设备状态
 	UpdateStatus(ctx context.Context, deviceID string, status string) error
+	// 更新设备健康度
 	UpdateHealthScore(ctx context.Context, deviceID string, score int) error
+	// 更新设备最后活跃时间
 	UpdateLastSeen(ctx context.Context, deviceID string, lastSeen time.Time) error
+	// 批量更新设备状态
 	BatchUpdateStatus(ctx context.Context, deviceIDs []string, status string) error
 
 	// 统计查询
+	// 获取设备统计信息
 	GetStatistics(ctx context.Context, filter *device.DeviceFilter) (*device.DeviceStatistics, error)
+	// 根据状态统计设备数量
 	CountByStatus(ctx context.Context) (map[string]int64, error)
+	// 根据类型统计设备数量
 	CountByType(ctx context.Context) (map[string]int64, error)
+	// 获取设备健康报告
 	GetHealthReport(ctx context.Context) (map[string]interface{}, error)
 
 	// 心跳管理
+	// 创建设备心跳
 	CreateHeartbeat(ctx context.Context, heartbeat *device.DeviceHeartbeat) error
+	// 获取最新设备心跳
 	GetLatestHeartbeat(ctx context.Context, deviceID int64) (*device.DeviceHeartbeat, error)
+	// 获取设备心跳历史
 	GetHeartbeatHistory(ctx context.Context, deviceID int64, hours int) ([]device.DeviceHeartbeat, error)
+	// 清理过期心跳
 	CleanupOldHeartbeats(ctx context.Context, days int) error
 
 	// 日志管理
+	// 创建设备日志
 	CreateLog(ctx context.Context, log *device.DeviceLog) error
+	// 根据设备ID获取设备日志
 	GetLogs(ctx context.Context, deviceID int64, filter *device.LogFilter) ([]device.DeviceLog, error)
+	// 根据日志级别获取设备日志
 	GetLogsByLevel(ctx context.Context, level string, limit int) ([]device.DeviceLog, error)
+	// 清理过期日志
 	CleanupOldLogs(ctx context.Context, days int) error
 
 	// 命令管理
+	// 创建设备命令
 	CreateCommand(ctx context.Context, command *device.DeviceCommand) error
+	// 根据命令ID获取设备命令
 	GetCommand(ctx context.Context, commandID string) (*device.DeviceCommand, error)
+	// 根据设备ID获取设备命令
 	GetDeviceCommands(ctx context.Context, deviceID int64, status []string) ([]device.DeviceCommand, error)
+	// 更新设备命令状态
 	UpdateCommandStatus(ctx context.Context, commandID string, status string) error
+	// 更新设备命令响应
 	UpdateCommandResponse(ctx context.Context, commandID string, response device.JSONB, errorMsg *string) error
 }
 

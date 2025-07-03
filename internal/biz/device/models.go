@@ -345,6 +345,12 @@ type DeviceListResponse struct {
 	Statistics *DeviceStatistics `json:"statistics,omitempty"`
 }
 
+// PaginationOption 分页选项
+type PaginationOption struct {
+	Page int `json:"page"` // 页码，从1开始
+	Size int `json:"size"` // 每页数量
+}
+
 // PaginationInfo 分页信息
 type PaginationInfo struct {
 	Page       int   `json:"page"`

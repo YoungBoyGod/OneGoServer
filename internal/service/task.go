@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/YoungBoyGod/OneGoServer/internal/biz/task"
-	"github.com/YoungBoyGod/OneGoServer/internal/data"
 	pkglog "github.com/YoungBoyGod/OneGoServer/pkg/log"
 	"go.uber.org/zap"
 )
@@ -14,26 +13,41 @@ import (
 // TaskService 任务服务接口
 type TaskService interface {
 	// 基础CRUD操作
+	// 创建任务
 	CreateTask(ctx context.Context, req *task.TaskCreateRequest) (*task.Task, error)
+	// 获取任务
 	GetTask(ctx context.Context, id int64) (*task.Task, error)
+	// 更新任务
 	UpdateTask(ctx context.Context, id int64, req *task.TaskUpdateRequest) (*task.Task, error)
+	// 删除任务
 	DeleteTask(ctx context.Context, id int64) error
+	// 获取任务列表
 	ListTasks(ctx context.Context, filter *task.TaskFilter, sort *task.TaskSortOption, pagination *task.PaginationOption) (*task.TaskListResponse, error)
 
 	// 状态管理
+	// 更新任务状态
 	UpdateTaskStatus(ctx context.Context, id int64, status string) error
+	// 获取任务状态
 	GetTaskStatus(ctx context.Context, id int64) (string, error)
 
 	// 执行控制
+	// 执行任务
 	ExecuteTask(ctx context.Context, id int64, req *task.TaskExecuteRequest) (*task.TaskExecution, error)
+	// 取消任务
 	CancelTask(ctx context.Context, id int64) error
+	// 分发任务
 	DispatchTask(ctx context.Context, id int64) error
 
 	// 查询功能
+	// 获取任务详情
 	GetTaskDetail(ctx context.Context, id int64) (*task.Task, error)
+	// 获取任务结果
 	GetTaskResult(ctx context.Context, id int64) (*task.TaskExecution, error)
+	// 获取任务执行记录
 	GetTaskExecutions(ctx context.Context, id int64) ([]task.TaskExecution, error)
+	// 获取任务统计
 	GetTaskStats(ctx context.Context, filter *task.TaskFilter) (*task.TaskStatistics, error)
+	// 查询任务
 	QueryTasks(ctx context.Context, keyword string, filter *task.TaskFilter) ([]task.Task, error)
 }
 
