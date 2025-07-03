@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"OneGoServer002/internal/biz/device"
+	"github.com/YoungBoyGod/OneGoServer/internal/biz/device"
 
 	"gorm.io/gorm"
 )

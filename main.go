@@ -11,7 +11,6 @@ import (
 	pkglog "github.com/YoungBoyGod/OneGoServer/pkg/log"
 	"github.com/YoungBoyGod/OneGoServer/pkg/queue"
 	"github.com/YoungBoyGod/OneGoServer/pkg/sql"
-	"github.com/YoungBoyGod/OneGoServer/pkg/utils"
 	"go.uber.org/zap"
 )
 
@@ -101,19 +100,19 @@ func main() {
 	// TODO: 添加HTTP服务器启动、API路由等业务逻辑
 
 	// 执行数据库迁移
-	gormDB := sql.GetDB()
-	if gormDB == nil {
-		log.Fatalf("Failed to get database connection: database not initialized")
-	}
+	// gormDB := sql.GetDB()
+	// if gormDB == nil {
+	// 	log.Fatalf("Failed to get database connection: database not initialized")
+	// }
 
-	db, err := gormDB.DB()
-	if err != nil {
-		log.Fatalf("Failed to get underlying sql.DB: %v", err)
-	}
-	if err := utils.RunMigrations(db); err != nil {
-		log.Fatalf("Failed to run migrations: %v", err)
-	}
-	logger.Info("Database migrations completed successfully")
+	// db, err := gormDB.DB()
+	// if err != nil {
+	// 	log.Fatalf("Failed to get underlying sql.DB: %v", err)
+	// }
+	// if err := utils.RunMigrations(db); err != nil {
+	// 	log.Fatalf("Failed to run migrations: %v", err)
+	// }
+	// logger.Info("Database migrations completed successfully")
 }
 
 // testKafkaProducerConsumer 测试Kafka生产者和消费者功能
