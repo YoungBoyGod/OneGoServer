@@ -103,3 +103,7 @@ business:
   alert:
     max_alerts_per_device: 100
     cleanup_days: 30 
+  migration:
+    enabled: true
+    dir: "internal/data/migrations"
+    

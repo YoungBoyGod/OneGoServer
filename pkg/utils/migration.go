@@ -37,6 +37,7 @@ func RunMigrations(db *sql.DB) error {
 	}
 
 	// 3. 读取migrations目录下的所有SQL文件
+	// 配置文件中配置的migration目录
 	migrations, err := loadMigrationFiles("internal/data/migrations")
 	if err != nil {
 		return fmt.Errorf("读取migration文件失败: %v", err)

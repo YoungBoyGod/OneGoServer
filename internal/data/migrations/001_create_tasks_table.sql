@@ -81,8 +81,7 @@ CREATE TABLE IF NOT EXISTS device_queues (
     queue_priority  INTEGER NOT NULL, -- 队列优先级
     queue_size      INTEGER NOT NULL, -- 队列大小
     queue_remaining INTEGER NOT NULL, -- 队列剩余大小
-    queue_position  INTEGER NOT NULL, -- 队列位置
-
+    queue_position  INTEGER NOT NULL -- 队列位置
 );
 
 

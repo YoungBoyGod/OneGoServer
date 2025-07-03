@@ -80,12 +80,17 @@ type KafkaConfig struct {
 	ConsumerHeartbeatInterval int      `yaml:"consumer_heartbeat_interval" mapstructure:"consumer_heartbeat_interval"`
 }
 
+type MigrationConfig struct {
+	Dir string `yaml:"dir" mapstructure:"dir"`
+}
+
 type Config struct {
-	Database DatabaseConfig `yaml:"database" mapstructure:"database"`
-	Server   ServerConfig   `yaml:"server" mapstructure:"server"`
-	Logging  LoggingConfig  `yaml:"logging" mapstructure:"logging"`
-	Redis    RedisConfig    `yaml:"redis" mapstructure:"redis"`
-	Kafka    KafkaConfig    `yaml:"kafka" mapstructure:"kafka"`
+	Database  DatabaseConfig  `yaml:"database" mapstructure:"database"`
+	Server    ServerConfig    `yaml:"server" mapstructure:"server"`
+	Logging   LoggingConfig   `yaml:"logging" mapstructure:"logging"`
+	Redis     RedisConfig     `yaml:"redis" mapstructure:"redis"`
+	Kafka     KafkaConfig     `yaml:"kafka" mapstructure:"kafka"`
+	Migration MigrationConfig `yaml:"migration" mapstructure:"migration"`
 }
 
 // 读取配置文件
