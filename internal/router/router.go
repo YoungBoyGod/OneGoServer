@@ -3,6 +3,10 @@ package router
 import (
 	"net/http"
 
+	"github.com/YoungBoyGod/OneGoServer/internal/data/repository"
+	"github.com/YoungBoyGod/OneGoServer/internal/service"
+	"github.com/YoungBoyGod/OneGoServer/pkg/sql"
+
 	"github.com/YoungBoyGod/OneGoServer/internal/controller"
 	"github.com/gin-gonic/gin"
 )
@@ -34,6 +38,9 @@ func InitRouter() *gin.Engine {
 
 		// 注册Device路由
 		registerDeviceRoutes(v1)
+
+		// 注册队列路由
+		registerQueueRoutes(v1)
 	}
 
 	return r
@@ -41,7 +48,10 @@ func InitRouter() *gin.Engine {
 
 // registerTaskRoutes 注册任务相关路由
 func registerTaskRoutes(rg *gin.RouterGroup) {
-	taskController := controller.NewTaskController()
+	db := sql.GetDB()
+	taskRepo := repository.NewTaskRepository(db)
+	taskService := service.NewTaskService(taskRepo)
+	taskController := controller.NewTaskController(taskService)
 
 	// 任务路由组
 	tasks := rg.Group("/tasks")
@@ -73,7 +83,10 @@ func registerTaskRoutes(rg *gin.RouterGroup) {
 
 // registerDeviceRoutes 注册设备相关路由
 func registerDeviceRoutes(rg *gin.RouterGroup) {
-	deviceController := controller.NewDeviceController()
+	db := sql.GetDB()
+	deviceRepo := repository.NewDeviceRepository(db)
+	deviceService := service.NewDeviceService(deviceRepo)
+	deviceController := controller.NewDeviceController(deviceService)
 
 	// 设备路由组
 	devices := rg.Group("/devices")
@@ -99,6 +112,22 @@ func registerDeviceRoutes(rg *gin.RouterGroup) {
 		devices.GET("/query", deviceController.QueryDevice)        // GET /api/v1/devices/query
 		devices.GET("/:id/logs", deviceController.GetDeviceLogs)   // GET /api/v1/devices/:id/logs
 		devices.GET("/:id/stats", deviceController.GetDeviceStats) // GET /api/v1/devices/:id/stats
+	}
+}
+
+// registerQueueRoutes 注册队列相关路由
+func registerQueueRoutes(rg *gin.RouterGroup) {
+	db := sql.GetDB()
+	taskRepo := repository.NewTaskRepository(db)
+	deviceRepo := repository.NewDeviceRepository(db)
+	queueService := service.NewQueueService(taskRepo, deviceRepo)
+	queueController := controller.NewQueueController(queueService)
+
+	q := rg.Group("/device-queues")
+	{
+		q.POST("/enqueue", queueController.EnqueueTask)               // POST /device-queues/enqueue
+		q.POST("/:device_id/dequeue", queueController.DequeueTask)    // POST /device-queues/:device_id/dequeue
+		q.GET("/:device_id/metrics", queueController.GetQueueMetrics) // GET  /device-queues/:device_id/metrics
 	}
 }
 

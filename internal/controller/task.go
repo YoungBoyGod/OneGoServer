@@ -49,9 +49,13 @@ type TaskController struct {
 
 // NewTaskController 创建任务控制器实例
 func NewTaskController(taskService service.TaskService) *TaskController {
-	return &TaskController{
-		taskService: taskService,
-	}
+	return &TaskController{taskService: taskService}
+}
+
+// NewTaskControllerFallback 提供无 service 的占位，防止其他包误用
+// Deprecated: 请使用 NewTaskController(service) 注入依赖
+func NewTaskControllerFallback() *TaskController {
+	return &TaskController{}
 }
 
 // CreateTask 创建任务
