@@ -16,6 +16,11 @@ var (
 		Usage: "main",
 		Brief: "start http server",
 		Func: func(ctx context.Context, parser *gcmd.Parser) (err error) {
+			// 初始化数据库
+			if err := g.DB().PingMaster(); err != nil {
+				g.Log().Fatalf(ctx, "database connection failed: %v", err)
+			}
+
 			s := g.Server()
 			s.Group("/", func(group *ghttp.RouterGroup) {
 				group.Middleware(ghttp.MiddlewareHandlerResponse)
