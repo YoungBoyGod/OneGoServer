@@ -180,26 +180,3 @@ func loggingMiddleware() gin.HandlerFunc {
 		return ""
 	})
 }
-
-// authMiddleware 认证中间件 (占位)
-func authMiddleware() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		// TODO: 实现JWT认证逻辑
-		// 1. 从Header获取Authorization
-		// 2. 验证JWT Token
-		// 3. 解析用户信息
-		// 4. 设置用户上下文
-		c.Next()
-	}
-}
-
-// rateLimitMiddleware 限流中间件 (占位)
-func rateLimitMiddleware() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		// TODO: 实现API限流逻辑
-		// 1. 获取客户端IP
-		// 2. 检查请求频率
-		// 3. 实施限流策略
-		c.Next()
-	}
-}

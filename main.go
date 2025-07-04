@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/YoungBoyGod/OneGoServer/internal/config"
+	"github.com/YoungBoyGod/OneGoServer/internal/router"
 	"github.com/YoungBoyGod/OneGoServer/pkg/cache"
 	pkglog "github.com/YoungBoyGod/OneGoServer/pkg/log"
 	"github.com/YoungBoyGod/OneGoServer/pkg/queue"
@@ -98,6 +99,8 @@ func main() {
 
 	// 应用程序启动完成，可以开始处理业务逻辑
 	// TODO: 添加HTTP服务器启动、API路由等业务逻辑
+	router := router.InitRouter()
+	router.Run(fmt.Sprintf(":%d", cfg.Server.Port))
 
 	// 执行数据库迁移
 	// gormDB := sql.GetDB()

@@ -6,12 +6,12 @@
 1. 鉴权中间件（JWT/OAuth2）
 2. 统一错误处理与响应包装
 3. 请求追踪（TraceID）与链路日志
-4. 速率限制与熔断
 
 ## 2. 队列持久化与调度
 1. 实现 QueueRepository，落地到 DB/Redis
 2. 队列执行器 Worker（并发、重试）
 3. 定时器扫尾任务、过期清理
+
 
 ## 3. 文档与 API 描述
 1. 集成 Swagger/OpenAPI 自动生成

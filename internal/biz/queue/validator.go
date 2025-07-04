@@ -180,7 +180,7 @@ func (v *QueueValidator) ValidateBatchOperation(req *BatchQueueOperation) error 
 		}
 	}
 
-	if len(req.Reason) > 255 {
+	if req.Reason != nil && len(*req.Reason) > 255 {
 		return errors.New("操作原因不能超过255个字符")
 	}
 

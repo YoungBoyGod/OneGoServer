@@ -67,3 +67,25 @@ func (qc *QueueController) GetQueueMetrics(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "获取成功", "data": metrics})
 }
+
+// ReorderQueue 重新排序队列
+func (qc *QueueController) ReorderQueue(c *gin.Context) {
+	deviceIDStr := c.Param("device_id")
+	deviceID, err := strconv.ParseInt(deviceIDStr, 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "无效DeviceID"})
+		return
+	}
+	var body struct {
+		Strategy string `json:"strategy" binding:"required"`
+	}
+	if err := c.ShouldBindJSON(&body); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
+		return
+	}
+	if err := qc.queueService.ReorderQueue(c.Request.Context(), deviceID, body.Strategy); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "重排成功"})
+}
