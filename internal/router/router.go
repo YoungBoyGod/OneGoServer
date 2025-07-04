@@ -8,6 +8,7 @@ import (
 	"github.com/YoungBoyGod/OneGoServer/pkg/sql"
 
 	"github.com/YoungBoyGod/OneGoServer/internal/controller"
+	"github.com/YoungBoyGod/OneGoServer/internal/middleware"
 	"github.com/gin-gonic/gin"
 )
 
@@ -19,7 +20,10 @@ func InitRouter() *gin.Engine {
 	// 添加全局中间件
 	r.Use(corsMiddleware())    // CORS中间件
 	r.Use(loggingMiddleware()) // 日志中间件
-	r.Use(gin.Recovery())      // 恢复中间件
+	r.Use(middleware.TraceMiddleware())
+	r.Use(middleware.ErrorRecovery())
+	r.Use(middleware.RateLimitMiddleware())
+	r.Use(middleware.AuthMiddleware())
 
 	// 健康检查端点
 	r.GET("/health", healthCheck)

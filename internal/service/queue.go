@@ -8,6 +8,7 @@ import (
 	"github.com/YoungBoyGod/OneGoServer/internal/biz/queue"
 	"github.com/YoungBoyGod/OneGoServer/internal/data/repository"
 	pkglog "github.com/YoungBoyGod/OneGoServer/pkg/log"
+	"github.com/YoungBoyGod/OneGoServer/pkg/sql"
 	"go.uber.org/zap"
 )
 
@@ -24,6 +25,7 @@ type queueServiceImpl struct {
 	queueBiz   *queue.QueueBusiness
 	taskRepo   repository.TaskRepository
 	deviceRepo repository.DeviceRepository
+	queueRepo  repository.QueueRepository
 	logger     *zap.Logger
 }
 
@@ -33,6 +35,7 @@ func NewQueueService(taskRepo repository.TaskRepository, deviceRepo repository.D
 		queueBiz:   queue.NewQueueBusiness(),
 		taskRepo:   taskRepo,
 		deviceRepo: deviceRepo,
+		queueRepo:  repository.NewQueueRepository(sql.GetDB()),
 		logger:     pkglog.GetAppLogger(nil),
 	}
 }
@@ -54,10 +57,10 @@ func (s *queueServiceImpl) EnqueueTask(ctx context.Context, deviceID int64, task
 		CreatedAt:     time.Now(),
 	}
 
-	// TODO: 持久化队列条目（待实现 Repository）
+	if err := s.queueRepo.Create(ctx, &item); err != nil {
+		return err
+	}
 	s.logger.Info("任务加入队列", zap.Int64("device_id", deviceID), zap.Int64("task_id", taskID), zap.Int("priority", priority))
-	_ = item // 占位防止未使用
-
 	return nil
 }
 
