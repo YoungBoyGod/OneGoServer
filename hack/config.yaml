@@ -4,8 +4,10 @@
 gfcli:
   gen:
     dao:
-      - link: "mysql:root:12345678@tcp(127.0.0.1:3306)/test"
+      - link: "pgsql:admin:onegoserver@123@tcp(localhost:5432)/onegoserver"
         descriptionTag: true
+        debug: true
+        tables: "device_heartbeats,task_assignment_history,device_logs,device_commands,device_load_monitor,device_tasks,task_assignment_queue,device_task_queue,devices,device_queue_operation_history,tasks,task_executions"
 
   docker:
     build: "-a amd64 -s linux -p temp -ew"
