@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"time"
 
+	data "github.com/YoungBoyGod/OneGoServer/internal/data/repository"
+
 	"github.com/YoungBoyGod/OneGoServer/internal/biz/task"
 	pkglog "github.com/YoungBoyGod/OneGoServer/pkg/log"
 	"go.uber.org/zap"
@@ -54,6 +56,7 @@ type TaskService interface {
 // taskServiceImpl 任务服务实现
 type taskServiceImpl struct {
 	taskRepo data.TaskRepository
+	taskBiz  *task.TaskBusiness
 	logger   *zap.Logger
 }
 
@@ -61,6 +64,7 @@ type taskServiceImpl struct {
 func NewTaskService(taskRepo data.TaskRepository) TaskService {
 	return &taskServiceImpl{
 		taskRepo: taskRepo,
+		taskBiz:  task.NewTaskBusiness(),
 		logger:   pkglog.GetAppLogger(nil), // 使用默认配置
 	}
 }
@@ -108,6 +112,9 @@ func (s *taskServiceImpl) CreateTask(ctx context.Context, req *task.TaskCreateRe
 	if req.Parameters != nil {
 		newTask.Parameters = task.JSONB(req.Parameters)
 	}
+
+	// 业务逻辑：动态计算优先级
+	newTask.Priority = s.taskBiz.CalculatePriority(newTask)
 
 	// 创建任务
 	if err := s.taskRepo.Create(ctx, newTask); err != nil {
@@ -318,6 +325,15 @@ func (s *taskServiceImpl) UpdateTaskStatus(ctx context.Context, id int64, status
 	}
 	if !validStatus {
 		return fmt.Errorf("无效的任务状态: %s", status)
+	}
+
+	// 业务逻辑校验状态转换
+	existingTask, err := s.taskRepo.GetByID(ctx, id)
+	if err != nil {
+		return err
+	}
+	if !s.taskBiz.CanTransitionTo(existingTask, status) {
+		return fmt.Errorf("不允许的状态转换: %s -> %s", existingTask.Status, status)
 	}
 
 	// 更新状态

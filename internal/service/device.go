@@ -92,6 +92,7 @@ type DeviceService interface {
 // deviceServiceImpl 设备服务实现
 type deviceServiceImpl struct {
 	deviceRepo repository.DeviceRepository
+	deviceBiz  *device.DeviceBusiness
 	logger     *zap.Logger
 }
 
@@ -99,6 +100,7 @@ type deviceServiceImpl struct {
 func NewDeviceService(deviceRepo repository.DeviceRepository) DeviceService {
 	return &deviceServiceImpl{
 		deviceRepo: deviceRepo,
+		deviceBiz:  device.NewDeviceBusiness(),
 		logger:     pkglog.GetAppLogger(nil),
 	}
 }
@@ -129,8 +131,8 @@ func (s *deviceServiceImpl) RegisterDevice(ctx context.Context, req *device.Devi
 		Type:         req.Type,
 		Model:        req.Model,
 		Manufacturer: req.Manufacturer,
-		Status:       device.DeviceStatusOffline, // 默认离线状态
-		HealthScore:  100,                        // 默认满分健康度
+		Status:       device.DeviceStatusOffline,
+		HealthScore:  0,
 		CreatedAt:    time.Now(),
 		UpdatedAt:    time.Now(),
 	}
@@ -171,6 +173,10 @@ func (s *deviceServiceImpl) RegisterDevice(ctx context.Context, req *device.Devi
 		metadata := device.JSONB(req.Metadata)
 		newDevice.Metadata = &metadata
 	}
+
+	// 业务逻辑：计算健康度与状态
+	newDevice.HealthScore = s.deviceBiz.CalculateHealthScore(newDevice)
+	newDevice.Status = s.deviceBiz.DetermineDeviceStatus(newDevice, nil)
 
 	// 创建设备
 	if err := s.deviceRepo.Create(ctx, newDevice); err != nil {
@@ -464,6 +470,15 @@ func (s *deviceServiceImpl) UpdateDeviceStatus(ctx context.Context, deviceID str
 		return fmt.Errorf("设备ID不能为空")
 	}
 
+	// 获取现有设备并校验状态转换
+	dev, err := s.deviceRepo.GetByDeviceID(ctx, deviceID)
+	if err != nil {
+		return err
+	}
+	if !s.deviceBiz.CanTransitionTo(dev, status) {
+		return fmt.Errorf("不允许的状态转换: %s -> %s", dev.Status, status)
+	}
+
 	// 验证状态值
 	validStatuses := []string{
 		device.DeviceStatusOnline,
@@ -647,6 +662,14 @@ func (s *deviceServiceImpl) ProcessHeartbeat(ctx context.Context, deviceID strin
 			zap.Error(err))
 		return fmt.Errorf("创建心跳记录失败: %w", err)
 	}
+
+	// 根据业务逻辑更新设备状态与健康度
+	newStatus := s.deviceBiz.DetermineDeviceStatus(dev, req)
+	if newStatus != dev.Status {
+		_ = s.deviceRepo.UpdateStatus(ctx, deviceID, newStatus)
+	}
+	newScore := s.deviceBiz.CalculateHealthScore(dev)
+	_ = s.deviceRepo.UpdateHealthScore(ctx, deviceID, newScore)
 
 	// 更新设备状态和最后活跃时间
 	if err := s.deviceRepo.UpdateStatus(ctx, deviceID, req.Status); err != nil {
