@@ -149,15 +149,12 @@ func (dc *DeviceController) DeviceOffline(c *gin.Context) {
 // @Router /api/v1/devices/{id}/heartbeat [get]
 func (dc *DeviceController) GetDeviceHeartbeat(c *gin.Context) {
 	deviceID := c.Param("id")
-	// TODO: 实现获取设备心跳逻辑
-	c.JSON(http.StatusOK, gin.H{
-		"message": "获取设备心跳功能待实现",
-		"data": gin.H{
-			"device_id": deviceID,
-			"heartbeat": "2025-07-01T11:21:00Z",
-			"interval":  30,
-		},
-	})
+	hb, err := dc.deviceService.GetDeviceHeartbeat(c.Request.Context(), deviceID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "获取成功", "data": hb})
 }
 
 // UpdateDeviceHeartbeat 更新设备心跳
@@ -173,14 +170,16 @@ func (dc *DeviceController) GetDeviceHeartbeat(c *gin.Context) {
 // @Router /api/v1/devices/{id}/heartbeat [post]
 func (dc *DeviceController) UpdateDeviceHeartbeat(c *gin.Context) {
 	deviceID := c.Param("id")
-	// TODO: 实现更新设备心跳逻辑
-	c.JSON(http.StatusOK, gin.H{
-		"message": "更新设备心跳功能待实现",
-		"data": gin.H{
-			"device_id": deviceID,
-			"timestamp": "2025-07-01T11:21:00Z",
-		},
-	})
+	var req device.DeviceHeartbeatRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
+		return
+	}
+	if err := dc.deviceService.ProcessHeartbeat(c.Request.Context(), deviceID, &req); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "心跳已更新"})
 }
 
 // GetDeviceStatus 获取设备状态
@@ -217,14 +216,12 @@ func (dc *DeviceController) GetDeviceStatus(c *gin.Context) {
 // @Router /api/v1/devices/{id}/logs [get]
 func (dc *DeviceController) GetDeviceLogs(c *gin.Context) {
 	deviceID := c.Param("id")
-	// TODO: 实现获取设备日志逻辑
-	c.JSON(http.StatusOK, gin.H{
-		"message": "获取设备日志功能待实现",
-		"data": gin.H{
-			"device_id": deviceID,
-			"logs":      []interface{}{},
-		},
-	})
+	logs, err := dc.deviceService.GetDeviceLogs(c.Request.Context(), deviceID, nil)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "获取成功", "data": logs})
 }
 
 // GetDeviceStats 获取设备统计
@@ -239,15 +236,13 @@ func (dc *DeviceController) GetDeviceLogs(c *gin.Context) {
 // @Failure 500 {object} object "服务器内部错误"
 // @Router /api/v1/devices/{id}/stats [get]
 func (dc *DeviceController) GetDeviceStats(c *gin.Context) {
-	deviceID := c.Param("id")
-	// TODO: 实现获取设备统计逻辑
-	c.JSON(http.StatusOK, gin.H{
-		"message": "获取设备统计功能待实现",
-		"data": gin.H{
-			"device_id": deviceID,
-			"stats":     []interface{}{},
-		},
-	})
+	filter := &device.DeviceFilter{}
+	stats, err := dc.deviceService.GetDeviceStats(c.Request.Context(), filter)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "获取成功", "data": stats})
 }
 
 // GetDevices 获取设备列表
@@ -361,14 +356,17 @@ func (dc *DeviceController) UpdateDevice(c *gin.Context) {
 // @Failure 500 {object} object "服务器内部错误"
 // @Router /api/v1/devices/{id} [delete]
 func (dc *DeviceController) DeleteDevice(c *gin.Context) {
-	deviceID := c.Param("id")
-	// TODO: 实现删除设备逻辑
-	c.JSON(http.StatusOK, gin.H{
-		"message": "删除设备功能待实现",
-		"data": gin.H{
-			"device_id": deviceID,
-		},
-	})
+	idStr := c.Param("id")
+	id, err := strconv.ParseInt(idStr, 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "无效ID"})
+		return
+	}
+	if err := dc.deviceService.DeleteDevice(c.Request.Context(), id); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "删除成功"})
 }
 
 // SendCommand 发送设备命令
@@ -386,13 +384,17 @@ func (dc *DeviceController) DeleteDevice(c *gin.Context) {
 // @Router /api/v1/devices/{id}/command [post]
 func (dc *DeviceController) SendCommand(c *gin.Context) {
 	deviceID := c.Param("id")
-	// TODO: 实现发送设备命令逻辑
-	c.JSON(http.StatusOK, gin.H{
-		"message": "发送设备命令功能待实现",
-		"data": gin.H{
-			"device_id": deviceID,
-		},
-	})
+	var req device.DeviceCommandRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
+		return
+	}
+	cmd, err := dc.deviceService.SendCommand(c.Request.Context(), deviceID, &req)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "命令已发送", "data": cmd})
 }
 
 // QueryDevice 查询设备
@@ -406,9 +408,15 @@ func (dc *DeviceController) SendCommand(c *gin.Context) {
 // @Failure 500 {object} object "服务器内部错误"
 // @Router /api/v1/devices/query [get]
 func (dc *DeviceController) QueryDevice(c *gin.Context) {
-	// TODO: 实现查询设备逻辑
-	c.JSON(http.StatusOK, gin.H{
-		"message": "查询设备功能待实现",
-		"data":    nil,
-	})
+	keyword := c.Query("keyword")
+	if keyword == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "缺少keyword"})
+		return
+	}
+	devices, err := dc.deviceService.QueryDevices(c.Request.Context(), keyword, nil)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "查询成功", "data": devices})
 }
