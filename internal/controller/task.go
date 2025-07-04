@@ -676,3 +676,33 @@ func (tc *TaskController) GetTaskStats(c *gin.Context) {
 		"data":    stats,
 	})
 }
+
+// BatchCancelTasks 批量取消任务
+func (tc *TaskController) BatchCancelTasks(c *gin.Context) {
+	var body struct {
+		IDs []int64 `json:"ids" binding:"required,min=1"`
+	}
+	if err := c.ShouldBindJSON(&body); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
+		return
+	}
+	for _, id := range body.IDs {
+		_ = tc.taskService.CancelTask(c.Request.Context(), id) // 忽略单个错误
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "批量取消已执行", "count": len(body.IDs)})
+}
+
+// BatchDispatchTasks 批量分发任务
+func (tc *TaskController) BatchDispatchTasks(c *gin.Context) {
+	var body struct {
+		IDs []int64 `json:"ids" binding:"required,min=1"`
+	}
+	if err := c.ShouldBindJSON(&body); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
+		return
+	}
+	for _, id := range body.IDs {
+		_ = tc.taskService.DispatchTask(c.Request.Context(), id)
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "批量分发已执行", "count": len(body.IDs)})
+}

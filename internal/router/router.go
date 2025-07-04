@@ -78,6 +78,10 @@ func registerTaskRoutes(rg *gin.RouterGroup) {
 		tasks.GET("/:id/result", taskController.GetTaskResult)       // GET /api/v1/tasks/:id/result
 		tasks.GET("/:id/execution", taskController.GetTaskExecution) // GET /api/v1/tasks/:id/execution
 		tasks.GET("/:id/stats", taskController.GetTaskStats)         // GET /api/v1/tasks/:id/stats
+
+		// 批量任务控制
+		tasks.POST("/batch/cancel", taskController.BatchCancelTasks)
+		tasks.POST("/batch/dispatch", taskController.BatchDispatchTasks)
 	}
 }
 
@@ -128,6 +132,7 @@ func registerQueueRoutes(rg *gin.RouterGroup) {
 		q.POST("/enqueue", queueController.EnqueueTask)               // POST /device-queues/enqueue
 		q.POST("/:device_id/dequeue", queueController.DequeueTask)    // POST /device-queues/:device_id/dequeue
 		q.GET("/:device_id/metrics", queueController.GetQueueMetrics) // GET  /device-queues/:device_id/metrics
+		q.POST("/:device_id/reorder", queueController.ReorderQueue)   // POST /device-queues/:device_id/reorder
 	}
 }
 
