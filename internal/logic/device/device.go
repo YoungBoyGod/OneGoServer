@@ -591,3 +591,388 @@ func contains(slice []string, item string) bool {
 	}
 	return false
 }
+
+// ===============================
+// 设备配置管理相关业务逻辑
+// ===============================
+
+// ValidateDeviceConfig 验证设备配置
+func (s *sDevice) ValidateDeviceConfig(ctx context.Context, config map[string]interface{}) error {
+	// 验证配置格式
+	if config == nil {
+		return gerror.NewCode(gcode.CodeInvalidParameter, "设备配置不能为空")
+	}
+
+	// 验证心跳间隔
+	if heartbeatInterval, ok := config["heartbeat_interval"]; ok {
+		if interval := gconv.Int(heartbeatInterval); interval < 30 || interval > 3600 {
+			return gerror.NewCode(gcode.CodeInvalidParameter, "心跳间隔必须在30-3600秒之间")
+		}
+	}
+
+	// 验证最大并发任务数
+	if maxTasks, ok := config["max_concurrent_tasks"]; ok {
+		if taskCount := gconv.Int(maxTasks); taskCount < 1 || taskCount > 100 {
+			return gerror.NewCode(gcode.CodeInvalidParameter, "最大并发任务数必须在1-100之间")
+		}
+	}
+
+	// 验证资源限制
+	if resourceLimits, ok := config["resource_limits"].(map[string]interface{}); ok {
+		if cpuLimit, exists := resourceLimits["cpu"]; exists {
+			if limit := gconv.Float64(cpuLimit); limit < 0 || limit > 100 {
+				return gerror.NewCode(gcode.CodeInvalidParameter, "CPU限制必须在0-100之间")
+			}
+		}
+		if memLimit, exists := resourceLimits["memory"]; exists {
+			if limit := gconv.Float64(memLimit); limit < 0 || limit > 100 {
+				return gerror.NewCode(gcode.CodeInvalidParameter, "内存限制必须在0-100之间")
+			}
+		}
+	}
+
+	return nil
+}
+
+// GenerateDeviceConfig 生成设备默认配置
+func (s *sDevice) GenerateDeviceConfig(ctx context.Context, deviceType string) map[string]interface{} {
+	config := make(map[string]interface{})
+
+	// 根据设备类型设置默认配置
+	switch deviceType {
+	case "sensor":
+		config["heartbeat_interval"] = 60
+		config["max_concurrent_tasks"] = 3
+		config["resource_limits"] = map[string]interface{}{
+			"cpu":    80.0,
+			"memory": 70.0,
+			"disk":   85.0,
+		}
+	case "camera":
+		config["heartbeat_interval"] = 30
+		config["max_concurrent_tasks"] = 5
+		config["resource_limits"] = map[string]interface{}{
+			"cpu":    90.0,
+			"memory": 80.0,
+			"disk":   90.0,
+		}
+	case "actuator":
+		config["heartbeat_interval"] = 120
+		config["max_concurrent_tasks"] = 2
+		config["resource_limits"] = map[string]interface{}{
+			"cpu":    60.0,
+			"memory": 50.0,
+			"disk":   70.0,
+		}
+	case "gateway":
+		config["heartbeat_interval"] = 45
+		config["max_concurrent_tasks"] = 10
+		config["resource_limits"] = map[string]interface{}{
+			"cpu":    85.0,
+			"memory": 75.0,
+			"disk":   80.0,
+		}
+	default:
+		config["heartbeat_interval"] = 60
+		config["max_concurrent_tasks"] = 5
+		config["resource_limits"] = map[string]interface{}{
+			"cpu":    75.0,
+			"memory": 65.0,
+			"disk":   75.0,
+		}
+	}
+
+	// 通用配置
+	config["retry_count"] = 3
+	config["timeout_seconds"] = 300
+	config["enable_auto_recovery"] = true
+	config["enable_performance_monitoring"] = true
+
+	return config
+}
+
+// ===============================
+// 设备监控和告警相关业务逻辑
+// ===============================
+
+// CheckDeviceHealth 检查设备健康状态
+func (s *sDevice) CheckDeviceHealth(ctx context.Context, deviceData map[string]interface{}) map[string]interface{} {
+	healthInfo := make(map[string]interface{})
+
+	// 计算健康度评分
+	healthScore := s.CalculateDeviceHealthScore(ctx, deviceData)
+	healthInfo["health_score"] = healthScore
+
+	// 确定健康状态
+	if healthScore >= 90 {
+		healthInfo["status"] = "excellent"
+	} else if healthScore >= 70 {
+		healthInfo["status"] = "good"
+	} else if healthScore >= 50 {
+		healthInfo["status"] = "fair"
+	} else {
+		healthInfo["status"] = "poor"
+	}
+
+	// 检查各项指标
+	healthInfo["checks"] = s.performHealthChecks(ctx, deviceData)
+
+	// 生成告警信息
+	alerts := s.generateHealthAlerts(ctx, deviceData, healthScore)
+	healthInfo["alerts"] = alerts
+
+	return healthInfo
+}
+
+// performHealthChecks 执行健康检查
+func (s *sDevice) performHealthChecks(ctx context.Context, deviceData map[string]interface{}) map[string]interface{} {
+	checks := make(map[string]interface{})
+
+	// CPU检查
+	if cpuUsage, ok := deviceData["cpu_usage"].(float64); ok {
+		checks["cpu"] = map[string]interface{}{
+			"value":   cpuUsage,
+			"status":  s.getCheckStatus(cpuUsage, 80, 90),
+			"message": s.getCPUMessage(cpuUsage),
+		}
+	}
+
+	// 内存检查
+	if memUsage, ok := deviceData["memory_usage"].(float64); ok {
+		checks["memory"] = map[string]interface{}{
+			"value":   memUsage,
+			"status":  s.getCheckStatus(memUsage, 85, 95),
+			"message": s.getMemoryMessage(memUsage),
+		}
+	}
+
+	// 磁盘检查
+	if diskUsage, ok := deviceData["disk_usage"].(float64); ok {
+		checks["disk"] = map[string]interface{}{
+			"value":   diskUsage,
+			"status":  s.getCheckStatus(diskUsage, 90, 95),
+			"message": s.getDiskMessage(diskUsage),
+		}
+	}
+
+	// 网络检查
+	if networkStatus, ok := deviceData["network_status"].(string); ok {
+		checks["network"] = map[string]interface{}{
+			"value":   networkStatus,
+			"status":  s.getNetworkStatus(networkStatus),
+			"message": s.getNetworkMessage(networkStatus),
+		}
+	}
+
+	return checks
+}
+
+// generateHealthAlerts 生成健康告警
+func (s *sDevice) generateHealthAlerts(ctx context.Context, deviceData map[string]interface{}, healthScore float64) []map[string]interface{} {
+	var alerts []map[string]interface{}
+
+	// 健康度告警
+	if healthScore < 30 {
+		alerts = append(alerts, map[string]interface{}{
+			"level":   "critical",
+			"type":    "health_score",
+			"message": "设备健康度严重不足，需要立即检查",
+		})
+	} else if healthScore < 50 {
+		alerts = append(alerts, map[string]interface{}{
+			"level":   "warning",
+			"type":    "health_score",
+			"message": "设备健康度偏低，建议进行维护",
+		})
+	}
+
+	// CPU告警
+	if cpuUsage, ok := deviceData["cpu_usage"].(float64); ok {
+		if cpuUsage > 95 {
+			alerts = append(alerts, map[string]interface{}{
+				"level":   "critical",
+				"type":    "cpu_usage",
+				"message": "CPU使用率过高，可能导致系统不稳定",
+			})
+		} else if cpuUsage > 85 {
+			alerts = append(alerts, map[string]interface{}{
+				"level":   "warning",
+				"type":    "cpu_usage",
+				"message": "CPU使用率较高，建议优化进程",
+			})
+		}
+	}
+
+	// 内存告警
+	if memUsage, ok := deviceData["memory_usage"].(float64); ok {
+		if memUsage > 95 {
+			alerts = append(alerts, map[string]interface{}{
+				"level":   "critical",
+				"type":    "memory_usage",
+				"message": "内存使用率过高，可能导致系统崩溃",
+			})
+		} else if memUsage > 85 {
+			alerts = append(alerts, map[string]interface{}{
+				"level":   "warning",
+				"type":    "memory_usage",
+				"message": "内存使用率较高，建议清理缓存",
+			})
+		}
+	}
+
+	// 磁盘告警
+	if diskUsage, ok := deviceData["disk_usage"].(float64); ok {
+		if diskUsage > 95 {
+			alerts = append(alerts, map[string]interface{}{
+				"level":   "critical",
+				"type":    "disk_usage",
+				"message": "磁盘空间严重不足，需要立即清理",
+			})
+		} else if diskUsage > 90 {
+			alerts = append(alerts, map[string]interface{}{
+				"level":   "warning",
+				"type":    "disk_usage",
+				"message": "磁盘空间不足，建议清理文件",
+			})
+		}
+	}
+
+	return alerts
+}
+
+// ===============================
+// 设备数据验证和处理
+// ===============================
+
+// ValidateDeviceData 验证设备数据完整性
+func (s *sDevice) ValidateDeviceData(ctx context.Context, deviceData map[string]interface{}) error {
+	// 验证必需字段
+	requiredFields := []string{"device_id", "name", "type", "status"}
+	for _, field := range requiredFields {
+		if value, ok := deviceData[field]; !ok || value == nil || value == "" {
+			return gerror.NewCode(gcode.CodeInvalidParameter, fmt.Sprintf("缺少必需字段: %s", field))
+		}
+	}
+
+	// 验证设备类型
+	if deviceType, ok := deviceData["type"].(string); ok {
+		validTypes := []string{"sensor", "camera", "actuator", "gateway"}
+		if !contains(validTypes, deviceType) {
+			return gerror.NewCode(gcode.CodeInvalidParameter, "无效的设备类型")
+		}
+	}
+
+	// 验证设备状态
+	if status, ok := deviceData["status"].(string); ok {
+		validStatuses := []string{"online", "offline", "maintenance", "error", "busy"}
+		if !contains(validStatuses, status) {
+			return gerror.NewCode(gcode.CodeInvalidParameter, "无效的设备状态")
+		}
+	}
+
+	// 验证IP地址
+	if ipAddress, ok := deviceData["ip_address"].(string); ok && ipAddress != "" {
+		if !isValidIPAddress(ipAddress) {
+			return gerror.NewCode(gcode.CodeInvalidParameter, "IP地址格式不正确")
+		}
+	}
+
+	return nil
+}
+
+// ProcessDeviceData 处理设备数据
+func (s *sDevice) ProcessDeviceData(ctx context.Context, rawData map[string]interface{}) (map[string]interface{}, error) {
+	// 验证数据
+	if err := s.ValidateDeviceData(ctx, rawData); err != nil {
+		return nil, err
+	}
+
+	// 处理数据
+	processedData := make(map[string]interface{})
+	for k, v := range rawData {
+		processedData[k] = v
+	}
+
+	// 计算健康度
+	processedData["health_score"] = s.CalculateDeviceHealthScore(ctx, processedData)
+
+	// 确定状态
+	processedData["status"] = s.DetermineDeviceStatus(ctx, processedData)
+
+	// 添加时间戳
+	processedData["processed_at"] = gtime.Now()
+
+	return processedData, nil
+}
+
+// ===============================
+// 辅助方法
+// ===============================
+
+// getCheckStatus 获取检查状态
+func (s *sDevice) getCheckStatus(value, warningThreshold, criticalThreshold float64) string {
+	if value >= criticalThreshold {
+		return "critical"
+	} else if value >= warningThreshold {
+		return "warning"
+	}
+	return "normal"
+}
+
+// getCPUMessage 获取CPU消息
+func (s *sDevice) getCPUMessage(cpuUsage float64) string {
+	if cpuUsage > 95 {
+		return "CPU使用率过高，需要立即处理"
+	} else if cpuUsage > 85 {
+		return "CPU使用率较高，建议优化"
+	}
+	return "CPU使用率正常"
+}
+
+// getMemoryMessage 获取内存消息
+func (s *sDevice) getMemoryMessage(memUsage float64) string {
+	if memUsage > 95 {
+		return "内存使用率过高，可能导致系统崩溃"
+	} else if memUsage > 85 {
+		return "内存使用率较高，建议清理缓存"
+	}
+	return "内存使用率正常"
+}
+
+// getDiskMessage 获取磁盘消息
+func (s *sDevice) getDiskMessage(diskUsage float64) string {
+	if diskUsage > 95 {
+		return "磁盘空间严重不足，需要立即清理"
+	} else if diskUsage > 90 {
+		return "磁盘空间不足，建议清理文件"
+	}
+	return "磁盘空间充足"
+}
+
+// getNetworkStatus 获取网络状态
+func (s *sDevice) getNetworkStatus(networkStatus string) string {
+	switch networkStatus {
+	case "connected":
+		return "normal"
+	case "unstable":
+		return "warning"
+	case "disconnected":
+		return "critical"
+	default:
+		return "unknown"
+	}
+}
+
+// getNetworkMessage 获取网络消息
+func (s *sDevice) getNetworkMessage(networkStatus string) string {
+	switch networkStatus {
+	case "connected":
+		return "网络连接正常"
+	case "unstable":
+		return "网络连接不稳定"
+	case "disconnected":
+		return "网络连接断开"
+	default:
+		return "网络状态未知"
+	}
+}
