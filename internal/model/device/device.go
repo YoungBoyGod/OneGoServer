@@ -59,3 +59,9 @@ const (
 // DeviceLog 设备日志模型
 
 // DeviceCommand 设备命令模型
+
+type GetDeviceListInput struct {
+}
+
+type GetDeviceListOutput struct {
+}
