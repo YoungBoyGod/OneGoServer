@@ -8,6 +8,8 @@ import (
 	"github.com/gogf/gf/v2/errors/gcode"
 	"github.com/gogf/gf/v2/errors/gerror"
 	"github.com/gogf/gf/v2/os/gtime"
+
+	task "OneGfServer/internal/model/task"
 )
 
 // ===============================
@@ -493,4 +495,95 @@ func (s *sTask) executeTaskAssignment(ctx context.Context, taskId, deviceId stri
 	// 这里应该执行实际的任务分配操作
 	// 更新数据库中的任务分配信息
 	return nil
+}
+
+// ===============================
+// 任务分配业务逻辑
+// ===============================
+
+// AssignTask 分配任务
+func (s *sTask) AssignTask(ctx context.Context, input *task.AssignTaskInput) (*task.AssignTaskOutput, error) {
+	// 检查任务状态
+	taskStatusInput := &task.GetTaskStatusInput{TaskID: input.TaskID}
+	taskStatusOutput := s.getTaskStatus(taskStatusInput)
+
+	if taskStatusOutput.Status == "running" || taskStatusOutput.Status == "completed" {
+		return nil, gerror.NewCode(gcode.CodeInvalidOperation, "任务已在运行或已完成，无法重新分配")
+	}
+
+	// 检查设备可用性
+	if !s.isDeviceAvailable(input.DeviceID) {
+		return nil, gerror.NewCode(gcode.CodeInvalidOperation, "设备不可用")
+	}
+
+	// 检查任务是否已被分配
+	if s.isTaskAssigned(input.TaskID) {
+		return nil, gerror.NewCode(gcode.CodeInvalidOperation, "任务已被分配")
+	}
+
+	// 这里应该更新数据库中的任务分配
+	// 目前返回模拟结果
+
+	return &task.AssignTaskOutput{
+		TaskID:     input.TaskID,
+		DeviceID:   input.DeviceID,
+		Status:     "assigned",
+		AssignedAt: gtime.Now().Format("2006-01-02 15:04:05"),
+		Message:    "任务分配成功",
+	}, nil
+}
+
+// UnassignTask 取消分配任务
+func (s *sTask) UnassignTask(ctx context.Context, input *task.UnassignTaskInput) (*task.UnassignTaskOutput, error) {
+	// 检查任务状态
+	taskStatusInput := &task.GetTaskStatusInput{TaskID: input.TaskID}
+	taskStatusOutput := s.getTaskStatus(taskStatusInput)
+
+	if taskStatusOutput.Status == "running" {
+		return nil, gerror.NewCode(gcode.CodeInvalidOperation, "运行中的任务无法取消分配")
+	}
+
+	// 检查任务是否已被分配
+	if !s.isTaskAssigned(input.TaskID) {
+		return nil, gerror.NewCode(gcode.CodeInvalidOperation, "任务未被分配")
+	}
+
+	// 这里应该更新数据库中的任务分配
+	// 目前返回模拟结果
+
+	return &task.UnassignTaskOutput{
+		TaskID:       input.TaskID,
+		Status:       "unassigned",
+		UnassignedAt: gtime.Now().Format("2006-01-02 15:04:05"),
+		Message:      "任务取消分配成功",
+	}, nil
+}
+
+// isDeviceAvailable 检查设备是否可用（内部方法）
+func (s *sTask) isDeviceAvailable(deviceID string) bool {
+	// 这里应该检查设备状态
+	// 目前返回模拟结果
+	return true
+}
+
+// isTaskAssigned 检查任务是否已被分配（内部方法）
+func (s *sTask) isTaskAssigned(taskID string) bool {
+	// 这里应该检查任务分配状态
+	// 目前返回模拟结果
+	return false
+}
+
+// getTaskStatus 获取任务状态（内部方法）
+func (s *sTask) getTaskStatus(input *task.GetTaskStatusInput) *task.GetTaskStatusOutput {
+	// 这里应该从数据库获取任务状态
+	// 目前返回模拟数据
+	return &task.GetTaskStatusOutput{
+		TaskID:    input.TaskID,
+		Status:    "pending",
+		Progress:  0.0,
+		StartTime: "",
+		EndTime:   "",
+		Duration:  "",
+		Details:   map[string]interface{}{},
+	}
 }

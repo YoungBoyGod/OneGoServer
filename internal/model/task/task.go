@@ -572,83 +572,113 @@ type GetTaskAssignmentsOutput struct {
 // 数据模型定义
 // ===============================
 
-// Task 任务主表模型
+// Task 任务实体
 type Task struct {
-	ID           int64       `json:"id"`
-	TaskID       string      `json:"task_id"`
-	Name         string      `json:"name"`
-	Description  string      `json:"description"`
-	Type         string      `json:"type"`
-	Status       string      `json:"status"`
-	Priority     int         `json:"priority"`
-	ExecuteTime  *gtime.Time `json:"execute_time"`
-	Timeout      int         `json:"timeout"`
-	RetryCount   int         `json:"retry_count"`
-	MaxRetries   int         `json:"max_retries"`
-	IsUrgent     bool        `json:"is_urgent"`
-	Parameters   string      `json:"parameters"`
-	Result       string      `json:"result"`
-	ErrorMessage string      `json:"error_message"`
-	ExecutorType string      `json:"executor_type"`
-	ExecutorID   string      `json:"executor_id"`
-	DeviceID     int64       `json:"device_id"`
-	CreatedAt    *gtime.Time `json:"created_at"`
-	UpdatedAt    *gtime.Time `json:"updated_at"`
-	CreatedBy    int64       `json:"created_by"`
-	UpdatedBy    int64       `json:"updated_by"`
+	ID          string                 `json:"id"`
+	Name        string                 `json:"name"`
+	Type        string                 `json:"type"`
+	Priority    int                    `json:"priority"`
+	Status      string                 `json:"status"`
+	Description string                 `json:"description"`
+	Parameters  map[string]interface{} `json:"parameters"`
+	Timeout     int                    `json:"timeout"`
+	RetryCount  int                    `json:"retry_count"`
+	CurrentRetry int                   `json:"current_retry"`
+	Progress    float64                `json:"progress"`
+	DeviceID    string                 `json:"device_id"`
+	CreatedAt   string                 `json:"created_at"`
+	UpdatedAt   string                 `json:"updated_at"`
+	StartedAt   string                 `json:"started_at"`
+	CompletedAt string                 `json:"completed_at"`
+	Error       string                 `json:"error"`
 }
 
-// TaskExecution 任务执行模型
-type TaskExecution struct {
-	ID                int64       `json:"id"`
-	TaskID            string      `json:"task_id"`
-	ExecutionID       string      `json:"execution_id"`
-	DeviceID          string      `json:"device_id"`
-	Status            string      `json:"status"`
-	StartTime         *gtime.Time `json:"start_time"`
-	EndTime           *gtime.Time `json:"end_time"`
-	Duration          int         `json:"duration"`
-	ExecutorInfo      string      `json:"executor_info"`
-	Logs              string      `json:"logs"`
-	Metrics           string      `json:"metrics"`
-	Output            string      `json:"output"`
-	ErrorDetails      string      `json:"error_details"`
-	CpuUsageAvg       float64     `json:"cpu_usage_avg"`
-	CpuUsagePeak      float64     `json:"cpu_usage_peak"`
-	MemoryUsageAvg    float64     `json:"memory_usage_avg"`
-	MemoryUsagePeak   float64     `json:"memory_usage_peak"`
-	IoOperationsTotal int64       `json:"io_operations_total"`
-	IoBytesTotal      int64       `json:"io_bytes_total"`
-	CreatedAt         *gtime.Time `json:"created_at"`
-	UpdatedAt         *gtime.Time `json:"updated_at"`
+// TaskStatus 任务状态
+type TaskStatus struct {
+	TaskID     string                 `json:"task_id"`
+	Status     string                 `json:"status"`
+	Progress   float64                `json:"progress"`
+	StartTime  string                 `json:"start_time"`
+	EndTime    string                 `json:"end_time"`
+	Duration   string                 `json:"duration"`
+	Details    map[string]interface{} `json:"details"`
 }
 
-// TaskAssignment 任务分配模型
+// TaskAssignment 任务分配
 type TaskAssignment struct {
-	ID                   int64       `json:"id"`
-	TaskID               string      `json:"task_id"`
-	Priority             int         `json:"priority"`
-	QueueStatus          string      `json:"queue_status"`
-	RequiredDeviceType   string      `json:"required_device_type"`
-	RequiredCapabilities string      `json:"required_capabilities"`
-	PreferredDeviceIDs   []int64     `json:"preferred_device_ids"`
-	ExcludedDeviceIDs    []int64     `json:"excluded_device_ids"`
-	AssignmentStrategy   string      `json:"assignment_strategy"`
-	AffinityRules        string      `json:"affinity_rules"`
-	AssignedDeviceID     int64       `json:"assigned_device_id"`
-	AssignedAt           *gtime.Time `json:"assigned_at"`
-	AssignmentScore      float64     `json:"assignment_score"`
-	QueuePosition        int         `json:"queue_position"`
-	EstimatedWaitTime    int         `json:"estimated_wait_time"`
-	RetryCount           int         `json:"retry_count"`
-	MaxRetries           int         `json:"max_retries"`
-	OriginalPriority     int         `json:"original_priority"`
-	LastPriorityChangeAt *gtime.Time `json:"last_priority_change_at"`
-	PriorityChangeReason string      `json:"priority_change_reason"`
-	PriorityBoostReason  string      `json:"priority_boost_reason"`
-	OperationSource      string      `json:"operation_source"`
-	QueuedAt             *gtime.Time `json:"queued_at"`
-	UpdatedAt            *gtime.Time `json:"updated_at"`
+	ID         string `json:"id"`
+	TaskID     string `json:"task_id"`
+	DeviceID   string `json:"device_id"`
+	Status     string `json:"status"`
+	AssignedAt string `json:"assigned_at"`
+	StartedAt  string `json:"started_at"`
+	CompletedAt string `json:"completed_at"`
+}
+
+// TaskSchedule 任务调度
+type TaskSchedule struct {
+	ID         string `json:"id"`
+	TaskID     string `json:"task_id"`
+	ScheduleAt string `json:"schedule_at"`
+	Recurring  bool   `json:"recurring"`
+	CronExpr   string `json:"cron_expr"`
+	Status     string `json:"status"`
+	CreatedAt  string `json:"created_at"`
+	UpdatedAt  string `json:"updated_at"`
+}
+
+// TaskLog 任务日志
+type TaskLog struct {
+	ID        int64  `json:"id"`
+	TaskID    string `json:"task_id"`
+	Level     string `json:"level"`
+	Message   string `json:"message"`
+	Timestamp string `json:"timestamp"`
+	Details   string `json:"details"`
+}
+
+// TaskStatistics 任务统计
+type TaskStatistics struct {
+	Period     string                 `json:"period"`
+	Total      int                    `json:"total"`
+	Running    int                    `json:"running"`
+	Completed  int                    `json:"completed"`
+	Failed     int                    `json:"failed"`
+	Pending    int                    `json:"pending"`
+	Statistics map[string]interface{} `json:"statistics"`
+}
+
+// TaskExecution 任务执行
+type TaskExecution struct {
+	ID         string `json:"id"`
+	TaskID     string `json:"task_id"`
+	DeviceID   string `json:"device_id"`
+	Status     string `json:"status"`
+	StartTime  string `json:"start_time"`
+	EndTime    string `json:"end_time"`
+	Duration   string `json:"duration"`
+	Result     string `json:"result"`
+	Error      string `json:"error"`
+	CreatedAt  string `json:"created_at"`
+}
+
+// TaskDependency 任务依赖
+type TaskDependency struct {
+	ID           string `json:"id"`
+	TaskID       string `json:"task_id"`
+	DependencyID string `json:"dependency_id"`
+	Type         string `json:"type"`
+	CreatedAt    string `json:"created_at"`
+}
+
+// TaskReport 任务报告
+type TaskReport struct {
+	ID       string `json:"id"`
+	TaskID   string `json:"task_id"`
+	Format   string `json:"format"`
+	URL      string `json:"url"`
+	Status   string `json:"status"`
+	CreatedAt string `json:"created_at"`
 }
 
 // TaskStatusInfo 任务状态信息
@@ -670,17 +700,6 @@ type TaskPriorityInfo struct {
 	Description string `json:"description"`
 	TaskCount   int    `json:"task_count"`
 	Color       string `json:"color"`
-}
-
-// TaskLog 任务日志模型
-type TaskLog struct {
-	LogID       string      `json:"log_id"`
-	TaskID      string      `json:"task_id"`
-	ExecutionID string      `json:"execution_id"`
-	Level       string      `json:"level"`
-	Message     string      `json:"message"`
-	Timestamp   *gtime.Time `json:"timestamp"`
-	Source      string      `json:"source"`
 }
 
 // TaskLogDetail 任务日志详情模型
@@ -725,53 +744,6 @@ type TaskQueueStats struct {
 	FailedTasks     int     `json:"failed_tasks"`
 	AverageWaitTime float64 `json:"average_wait_time"`
 	Throughput      float64 `json:"throughput"`
-}
-
-// TaskSchedule 任务调度模型
-type TaskSchedule struct {
-	ScheduleID   string      `json:"schedule_id"`
-	ScheduleName string      `json:"schedule_name"`
-	ScheduleType string      `json:"schedule_type"`
-	CronExpr     string      `json:"cron_expr"`
-	Status       string      `json:"status"`
-	Enabled      bool        `json:"enabled"`
-	TaskCount    int         `json:"task_count"`
-	LastRun      *gtime.Time `json:"last_run"`
-	NextRun      *gtime.Time `json:"next_run"`
-	CreatedAt    *gtime.Time `json:"created_at"`
-	UpdatedAt    *gtime.Time `json:"updated_at"`
-}
-
-// TaskStatistics 任务统计信息
-type TaskStatistics struct {
-	TotalTasks           int               `json:"total_tasks"`
-	StatusDistribution   map[string]int    `json:"status_distribution"`
-	TypeDistribution     map[string]int    `json:"type_distribution"`
-	PriorityDistribution map[string]int    `json:"priority_distribution"`
-	DeviceDistribution   map[string]int    `json:"device_distribution"`
-	SuccessRate          float64           `json:"success_rate"`
-	AverageExecutionTime float64           `json:"average_execution_time"`
-	TrendData            []TaskTrendPoint  `json:"trend_data"`
-	TopFailedTasks       []TaskFailureInfo `json:"top_failed_tasks"`
-}
-
-// TaskTrendPoint 任务趋势数据点
-type TaskTrendPoint struct {
-	Timestamp    *gtime.Time `json:"timestamp"`
-	TaskCount    int         `json:"task_count"`
-	SuccessCount int         `json:"success_count"`
-	FailureCount int         `json:"failure_count"`
-	SuccessRate  float64     `json:"success_rate"`
-	AvgDuration  float64     `json:"avg_duration"`
-}
-
-// TaskFailureInfo 任务失败信息
-type TaskFailureInfo struct {
-	TaskID       string  `json:"task_id"`
-	TaskName     string  `json:"task_name"`
-	FailureCount int     `json:"failure_count"`
-	FailureRate  float64 `json:"failure_rate"`
-	LastError    string  `json:"last_error"`
 }
 
 // TaskPerformanceReport 任务性能报告
@@ -869,16 +841,3 @@ type ScheduleFilter struct {
 // ExecutionFilter 执行过滤条件
 type ExecutionFilter struct {
 	Status    []string   `json:"status"`
-	DeviceID  *string    `json:"device_id"`
-	StartTime *time.Time `json:"start_time"`
-	EndTime   *time.Time `json:"end_time"`
-}
-
-// AssignmentFilter 分配过滤条件
-type AssignmentFilter struct {
-	Status             []string   `json:"status"`
-	AssignmentStrategy *string    `json:"assignment_strategy"`
-	AssignedDeviceID   *string    `json:"assigned_device_id"`
-	StartTime          *time.Time `json:"start_time"`
-	EndTime            *time.Time `json:"end_time"`
-}

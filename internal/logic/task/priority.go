@@ -6,7 +6,11 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gogf/gf/v2/errors/gcode"
+	"github.com/gogf/gf/v2/errors/gerror"
 	"github.com/gogf/gf/v2/os/gtime"
+
+	task "OneGfServer/internal/model/task"
 )
 
 // ===============================
@@ -178,4 +182,53 @@ func (s *sTask) calculateResourceScore(taskData map[string]interface{}) float64 
 	}
 
 	return math.Max(score, 0)
+}
+
+// ===============================
+// 任务优先级业务逻辑
+// ===============================
+
+// UpdateTaskPriority 更新任务优先级
+func (s *sTask) UpdateTaskPriority(ctx context.Context, input *task.UpdateTaskPriorityInput) (*task.UpdateTaskPriorityOutput, error) {
+	// 验证优先级范围
+	if input.Priority < 1 || input.Priority > 10 {
+		return nil, gerror.NewCode(gcode.CodeValidationFailed, "优先级必须在1-10之间")
+	}
+
+	// 检查任务是否存在
+	taskStatusInput := &task.GetTaskStatusInput{TaskID: input.TaskID}
+	taskStatusOutput := s.getTaskStatus(taskStatusInput)
+	if taskStatusOutput.Status == "" {
+		return nil, gerror.NewCode(gcode.CodeNotFound, "任务不存在")
+	}
+
+	// 检查任务状态
+	if taskStatusOutput.Status == "completed" {
+		return nil, gerror.NewCode(gcode.CodeInvalidOperation, "已完成的任务无法修改优先级")
+	}
+
+	// 这里应该更新数据库中的任务优先级
+	// 目前返回模拟结果
+
+	return &task.UpdateTaskPriorityOutput{
+		TaskID:    input.TaskID,
+		Priority:  input.Priority,
+		UpdatedAt: gtime.Now().Format("2006-01-02 15:04:05"),
+		Message:   "任务优先级更新成功",
+	}, nil
+}
+
+// getTaskStatus 获取任务状态（内部方法）
+func (s *sTask) getTaskStatus(input *task.GetTaskStatusInput) *task.GetTaskStatusOutput {
+	// 这里应该从数据库获取任务状态
+	// 目前返回模拟数据
+	return &task.GetTaskStatusOutput{
+		TaskID:    input.TaskID,
+		Status:    "pending",
+		Progress:  0.0,
+		StartTime: "",
+		EndTime:   "",
+		Duration:  "",
+		Details:   map[string]interface{}{},
+	}
 }
