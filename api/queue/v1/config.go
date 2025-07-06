@@ -1,6 +1,8 @@
 package v1
 
 import (
+	"OneGfServer/api/common"
+
 	"github.com/gogf/gf/v2/frame/g"
 )
 
@@ -39,15 +41,11 @@ type UpdateQueueConfigRes struct {
 
 // GetQueueConfigHistoryReq 获取队列配置历史请求
 type GetQueueConfigHistoryReq struct {
-	g.Meta  `path:"/queue/{queueId}/config/history" method:"get" tags:"队列配置" summary:"获取队列配置历史"`
-	QueueId string `json:"queue_id" v:"required|max-length:50#队列ID不能为空"`
-	Page    int    `json:"page" d:"1" v:"min:1#页码最小为1"`
-	Size    int    `json:"size" d:"10" v:"between:1,50#每页数量为1-50"`
+	g.Meta                   `path:"/queue/{queueId}/config/history" method:"get" tags:"队列配置" summary:"获取队列配置历史"`
+	QueueId                  string `json:"queue_id" v:"required|max-length:50#队列ID不能为空"`
+	common.PaginationRequest `json:",inline"`
 }
 
 type GetQueueConfigHistoryRes struct {
-	List  []QueueConfigHistory `json:"list"`
-	Total int64                `json:"total"`
-	Page  int                  `json:"page"`
-	Size  int                  `json:"size"`
+	common.PaginationResponse[QueueConfigHistory] `json:",inline"`
 }

@@ -1,6 +1,8 @@
 package v1
 
 import (
+	"OneGfServer/api/common"
+
 	"github.com/gogf/gf/v2/frame/g"
 )
 
@@ -40,19 +42,15 @@ type DequeueTaskRes struct {
 
 // GetQueueTasksReq 获取队列任务请求
 type GetQueueTasksReq struct {
-	g.Meta   `path:"/queue/{queueId}/tasks" method:"get" tags:"队列任务" summary:"获取队列任务"`
-	QueueId  string `json:"queue_id" v:"required|max-length:50#队列ID不能为空"`
-	Page     int    `json:"page" d:"1" v:"min:1#页码最小为1"`
-	Size     int    `json:"size" d:"20" v:"between:1,100#每页数量为1-100"`
-	Status   string `json:"status,omitempty" v:"in:pending,processing,completed,failed,retry#状态值无效"`
-	Priority int    `json:"priority,omitempty" v:"between:1,10#优先级为1-10"`
+	g.Meta                   `path:"/queue/{queueId}/tasks" method:"get" tags:"队列任务" summary:"获取队列任务"`
+	QueueId                  string `json:"queue_id" v:"required|max-length:50#队列ID不能为空"`
+	common.PaginationRequest `json:",inline"`
+	Status                   string `json:"status,omitempty" v:"in:pending,processing,completed,failed,retry#状态值无效"`
+	Priority                 int    `json:"priority,omitempty" v:"between:1,10#优先级为1-10"`
 }
 
 type GetQueueTasksRes struct {
-	List  []QueueTaskInfo `json:"list"`
-	Total int64           `json:"total"`
-	Page  int             `json:"page"`
-	Size  int             `json:"size"`
+	common.PaginationResponse[QueueTaskInfo] `json:",inline"`
 }
 
 // ReorderQueueTasksReq 重新排序队列任务请求
