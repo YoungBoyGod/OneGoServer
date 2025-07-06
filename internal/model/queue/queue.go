@@ -540,3 +540,354 @@ type TaskFilter struct {
 	StartTime *time.Time `json:"start_time"`
 	EndTime   *time.Time `json:"end_time"`
 }
+
+// ===============================
+// 队列Logic层相关 Input/Output
+// ===============================
+
+// ValidateQueueCreationInput 验证队列创建输入
+type ValidateQueueCreationInput struct {
+	QueueData map[string]interface{} `json:"queue_data"` // 队列数据
+}
+
+// ValidateQueueCreationOutput 验证队列创建输出
+type ValidateQueueCreationOutput struct {
+	IsValid bool     `json:"is_valid"` // 是否有效
+	Message string   `json:"message"`  // 验证消息
+	Errors  []string `json:"errors"`   // 错误列表
+}
+
+// ValidateQueueOperationInput 验证队列操作输入
+type ValidateQueueOperationInput struct {
+	QueueData map[string]interface{} `json:"queue_data"` // 队列数据
+	Operation string                 `json:"operation"`  // 操作类型
+}
+
+// ValidateQueueOperationOutput 验证队列操作输出
+type ValidateQueueOperationOutput struct {
+	IsValid bool     `json:"is_valid"` // 是否有效
+	Message string   `json:"message"`  // 验证消息
+	Errors  []string `json:"errors"`   // 错误列表
+}
+
+// CalculateQueueHealthScoreInput 计算队列健康度评分输入
+type CalculateQueueHealthScoreInput struct {
+	QueueData map[string]interface{} `json:"queue_data"` // 队列数据
+}
+
+// CalculateQueueHealthScoreOutput 计算队列健康度评分输出
+type CalculateQueueHealthScoreOutput struct {
+	HealthScore float64                `json:"health_score"` // 健康度评分
+	Components  map[string]interface{} `json:"components"`   // 评分组件
+}
+
+// ValidateTaskEnqueueInput 验证任务入队输入
+type ValidateTaskEnqueueInput struct {
+	QueueData map[string]interface{} `json:"queue_data"` // 队列数据
+	TaskData  map[string]interface{} `json:"task_data"`  // 任务数据
+}
+
+// ValidateTaskEnqueueOutput 验证任务入队输出
+type ValidateTaskEnqueueOutput struct {
+	IsValid bool     `json:"is_valid"` // 是否有效
+	Message string   `json:"message"`  // 验证消息
+	Errors  []string `json:"errors"`   // 错误列表
+}
+
+// SortQueueTasksInput 排序队列任务输入
+type SortQueueTasksInput struct {
+	QueueType string                   `json:"queue_type"` // 队列类型
+	Tasks     []map[string]interface{} `json:"tasks"`      // 任务列表
+}
+
+// SortQueueTasksOutput 排序队列任务输出
+type SortQueueTasksOutput struct {
+	SortedTasks []map[string]interface{} `json:"sorted_tasks"` // 排序后的任务列表
+}
+
+// CalculateLoadBalanceInput 计算负载均衡输入
+type CalculateLoadBalanceInput struct {
+	Queues []map[string]interface{} `json:"queues"` // 队列列表
+}
+
+// CalculateLoadBalanceOutput 计算负载均衡输出
+type CalculateLoadBalanceOutput struct {
+	LoadBalance map[string]interface{} `json:"load_balance"` // 负载均衡结果
+}
+
+// SelectOptimalQueueInput 选择最优队列输入
+type SelectOptimalQueueInput struct {
+	TaskData        map[string]interface{}   `json:"task_data"`        // 任务数据
+	AvailableQueues []map[string]interface{} `json:"available_queues"` // 可用队列列表
+}
+
+// SelectOptimalQueueOutput 选择最优队列输出
+type SelectOptimalQueueOutput struct {
+	OptimalQueue map[string]interface{} `json:"optimal_queue"` // 最优队列
+	Score        float64                `json:"score"`         // 选择评分
+	Reason       string                 `json:"reason"`        // 选择原因
+}
+
+// CalculateQueueStatisticsInput 计算队列统计信息输入
+type CalculateQueueStatisticsInput struct {
+	QueueData      map[string]interface{}   `json:"queue_data"`      // 队列数据
+	HistoricalData []map[string]interface{} `json:"historical_data"` // 历史数据
+}
+
+// CalculateQueueStatisticsOutput 计算队列统计信息输出
+type CalculateQueueStatisticsOutput struct {
+	Statistics map[string]interface{} `json:"statistics"` // 统计信息
+}
+
+// ValidateQueueConfigurationInput 验证队列配置输入
+type ValidateQueueConfigurationInput struct {
+	Config map[string]interface{} `json:"config"` // 配置数据
+}
+
+// ValidateQueueConfigurationOutput 验证队列配置输出
+type ValidateQueueConfigurationOutput struct {
+	IsValid bool     `json:"is_valid"` // 是否有效
+	Message string   `json:"message"`  // 验证消息
+	Errors  []string `json:"errors"`   // 错误列表
+}
+
+// CalculateStatusScoreInput 计算状态评分输入
+type CalculateStatusScoreInput struct {
+	QueueData map[string]interface{} `json:"queue_data"` // 队列数据
+}
+
+// CalculateStatusScoreOutput 计算状态评分输出
+type CalculateStatusScoreOutput struct {
+	Score float64 `json:"score"` // 状态评分
+}
+
+// CalculatePerformanceScoreInput 计算性能评分输入
+type CalculatePerformanceScoreInput struct {
+	QueueData map[string]interface{} `json:"queue_data"` // 队列数据
+}
+
+// CalculatePerformanceScoreOutput 计算性能评分输出
+type CalculatePerformanceScoreOutput struct {
+	Score float64 `json:"score"` // 性能评分
+}
+
+// CalculateErrorScoreInput 计算错误评分输入
+type CalculateErrorScoreInput struct {
+	QueueData map[string]interface{} `json:"queue_data"` // 队列数据
+}
+
+// CalculateErrorScoreOutput 计算错误评分输出
+type CalculateErrorScoreOutput struct {
+	Score float64 `json:"score"` // 错误评分
+}
+
+// CalculateResourceScoreInput 计算资源评分输入
+type CalculateResourceScoreInput struct {
+	QueueData map[string]interface{} `json:"queue_data"` // 队列数据
+}
+
+// CalculateResourceScoreOutput 计算资源评分输出
+type CalculateResourceScoreOutput struct {
+	Score float64 `json:"score"` // 资源评分
+}
+
+// CalculateResponseScoreInput 计算响应评分输入
+type CalculateResponseScoreInput struct {
+	QueueData map[string]interface{} `json:"queue_data"` // 队列数据
+}
+
+// CalculateResponseScoreOutput 计算响应评分输出
+type CalculateResponseScoreOutput struct {
+	Score float64 `json:"score"` // 响应评分
+}
+
+// ValidateTaskDataInput 验证任务数据输入
+type ValidateTaskDataInput struct {
+	TaskData map[string]interface{} `json:"task_data"` // 任务数据
+}
+
+// ValidateTaskDataOutput 验证任务数据输出
+type ValidateTaskDataOutput struct {
+	IsValid bool     `json:"is_valid"` // 是否有效
+	Message string   `json:"message"`  // 验证消息
+	Errors  []string `json:"errors"`   // 错误列表
+}
+
+// SortFIFOInput FIFO排序输入
+type SortFIFOInput struct {
+	Tasks []map[string]interface{} `json:"tasks"` // 任务列表
+}
+
+// SortFIFOOutput FIFO排序输出
+type SortFIFOOutput struct {
+	SortedTasks []map[string]interface{} `json:"sorted_tasks"` // 排序后的任务列表
+}
+
+// SortLIFOInput LIFO排序输入
+type SortLIFOInput struct {
+	Tasks []map[string]interface{} `json:"tasks"` // 任务列表
+}
+
+// SortLIFOOutput LIFO排序输出
+type SortLIFOOutput struct {
+	SortedTasks []map[string]interface{} `json:"sorted_tasks"` // 排序后的任务列表
+}
+
+// SortByPriorityInput 按优先级排序输入
+type SortByPriorityInput struct {
+	Tasks []map[string]interface{} `json:"tasks"` // 任务列表
+}
+
+// SortByPriorityOutput 按优先级排序输出
+type SortByPriorityOutput struct {
+	SortedTasks []map[string]interface{} `json:"sorted_tasks"` // 排序后的任务列表
+}
+
+// SortRoundRobinInput 轮询排序输入
+type SortRoundRobinInput struct {
+	Tasks []map[string]interface{} `json:"tasks"` // 任务列表
+}
+
+// SortRoundRobinOutput 轮询排序输出
+type SortRoundRobinOutput struct {
+	SortedTasks []map[string]interface{} `json:"sorted_tasks"` // 排序后的任务列表
+}
+
+// SortByWeightInput 按权重排序输入
+type SortByWeightInput struct {
+	Tasks []map[string]interface{} `json:"tasks"` // 任务列表
+}
+
+// SortByWeightOutput 按权重排序输出
+type SortByWeightOutput struct {
+	SortedTasks []map[string]interface{} `json:"sorted_tasks"` // 排序后的任务列表
+}
+
+// CalculateTaskWeightInput 计算任务权重输入
+type CalculateTaskWeightInput struct {
+	Task map[string]interface{} `json:"task"` // 任务数据
+}
+
+// CalculateTaskWeightOutput 计算任务权重输出
+type CalculateTaskWeightOutput struct {
+	Weight float64 `json:"weight"` // 任务权重
+}
+
+// CalculateQueueScoreInput 计算队列评分输入
+type CalculateQueueScoreInput struct {
+	Queue    map[string]interface{} `json:"queue"`     // 队列数据
+	TaskData map[string]interface{} `json:"task_data"` // 任务数据
+}
+
+// CalculateQueueScoreOutput 计算队列评分输出
+type CalculateQueueScoreOutput struct {
+	Score float64 `json:"score"` // 队列评分
+}
+
+// CalculateUtilizationRateInput 计算利用率输入
+type CalculateUtilizationRateInput struct {
+	QueueData map[string]interface{} `json:"queue_data"` // 队列数据
+}
+
+// CalculateUtilizationRateOutput 计算利用率输出
+type CalculateUtilizationRateOutput struct {
+	UtilizationRate float64 `json:"utilization_rate"` // 利用率
+}
+
+// CalculateAverageProcessingTimeInput 计算平均处理时间输入
+type CalculateAverageProcessingTimeInput struct {
+	HistoricalData []map[string]interface{} `json:"historical_data"` // 历史数据
+}
+
+// CalculateAverageProcessingTimeOutput 计算平均处理时间输出
+type CalculateAverageProcessingTimeOutput struct {
+	AverageProcessingTime float64 `json:"average_processing_time"` // 平均处理时间
+}
+
+// CalculateThroughputInput 计算吞吐量输入
+type CalculateThroughputInput struct {
+	HistoricalData []map[string]interface{} `json:"historical_data"` // 历史数据
+}
+
+// CalculateThroughputOutput 计算吞吐量输出
+type CalculateThroughputOutput struct {
+	Throughput float64 `json:"throughput"` // 吞吐量
+}
+
+// CalculateErrorRateInput 计算错误率输入
+type CalculateErrorRateInput struct {
+	HistoricalData []map[string]interface{} `json:"historical_data"` // 历史数据
+}
+
+// CalculateErrorRateOutput 计算错误率输出
+type CalculateErrorRateOutput struct {
+	ErrorRate float64 `json:"error_rate"` // 错误率
+}
+
+// AnalyzeQueueTrendInput 分析队列趋势输入
+type AnalyzeQueueTrendInput struct {
+	HistoricalData []map[string]interface{} `json:"historical_data"` // 历史数据
+}
+
+// AnalyzeQueueTrendOutput 分析队列趋势输出
+type AnalyzeQueueTrendOutput struct {
+	Trend map[string]interface{} `json:"trend"` // 趋势分析结果
+}
+
+// PredictQueueBehaviorInput 预测队列行为输入
+type PredictQueueBehaviorInput struct {
+	HistoricalData []map[string]interface{} `json:"historical_data"` // 历史数据
+}
+
+// PredictQueueBehaviorOutput 预测队列行为输出
+type PredictQueueBehaviorOutput struct {
+	Prediction map[string]interface{} `json:"prediction"` // 预测结果
+}
+
+// ValidateBasicConfigInput 验证基础配置输入
+type ValidateBasicConfigInput struct {
+	Config map[string]interface{} `json:"config"` // 配置数据
+}
+
+// ValidateBasicConfigOutput 验证基础配置输出
+type ValidateBasicConfigOutput struct {
+	IsValid bool     `json:"is_valid"` // 是否有效
+	Message string   `json:"message"`  // 验证消息
+	Errors  []string `json:"errors"`   // 错误列表
+}
+
+// ValidatePerformanceConfigInput 验证性能配置输入
+type ValidatePerformanceConfigInput struct {
+	Config map[string]interface{} `json:"config"` // 配置数据
+}
+
+// ValidatePerformanceConfigOutput 验证性能配置输出
+type ValidatePerformanceConfigOutput struct {
+	IsValid bool     `json:"is_valid"` // 是否有效
+	Message string   `json:"message"`  // 验证消息
+	Errors  []string `json:"errors"`   // 错误列表
+}
+
+// ValidateSecurityConfigInput 验证安全配置输入
+type ValidateSecurityConfigInput struct {
+	Config map[string]interface{} `json:"config"` // 配置数据
+}
+
+// ValidateSecurityConfigOutput 验证安全配置输出
+type ValidateSecurityConfigOutput struct {
+	IsValid bool     `json:"is_valid"` // 是否有效
+	Message string   `json:"message"`  // 验证消息
+	Errors  []string `json:"errors"`   // 错误列表
+}
+
+// ValidateAccessControlInput 验证访问控制输入
+type ValidateAccessControlInput struct {
+	AccessControl map[string]interface{} `json:"access_control"` // 访问控制数据
+}
+
+// ValidateAccessControlOutput 验证访问控制输出
+type ValidateAccessControlOutput struct {
+	IsValid bool     `json:"is_valid"` // 是否有效
+	Message string   `json:"message"`  // 验证消息
+	Errors  []string `json:"errors"`   // 错误列表
+}
