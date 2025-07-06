@@ -43,10 +43,11 @@ const (
 
 // 日志级别常量 - 使用统一常量
 const (
-	LogLevelDEBUG = "DEBUG" // 保持原有大写格式
-	LogLevelINFO  = "INFO"
-	LogLevelWARN  = "WARN"
-	LogLevelERROR = "ERROR"
+	LogLevelDebug    = consts.LogLevelDebug // 保持原有大写格式
+	LogLevelInfo     = consts.LogLevelInfo
+	LogLevelWarn     = consts.LogLevelWarn
+	LogLevelError    = consts.LogLevelError
+	LogLevelCritical = consts.LogLevelCritical
 )
 
 // 命令状态常量 - 使用统一常量

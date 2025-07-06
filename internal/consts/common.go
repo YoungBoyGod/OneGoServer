@@ -56,8 +56,6 @@ const (
 	ActionTypeUnassign = "unassign"
 )
 
-
-
 // 通用优先级常量
 const (
 	PriorityLowest  = 1
@@ -182,4 +180,13 @@ const (
 	EnvTesting     = "testing"
 	EnvStaging     = "staging"
 	EnvProduction  = "production"
+)
+
+// 日志级别常量
+const (
+	LogLevelDebug    = "debug"
+	LogLevelInfo     = "info"
+	LogLevelWarn     = "warn"
+	LogLevelError    = "error"
+	LogLevelCritical = "critical"
 )

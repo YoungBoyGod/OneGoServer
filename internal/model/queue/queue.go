@@ -11,18 +11,18 @@ import (
 
 // 队列状态常量 - 使用统一常量
 const (
-	QueueStatusActive  = "active"
-	QueueStatusPaused  = "paused"
-	QueueStatusStopped = "stopped"
-	QueueStatusError   = "error"
+	QueueStatusActive  = consts.QueueStatusActive
+	QueueStatusPaused  = consts.QueueStatusPaused
+	QueueStatusStopped = consts.QueueStatusStopped
+	QueueStatusError   = consts.QueueStatusError
 )
 
 // 队列类型常量 - 使用统一常量
 const (
-	QueueTypeFIFO     = "fifo"
-	QueueTypePriority = "priority"
-	QueueTypeDelay    = "delay"
-	QueueTypeLIFO     = "lifo"
+	QueueTypeFIFO     = consts.QueueTypeFIFO
+	QueueTypePriority = consts.QueueTypePriority
+	QueueTypeDelay    = consts.QueueTypeDelay
+	QueueTypeLIFO     = consts.QueueTypeLIFO
 )
 
 // 队列操作类型常量 - 使用统一常量

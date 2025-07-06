@@ -4,6 +4,22 @@ package consts
 // Queue 模块常量定义
 // ================================
 
+// 队列状态常量
+const (
+	QueueStatusActive  = "active"
+	QueueStatusPaused  = "paused"
+	QueueStatusStopped = "stopped"
+	QueueStatusError   = "error"
+)
+
+// 队列类型常量
+const (
+	QueueTypeFIFO     = "fifo"
+	QueueTypePriority = "priority"
+	QueueTypeDelay    = "delay"
+	QueueTypeLIFO     = "lifo"
+)
+
 // 设备队列任务状态常量
 const (
 	DeviceQueueStatusQueued    = "queued"
