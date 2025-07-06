@@ -1,6 +1,8 @@
 package v1
 
 import (
+	"OneGfServer/api/common"
+
 	"github.com/gogf/gf/v2/frame/g"
 	"github.com/gogf/gf/v2/os/gtime"
 )
@@ -30,25 +32,19 @@ type CreateTaskRes struct {
 
 // GetTaskListReq 获取任务列表请求
 type GetTaskListReq struct {
-	g.Meta    `path:"/task/list" method:"get" tags:"任务管理" summary:"获取任务列表"`
-	Page      int         `json:"page" d:"1" v:"min:1#页码最小为1"`
-	Size      int         `json:"size" d:"10" v:"between:1,100#每页数量为1-100"`
-	Status    string      `json:"status,omitempty" v:"in:pending,running,completed,failed,cancelled#状态值无效"`
-	TaskType  string      `json:"task_type,omitempty" v:"in:backup,sync,monitor,custom#任务类型无效"`
-	DeviceId  string      `json:"device_id,omitempty" v:"max-length:50#设备ID最大50字符"`
-	Priority  int         `json:"priority,omitempty" v:"between:1,10#优先级为1-10"`
-	StartTime *gtime.Time `json:"start_time,omitempty"`
-	EndTime   *gtime.Time `json:"end_time,omitempty"`
-	Keyword   string      `json:"keyword,omitempty" v:"max-length:100#关键词最大100字符"`
-	SortBy    string      `json:"sort_by" d:"created_at" v:"in:created_at,updated_at,priority,deadline_at#排序字段无效"`
-	SortOrder string      `json:"sort_order" d:"desc" v:"in:asc,desc#排序方向无效"`
+	g.Meta                   `path:"/task/list" method:"get" tags:"任务管理" summary:"获取任务列表"`
+	common.PaginationRequest `json:",inline"`
+	Status                   string      `json:"status,omitempty" v:"in:pending,running,completed,failed,cancelled#状态值无效"`
+	TaskType                 string      `json:"task_type,omitempty" v:"in:backup,sync,monitor,custom#任务类型无效"`
+	DeviceId                 string      `json:"device_id,omitempty" v:"max-length:50#设备ID最大50字符"`
+	Priority                 int         `json:"priority,omitempty" v:"between:1,10#优先级为1-10"`
+	StartTime                *gtime.Time `json:"start_time,omitempty"`
+	EndTime                  *gtime.Time `json:"end_time,omitempty"`
+	Keyword                  string      `json:"keyword,omitempty" v:"max-length:100#关键词最大100字符"`
 }
 
 type GetTaskListRes struct {
-	List  []TaskInfo `json:"list"`
-	Total int64      `json:"total"`
-	Page  int        `json:"page"`
-	Size  int        `json:"size"`
+	common.PaginationResponse[TaskInfo] `json:",inline"`
 }
 
 // GetTaskDetailReq 获取任务详情请求

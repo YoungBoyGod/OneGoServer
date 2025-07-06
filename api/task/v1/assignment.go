@@ -1,7 +1,10 @@
 package v1
 
 import (
+	"OneGfServer/api/common"
+
 	"github.com/gogf/gf/v2/frame/g"
+	"github.com/gogf/gf/v2/os/gtime"
 )
 
 // ===============================
@@ -105,4 +108,63 @@ type GetDeviceTaskQueueRes struct {
 	Total    int64                 `json:"total"`
 	Page     int                   `json:"page"`
 	Size     int                   `json:"size"`
+}
+
+// ===============================
+// 任务分配管理相关API
+// ===============================
+
+// AssignTaskReq 分配任务请求
+type AssignTaskReq struct {
+	g.Meta    `path:"/task/{taskId}/assign" method:"post" tags:"任务分配" summary:"分配任务"`
+	TaskId    string   `json:"task_id" v:"required|max-length:50#任务ID不能为空"`
+	DeviceIds []string `json:"device_ids" v:"required|max:10#设备ID列表不能为空|最多10个设备"`
+	Priority  int      `json:"priority,omitempty" v:"between:1,10#优先级为1-10"`
+	Deadline  string   `json:"deadline,omitempty" v:"datetime#截止时间格式不正确"`
+}
+
+type AssignTaskRes struct {
+	Message string `json:"message"`
+}
+
+// GetTaskAssignmentsReq 获取任务分配请求
+type GetTaskAssignmentsReq struct {
+	g.Meta                   `path:"/task/{taskId}/assignments" method:"get" tags:"任务分配" summary:"获取任务分配"`
+	TaskId                   string `json:"task_id" v:"required|max-length:50#任务ID不能为空"`
+	common.PaginationRequest `json:",inline"`
+	Status                   string      `json:"status,omitempty" v:"in:pending,running,completed,failed#状态值无效"`
+	StartTime                *gtime.Time `json:"start_time,omitempty"`
+	EndTime                  *gtime.Time `json:"end_time,omitempty"`
+}
+
+type GetTaskAssignmentsRes struct {
+	common.PaginationResponse[TaskAssignmentInfo] `json:",inline"`
+}
+
+// ReassignTaskReq 重新分配任务请求
+type ReassignTaskReq struct {
+	g.Meta       `path:"/task/{taskId}/reassign" method:"post" tags:"任务分配" summary:"重新分配任务"`
+	TaskId       string   `json:"task_id" v:"required|max-length:50#任务ID不能为空"`
+	OldDeviceIds []string `json:"old_device_ids" v:"required|max:10#原设备ID列表不能为空"`
+	NewDeviceIds []string `json:"new_device_ids" v:"required|max:10#新设备ID列表不能为空"`
+	Reason       string   `json:"reason,omitempty" v:"max-length:200#重新分配原因最大200字符"`
+}
+
+type ReassignTaskRes struct {
+	Message string `json:"message"`
+}
+
+// GetDeviceTaskAssignmentsReq 获取设备任务分配请求
+type GetDeviceTaskAssignmentsReq struct {
+	g.Meta                   `path:"/device/{deviceId}/task-assignments" method:"get" tags:"任务分配" summary:"获取设备任务分配"`
+	DeviceId                 string `json:"device_id" v:"required|max-length:50#设备ID不能为空"`
+	common.PaginationRequest `json:",inline"`
+	Status                   string      `json:"status,omitempty" v:"in:pending,running,completed,failed#状态值无效"`
+	TaskType                 string      `json:"task_type,omitempty" v:"in:backup,sync,monitor,custom#任务类型无效"`
+	StartTime                *gtime.Time `json:"start_time,omitempty"`
+	EndTime                  *gtime.Time `json:"end_time,omitempty"`
+}
+
+type GetDeviceTaskAssignmentsRes struct {
+	common.PaginationResponse[DeviceTaskAssignmentInfo] `json:",inline"`
 }

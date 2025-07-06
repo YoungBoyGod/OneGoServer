@@ -1,6 +1,8 @@
 package v1
 
 import (
+	"OneGfServer/api/common"
+
 	"github.com/gogf/gf/v2/frame/g"
 	"github.com/gogf/gf/v2/os/gtime"
 )
@@ -11,17 +13,13 @@ import (
 
 // GetUserSessionsReq 获取用户会话请求
 type GetUserSessionsReq struct {
-	g.Meta `path:"/user/{userId}/sessions" method:"get" tags:"用户会话" summary:"获取用户会话"`
-	UserId string `json:"user_id" v:"required|max-length:50#用户ID不能为空"`
-	Page   int    `json:"page" d:"1" v:"min:1#页码最小为1"`
-	Size   int    `json:"size" d:"10" v:"between:1,50#每页数量为1-50"`
+	g.Meta                   `path:"/user/{userId}/sessions" method:"get" tags:"用户会话" summary:"获取用户会话"`
+	UserId                   string `json:"user_id" v:"required|max-length:50#用户ID不能为空"`
+	common.PaginationRequest `json:",inline"`
 }
 
 type GetUserSessionsRes struct {
-	List  []SessionInfo `json:"list"`
-	Total int64         `json:"total"`
-	Page  int           `json:"page"`
-	Size  int           `json:"size"`
+	common.PaginationResponse[SessionInfo] `json:",inline"`
 }
 
 // RefreshTokenReq 刷新令牌请求
@@ -52,18 +50,14 @@ type RevokeUserSessionRes struct {
 
 // GetUserActivityReq 获取用户活动请求
 type GetUserActivityReq struct {
-	g.Meta     `path:"/user/{userId}/activity" method:"get" tags:"用户会话" summary:"获取用户活动"`
-	UserId     string      `json:"user_id" v:"required|max-length:50#用户ID不能为空"`
-	Page       int         `json:"page" d:"1" v:"min:1#页码最小为1"`
-	Size       int         `json:"size" d:"20" v:"between:1,100#每页数量为1-100"`
-	ActionType string      `json:"action_type,omitempty" v:"in:login,logout,create,update,delete,view#操作类型无效"`
-	StartTime  *gtime.Time `json:"start_time,omitempty"`
-	EndTime    *gtime.Time `json:"end_time,omitempty"`
+	g.Meta                   `path:"/user/{userId}/activity" method:"get" tags:"用户会话" summary:"获取用户活动"`
+	UserId                   string `json:"user_id" v:"required|max-length:50#用户ID不能为空"`
+	common.PaginationRequest `json:",inline"`
+	ActionType               string      `json:"action_type,omitempty" v:"in:login,logout,create,update,delete,view#操作类型无效"`
+	StartTime                *gtime.Time `json:"start_time,omitempty"`
+	EndTime                  *gtime.Time `json:"end_time,omitempty"`
 }
 
 type GetUserActivityRes struct {
-	List  []ActivityInfo `json:"list"`
-	Total int64          `json:"total"`
-	Page  int            `json:"page"`
-	Size  int            `json:"size"`
+	common.PaginationResponse[ActivityInfo] `json:",inline"`
 }

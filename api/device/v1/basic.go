@@ -1,27 +1,31 @@
 package v1
 
 import (
+	"OneGfServer/api/common"
+
 	"github.com/gogf/gf/v2/frame/g"
+	"github.com/gogf/gf/v2/os/gtime"
 )
 
 // ==============================================
 // 基础设备管理 API
 // ==============================================
 
-// RegisterDevice 注册设备请求
+// RegisterDeviceReq 设备注册请求
 type RegisterDeviceReq struct {
-	g.Meta        `path:"/device/register" method:"post" tags:"设备管理" summary:"注册设备"`
-	DeviceName    string `json:"device_name" v:"required|length:1,100#设备名称不能为空|设备名称长度为1-100字符"`
-	DeviceType    string `json:"device_type" v:"required|in:sensor,camera,actuator,gateway#设备类型不能为空|设备类型只能是sensor,camera,actuator,gateway"`
-	Model         string `json:"model" v:"required|length:1,50#设备型号不能为空|设备型号长度为1-50字符"`
-	BoardId       string `json:"board_id" v:"required|length:1,50#主板ID不能为空|主板ID长度为1-50字符"`
-	IpAddress     string `json:"ip_address" v:"required|ip#IP地址不能为空|IP地址格式不正确"`
-	Port          int    `json:"port" v:"required|between:1,65535#端口不能为空|端口范围为1-65535"`
-	Protocol      string `json:"protocol" v:"required|in:http,mqtt,tcp,udp#协议不能为空|协议只能是http,mqtt,tcp,udp"`
-	LoginUsername string `json:"login_username,omitempty"`
-	LoginPassword string `json:"login_password,omitempty"`
-	Metadata      string `json:"metadata,omitempty"`
-	Tags          string `json:"tags,omitempty"`
+	g.Meta       `path:"/device/register" method:"post" tags:"设备管理" summary:"设备注册"`
+	DeviceName   string                 `json:"device_name" v:"required|length:1,100#设备名称不能为空|设备名称长度为1-100字符"`
+	DeviceType   string                 `json:"device_type" v:"required|in:server,workstation,mobile,iot#设备类型不能为空"`
+	DeviceModel  string                 `json:"device_model,omitempty" v:"length:1,100#设备型号长度为1-100字符"`
+	SerialNumber string                 `json:"serial_number,omitempty" v:"length:1,100#序列号长度为1-100字符"`
+	MacAddress   string                 `json:"mac_address,omitempty" v:"mac#MAC地址格式不正确"`
+	IpAddress    string                 `json:"ip_address,omitempty" v:"ip#IP地址格式不正确"`
+	Location     string                 `json:"location,omitempty" v:"length:1,200#位置信息长度为1-200字符"`
+	Description  string                 `json:"description,omitempty" v:"max-length:500#设备描述最大500字符"`
+	Config       map[string]interface{} `json:"config,omitempty"`
+	Tags         []string               `json:"tags,omitempty" v:"max:10#标签数量最多10个"`
+	OwnerId      string                 `json:"owner_id,omitempty" v:"max-length:50#所有者ID最大50字符"`
+	Department   string                 `json:"department,omitempty" v:"length:1,100#部门名称长度为1-100字符"`
 }
 
 // RegisterDeviceRes 注册设备响应
@@ -30,22 +34,21 @@ type RegisterDeviceRes struct {
 	Message  string `json:"message"`
 }
 
-// GetDeviceList 获取设备列表请求
+// GetDeviceListReq 获取设备列表请求
 type GetDeviceListReq struct {
-	g.Meta     `path:"/device/list" method:"get" tags:"设备管理" summary:"获取设备列表"`
-	Page       int    `json:"page" d:"1" v:"min:1#页码最小为1"`
-	Size       int    `json:"size" d:"10" v:"between:1,100#每页数量为1-100"`
-	DeviceType string `json:"device_type,omitempty" v:"in:sensor,camera,actuator,gateway#设备类型只能是sensor,camera,actuator,gateway"`
-	Status     string `json:"status,omitempty" v:"in:online,offline,maintenance,error#状态只能是online,offline,maintenance,error"`
-	Keyword    string `json:"keyword,omitempty"`
+	g.Meta                   `path:"/device/list" method:"get" tags:"设备管理" summary:"获取设备列表"`
+	common.PaginationRequest `json:",inline"`
+	Status                   string      `json:"status,omitempty" v:"in:online,offline,maintenance,error#状态值无效"`
+	DeviceType               string      `json:"device_type,omitempty" v:"in:server,workstation,mobile,iot#设备类型无效"`
+	Department               string      `json:"department,omitempty" v:"length:1,100#部门名称长度为1-100字符"`
+	Keyword                  string      `json:"keyword,omitempty" v:"max-length:100#关键词最大100字符"`
+	StartTime                *gtime.Time `json:"start_time,omitempty"`
+	EndTime                  *gtime.Time `json:"end_time,omitempty"`
 }
 
 // GetDeviceListRes 获取设备列表响应
 type GetDeviceListRes struct {
-	List  []DeviceInfo `json:"list"`
-	Total int64        `json:"total"`
-	Page  int          `json:"page"`
-	Size  int          `json:"size"`
+	common.PaginationResponse[DeviceInfo] `json:",inline"`
 }
 
 // ManageDeviceWhitelist 管理设备白名单请求

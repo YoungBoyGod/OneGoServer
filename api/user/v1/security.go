@@ -1,6 +1,8 @@
 package v1
 
 import (
+	"OneGfServer/api/common"
+
 	"github.com/gogf/gf/v2/frame/g"
 	"github.com/gogf/gf/v2/os/gtime"
 )
@@ -38,21 +40,17 @@ type ResetPasswordRes struct {
 
 // GetUserSecurityLogReq 获取用户安全日志请求
 type GetUserSecurityLogReq struct {
-	g.Meta    `path:"/user/{userId}/security/logs" method:"get" tags:"用户安全" summary:"获取用户安全日志"`
-	UserId    string      `json:"user_id" v:"required|max-length:50#用户ID不能为空"`
-	Page      int         `json:"page" d:"1" v:"min:1#页码最小为1"`
-	Size      int         `json:"size" d:"20" v:"between:1,100#每页数量为1-100"`
-	LogType   string      `json:"log_type,omitempty" v:"in:login,password_change,permission_change,security_event#日志类型无效"`
-	Level     string      `json:"level,omitempty" v:"in:info,warn,error,critical#日志级别无效"`
-	StartTime *gtime.Time `json:"start_time,omitempty"`
-	EndTime   *gtime.Time `json:"end_time,omitempty"`
+	g.Meta                   `path:"/user/{userId}/security/logs" method:"get" tags:"用户安全" summary:"获取用户安全日志"`
+	UserId                   string `json:"user_id" v:"required|max-length:50#用户ID不能为空"`
+	common.PaginationRequest `json:",inline"`
+	LogType                  string      `json:"log_type,omitempty" v:"in:login,password_change,permission_change,security_event#日志类型无效"`
+	Level                    string      `json:"level,omitempty" v:"in:info,warn,error,critical#日志级别无效"`
+	StartTime                *gtime.Time `json:"start_time,omitempty"`
+	EndTime                  *gtime.Time `json:"end_time,omitempty"`
 }
 
 type GetUserSecurityLogRes struct {
-	List  []SecurityLogInfo `json:"list"`
-	Total int64             `json:"total"`
-	Page  int               `json:"page"`
-	Size  int               `json:"size"`
+	common.PaginationResponse[SecurityLogInfo] `json:",inline"`
 }
 
 // UpdateUserSecuritySettingsReq 更新用户安全设置请求

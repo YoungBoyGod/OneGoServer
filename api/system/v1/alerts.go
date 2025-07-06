@@ -1,6 +1,8 @@
 package v1
 
 import (
+	"OneGfServer/api/common"
+
 	"github.com/gogf/gf/v2/frame/g"
 )
 
@@ -10,21 +12,17 @@ import (
 
 // GetSystemAlertsReq 获取系统告警请求
 type GetSystemAlertsReq struct {
-	g.Meta    `path:"/alerts" method:"get" tags:"系统管理" summary:"获取系统告警"`
-	Level     string `json:"level,omitempty" v:"in:info,warn,error,critical#告警级别只能是info,warn,error,critical"`
-	Status    string `json:"status,omitempty" v:"in:active,resolved,acknowledged#告警状态只能是active,resolved,acknowledged"`
-	StartTime string `json:"startTime,omitempty"`
-	EndTime   string `json:"endTime,omitempty"`
-	Page      int    `json:"page" d:"1" v:"min:1#页码最小为1"`
-	Size      int    `json:"size" d:"20" v:"between:1,100#每页数量为1-100"`
+	g.Meta                   `path:"/alerts" method:"get" tags:"系统管理" summary:"获取系统告警"`
+	common.PaginationRequest `json:",inline"`
+	Level                    string `json:"level,omitempty" v:"in:info,warn,error,critical#告警级别只能是info,warn,error,critical"`
+	Status                   string `json:"status,omitempty" v:"in:active,resolved,acknowledged#告警状态只能是active,resolved,acknowledged"`
+	StartTime                string `json:"startTime,omitempty"`
+	EndTime                  string `json:"endTime,omitempty"`
 }
 
 // GetSystemAlertsRes 获取系统告警响应
 type GetSystemAlertsRes struct {
-	List  []SystemAlert `json:"list"`
-	Total int64         `json:"total"`
-	Page  int           `json:"page"`
-	Size  int           `json:"size"`
+	common.PaginationResponse[SystemAlert] `json:",inline"`
 }
 
 // AcknowledgeAlertReq 确认告警请求

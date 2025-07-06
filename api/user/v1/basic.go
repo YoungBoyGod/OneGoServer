@@ -1,6 +1,8 @@
 package v1
 
 import (
+	"OneGfServer/api/common"
+
 	"github.com/gogf/gf/v2/frame/g"
 	"github.com/gogf/gf/v2/os/gtime"
 )
@@ -62,24 +64,18 @@ type LogoutUserRes struct {
 
 // GetUserListReq 获取用户列表请求
 type GetUserListReq struct {
-	g.Meta     `path:"/user/list" method:"get" tags:"用户管理" summary:"获取用户列表"`
-	Page       int         `json:"page" d:"1" v:"min:1#页码最小为1"`
-	Size       int         `json:"size" d:"10" v:"between:1,100#每页数量为1-100"`
-	Status     string      `json:"status,omitempty" v:"in:active,inactive,locked,pending#状态值无效"`
-	Role       string      `json:"role,omitempty" v:"length:1,50#角色名称长度为1-50字符"`
-	Department string      `json:"department,omitempty" v:"length:1,100#部门名称长度为1-100字符"`
-	Keyword    string      `json:"keyword,omitempty" v:"max-length:100#关键词最大100字符"`
-	StartTime  *gtime.Time `json:"start_time,omitempty"`
-	EndTime    *gtime.Time `json:"end_time,omitempty"`
-	SortBy     string      `json:"sort_by" d:"created_at" v:"in:created_at,updated_at,last_login#排序字段无效"`
-	SortOrder  string      `json:"sort_order" d:"desc" v:"in:asc,desc#排序方向无效"`
+	g.Meta                   `path:"/user/list" method:"get" tags:"用户管理" summary:"获取用户列表"`
+	common.PaginationRequest `json:",inline"`
+	Status                   string      `json:"status,omitempty" v:"in:active,inactive,locked,pending#状态值无效"`
+	Role                     string      `json:"role,omitempty" v:"length:1,50#角色名称长度为1-50字符"`
+	Department               string      `json:"department,omitempty" v:"length:1,100#部门名称长度为1-100字符"`
+	Keyword                  string      `json:"keyword,omitempty" v:"max-length:100#关键词最大100字符"`
+	StartTime                *gtime.Time `json:"start_time,omitempty"`
+	EndTime                  *gtime.Time `json:"end_time,omitempty"`
 }
 
 type GetUserListRes struct {
-	List  []UserInfo `json:"list"`
-	Total int64      `json:"total"`
-	Page  int        `json:"page"`
-	Size  int        `json:"size"`
+	common.PaginationResponse[UserInfo] `json:",inline"`
 }
 
 // GetUserDetailReq 获取用户详情请求

@@ -1,6 +1,8 @@
 package v1
 
 import (
+	"OneGfServer/api/common"
+
 	"github.com/gogf/gf/v2/frame/g"
 	"github.com/gogf/gf/v2/os/gtime"
 )
@@ -11,15 +13,14 @@ import (
 
 // CreateQueueReq 创建队列请求
 type CreateQueueReq struct {
-	g.Meta         `path:"/queue/create" method:"post" tags:"队列管理" summary:"创建队列"`
-	QueueName      string                 `json:"queue_name" v:"required|length:1,100#队列名称不能为空|队列名称长度为1-100字符"`
-	QueueType      string                 `json:"queue_type" v:"required|in:fifo,priority,delay,lifo#队列类型不能为空"`
-	Description    string                 `json:"description,omitempty" v:"max-length:500#队列描述最大500字符"`
-	MaxSize        int                    `json:"max_size" d:"1000" v:"between:1,10000#队列最大大小为1-10000"`
-	MaxConcurrency int                    `json:"max_concurrency" d:"10" v:"between:1,100#最大并发数为1-100"`
-	Priority       int                    `json:"priority" d:"5" v:"between:1,10#队列优先级为1-10"`
-	Config         map[string]interface{} `json:"config,omitempty"`
-	Enabled        bool                   `json:"enabled" d:"true"`
+	g.Meta      `path:"/queue/create" method:"post" tags:"队列管理" summary:"创建队列"`
+	QueueName   string                 `json:"queue_name" v:"required|length:1,100#队列名称不能为空|队列名称长度为1-100字符"`
+	QueueType   string                 `json:"queue_type" v:"required|in:task,message,event#队列类型不能为空"`
+	Description string                 `json:"description,omitempty" v:"max-length:500#队列描述最大500字符"`
+	Priority    int                    `json:"priority" d:"5" v:"between:1,10#队列优先级为1-10"`
+	MaxSize     int                    `json:"max_size,omitempty" v:"min:1#最大容量最小为1"`
+	Config      map[string]interface{} `json:"config,omitempty"`
+	Tags        []string               `json:"tags,omitempty" v:"max:10#标签数量最多10个"`
 }
 
 type CreateQueueRes struct {
@@ -29,24 +30,17 @@ type CreateQueueRes struct {
 
 // GetQueueListReq 获取队列列表请求
 type GetQueueListReq struct {
-	g.Meta    `path:"/queue/list" method:"get" tags:"队列管理" summary:"获取队列列表"`
-	Page      int         `json:"page" d:"1" v:"min:1#页码最小为1"`
-	Size      int         `json:"size" d:"10" v:"between:1,100#每页数量为1-100"`
-	Status    string      `json:"status,omitempty" v:"in:active,paused,stopped,error#状态值无效"`
-	QueueType string      `json:"queue_type,omitempty" v:"in:fifo,priority,delay,lifo#队列类型无效"`
-	Priority  int         `json:"priority,omitempty" v:"between:1,10#优先级为1-10"`
-	Keyword   string      `json:"keyword,omitempty" v:"max-length:100#关键词最大100字符"`
-	StartTime *gtime.Time `json:"start_time,omitempty"`
-	EndTime   *gtime.Time `json:"end_time,omitempty"`
-	SortBy    string      `json:"sort_by" d:"created_at" v:"in:created_at,updated_at,priority,task_count#排序字段无效"`
-	SortOrder string      `json:"sort_order" d:"desc" v:"in:asc,desc#排序方向无效"`
+	g.Meta                   `path:"/queue/list" method:"get" tags:"队列管理" summary:"获取队列列表"`
+	common.PaginationRequest `json:",inline"`
+	Status                   string      `json:"status,omitempty" v:"in:active,inactive,paused#状态值无效"`
+	QueueType                string      `json:"queue_type,omitempty" v:"in:task,message,event#队列类型无效"`
+	Keyword                  string      `json:"keyword,omitempty" v:"max-length:100#关键词最大100字符"`
+	StartTime                *gtime.Time `json:"start_time,omitempty"`
+	EndTime                  *gtime.Time `json:"end_time,omitempty"`
 }
 
 type GetQueueListRes struct {
-	List  []QueueInfo `json:"list"`
-	Total int64       `json:"total"`
-	Page  int         `json:"page"`
-	Size  int         `json:"size"`
+	common.PaginationResponse[QueueInfo] `json:",inline"`
 }
 
 // GetQueueDetailReq 获取队列详情请求
