@@ -6,6 +6,8 @@ import (
 
 	"github.com/gogf/gf/v2/errors/gerror"
 	"github.com/gogf/gf/v2/os/gtime"
+
+	device "OneGfServer/internal/model/device"
 )
 
 // ===============================
@@ -13,41 +15,41 @@ import (
 // ===============================
 
 // GetDeviceLoadMetrics 获取设备负载指标
-func (s *sDevice) GetDeviceLoadMetrics(ctx context.Context, deviceId, period string) (map[string]interface{}, error) {
+func (s *sDevice) GetDeviceLoadMetrics(ctx context.Context, input *device.GetDeviceLoadMetricsInput) (*device.GetDeviceLoadMetricsOutput, error) {
 	// 验证设备是否存在
-	if err := s.validateDeviceExists(ctx, deviceId); err != nil {
+	if err := s.validateDeviceExists(ctx, input.DeviceID); err != nil {
 		return nil, err
 	}
 
 	// 解析时间周期
-	duration, err := s.parsePeriod(period)
+	duration, err := s.parsePeriod(input.Period)
 	if err != nil {
 		return nil, err
 	}
 
 	// 获取历史数据
-	history, err := s.getDeviceLoadHistory(ctx, deviceId, duration)
+	history, err := s.getDeviceLoadHistory(ctx, input.DeviceID, duration)
 	if err != nil {
 		return nil, err
 	}
 
 	// 生成时间序列数据
 	timeSeriesData := s.generateTimeSeriesData(
-		gtime.Now().Add(-duration),
-		gtime.Now(),
+		gtime.Now().Add(-duration).Time,
+		gtime.Now().Time,
 		300, // 5分钟间隔
 		0,   // 最小值
 		100, // 最大值
 	)
 
-	return map[string]interface{}{
-		"device_id":   deviceId,
-		"period":      period,
-		"duration":    duration.String(),
-		"time_series": timeSeriesData,
-		"history":     history,
-		"summary":     s.calculateMetricsSummary(history),
-		"timestamp":   gtime.Now().Format("2006-01-02 15:04:05"),
+	return &device.GetDeviceLoadMetricsOutput{
+		DeviceID:   input.DeviceID,
+		Period:     input.Period,
+		Duration:   duration.String(),
+		TimeSeries: timeSeriesData,
+		History:    history,
+		Summary:    s.calculateMetricsSummary(history),
+		Timestamp:  gtime.Now().Format("2006-01-02 15:04:05"),
 	}, nil
 }
 

@@ -1,6 +1,7 @@
 package device
 
 import (
+	"OneGfServer/internal/model/device"
 	"context"
 	"math"
 	"time"
@@ -13,74 +14,134 @@ import (
 // ===============================
 
 // CalculateDeviceHealthScore 计算设备健康度评分
-func (s *sDevice) CalculateDeviceHealthScore(ctx context.Context, deviceData map[string]interface{}) float64 {
+func (s *sDevice) CalculateDeviceHealthScore(ctx context.Context, input *device.CalculateDeviceHealthScoreInput) (*device.CalculateDeviceHealthScoreOutput, error) {
+	output := &device.CalculateDeviceHealthScoreOutput{
+		HealthScore: 100.0,
+		Components:  make(map[string]interface{}),
+	}
+
 	var totalScore float64 = 100.0
 
 	// 1. CPU使用率影响 (权重: 25%)
-	if cpuUsage, ok := deviceData["cpu_usage"].(float64); ok {
+	if cpuUsage, ok := input.DeviceData["cpu_usage"].(float64); ok {
+		cpuScore := 100.0
 		if cpuUsage > 90 {
 			totalScore -= 25
+			cpuScore = 0
 		} else if cpuUsage > 70 {
 			totalScore -= 15
+			cpuScore = 60
 		} else if cpuUsage > 50 {
 			totalScore -= 5
+			cpuScore = 80
+		}
+		output.Components["cpu"] = map[string]interface{}{
+			"usage":  cpuUsage,
+			"score":  cpuScore,
+			"weight": 0.25,
 		}
 	}
 
 	// 2. 内存使用率影响 (权重: 25%)
-	if memUsage, ok := deviceData["memory_usage"].(float64); ok {
+	if memUsage, ok := input.DeviceData["memory_usage"].(float64); ok {
+		memScore := 100.0
 		if memUsage > 90 {
 			totalScore -= 25
+			memScore = 0
 		} else if memUsage > 80 {
 			totalScore -= 15
+			memScore = 60
 		} else if memUsage > 60 {
 			totalScore -= 5
+			memScore = 80
+		}
+		output.Components["memory"] = map[string]interface{}{
+			"usage":  memUsage,
+			"score":  memScore,
+			"weight": 0.25,
 		}
 	}
 
 	// 3. 磁盘使用率影响 (权重: 20%)
-	if diskUsage, ok := deviceData["disk_usage"].(float64); ok {
+	if diskUsage, ok := input.DeviceData["disk_usage"].(float64); ok {
+		diskScore := 100.0
 		if diskUsage > 95 {
 			totalScore -= 20
+			diskScore = 0
 		} else if diskUsage > 85 {
 			totalScore -= 10
+			diskScore = 70
 		} else if diskUsage > 70 {
 			totalScore -= 3
+			diskScore = 90
+		}
+		output.Components["disk"] = map[string]interface{}{
+			"usage":  diskUsage,
+			"score":  diskScore,
+			"weight": 0.20,
 		}
 	}
 
 	// 4. 网络连接状态影响 (权重: 15%)
-	if networkStatus, ok := deviceData["network_status"].(string); ok {
+	if networkStatus, ok := input.DeviceData["network_status"].(string); ok {
+		networkScore := 100.0
 		switch networkStatus {
 		case "disconnected":
 			totalScore -= 15
+			networkScore = 0
 		case "unstable":
 			totalScore -= 8
+			networkScore = 50
 		case "slow":
 			totalScore -= 3
+			networkScore = 80
+		}
+		output.Components["network"] = map[string]interface{}{
+			"status": networkStatus,
+			"score":  networkScore,
+			"weight": 0.15,
 		}
 	}
 
 	// 5. 最后心跳时间影响 (权重: 10%)
-	if lastHeartbeat, ok := deviceData["last_heartbeat"].(*gtime.Time); ok && lastHeartbeat != nil {
+	if lastHeartbeat, ok := input.DeviceData["last_heartbeat"].(*gtime.Time); ok && lastHeartbeat != nil {
+		heartbeatScore := 100.0
 		timeDiff := time.Since(lastHeartbeat.Time)
 		if timeDiff > 10*time.Minute {
 			totalScore -= 10
+			heartbeatScore = 0
 		} else if timeDiff > 5*time.Minute {
 			totalScore -= 5
+			heartbeatScore = 50
 		} else if timeDiff > 2*time.Minute {
 			totalScore -= 2
+			heartbeatScore = 80
+		}
+		output.Components["heartbeat"] = map[string]interface{}{
+			"last_heartbeat": lastHeartbeat.Format("2006-01-02 15:04:05"),
+			"time_diff":      timeDiff.String(),
+			"score":          heartbeatScore,
+			"weight":         0.10,
 		}
 	}
 
 	// 6. 错误次数影响 (权重: 5%)
-	if errorCount, ok := deviceData["error_count"].(int); ok {
+	if errorCount, ok := input.DeviceData["error_count"].(int); ok {
+		errorScore := 100.0
 		if errorCount > 10 {
 			totalScore -= 5
+			errorScore = 0
 		} else if errorCount > 5 {
 			totalScore -= 3
+			errorScore = 40
 		} else if errorCount > 2 {
 			totalScore -= 1
+			errorScore = 80
+		}
+		output.Components["errors"] = map[string]interface{}{
+			"error_count": errorCount,
+			"score":       errorScore,
+			"weight":      0.05,
 		}
 	}
 
@@ -92,23 +153,42 @@ func (s *sDevice) CalculateDeviceHealthScore(ctx context.Context, deviceData map
 		totalScore = 100
 	}
 
-	return math.Round(totalScore*100) / 100
+	output.HealthScore = math.Round(totalScore*100) / 100
+
+	return output, nil
 }
 
 // CheckDeviceHealth 检查设备健康状态
-func (s *sDevice) CheckDeviceHealth(ctx context.Context, deviceData map[string]interface{}) map[string]interface{} {
-	healthScore := s.CalculateDeviceHealthScore(ctx, deviceData)
-	healthChecks := s.performHealthChecks(ctx, deviceData)
-	alerts := s.generateHealthAlerts(ctx, deviceData, healthScore)
-
-	return map[string]interface{}{
-		"health_score":    healthScore,
-		"status":          s.getHealthStatus(healthScore),
-		"checks":          healthChecks,
-		"alerts":          alerts,
-		"recommendations": s.generateHealthRecommendations(healthScore, healthChecks),
-		"timestamp":       gtime.Now().Format("2006-01-02 15:04:05"),
+func (s *sDevice) CheckDeviceHealth(ctx context.Context, input *device.CheckDeviceHealthInput) (*device.CheckDeviceHealthOutput, error) {
+	output := &device.CheckDeviceHealthOutput{
+		Checks:          make(map[string]interface{}),
+		Alerts:          []map[string]interface{}{},
+		Recommendations: []string{},
 	}
+
+	// 计算健康度评分
+	healthInput := &device.CalculateDeviceHealthScoreInput{
+		DeviceData: input.DeviceData,
+	}
+	healthOutput, err := s.CalculateDeviceHealthScore(ctx, healthInput)
+	if err != nil {
+		return nil, err
+	}
+
+	// 执行健康检查
+	healthChecks := s.performHealthChecks(ctx, input.DeviceData)
+
+	// 生成健康告警
+	alerts := s.generateHealthAlerts(ctx, input.DeviceData, healthOutput.HealthScore)
+
+	output.HealthScore = healthOutput.HealthScore
+	output.Status = s.getHealthStatus(healthOutput.HealthScore)
+	output.Checks = healthChecks
+	output.Alerts = alerts
+	output.Recommendations = s.generateHealthRecommendations(healthOutput.HealthScore, healthChecks)
+	output.Timestamp = gtime.Now().Format("2006-01-02 15:04:05")
+
+	return output, nil
 }
 
 // performHealthChecks 执行健康检查

@@ -1,6 +1,7 @@
 package device
 
 import (
+	"OneGfServer/internal/model/device"
 	"context"
 	"math"
 
@@ -13,15 +14,15 @@ import (
 // ===============================
 
 // CalculateDeviceLoadScore 计算设备负载评分
-func (s *sDevice) CalculateDeviceLoadScore(ctx context.Context, deviceId string) (map[string]interface{}, error) {
+func (s *sDevice) CalculateDeviceLoadScore(ctx context.Context, input *device.CalculateDeviceLoadScoreInput) (*device.CalculateDeviceLoadScoreOutput, error) {
 	// 获取设备数据
-	deviceData, err := s.getDeviceData(ctx, deviceId)
+	_, err := s.getDeviceData(ctx, input.DeviceID)
 	if err != nil {
 		return nil, err
 	}
 
 	// 获取设备指标
-	metrics, err := s.getDeviceMetrics(ctx, deviceId)
+	metrics, err := s.getDeviceMetrics(ctx, input.DeviceID)
 	if err != nil {
 		return nil, err
 	}
@@ -32,13 +33,13 @@ func (s *sDevice) CalculateDeviceLoadScore(ctx context.Context, deviceId string)
 	// 生成优化建议
 	recommendations := s.generateLoadOptimizationRecommendations(loadScore, components, metrics)
 
-	return map[string]interface{}{
-		"device_id":       deviceId,
-		"load_score":      loadScore,
-		"components":      components,
-		"recommendations": recommendations,
-		"timestamp":       gtime.Now().Format("2006-01-02 15:04:05"),
-		"metrics":         metrics,
+	return &device.CalculateDeviceLoadScoreOutput{
+		DeviceID:        input.DeviceID,
+		LoadScore:       loadScore,
+		Components:      components,
+		Recommendations: recommendations,
+		Timestamp:       gtime.Now().Format("2006-01-02 15:04:05"),
+		Metrics:         metrics,
 	}, nil
 }
 
@@ -197,27 +198,27 @@ func (s *sDevice) generateLoadOptimizationRecommendations(loadScore float64, com
 }
 
 // OptimizeDeviceLoad 优化设备负载
-func (s *sDevice) OptimizeDeviceLoad(ctx context.Context, deviceId, strategy string) (map[string]interface{}, error) {
+func (s *sDevice) OptimizeDeviceLoad(ctx context.Context, input *device.OptimizeDeviceLoadInput) (*device.OptimizeDeviceLoadOutput, error) {
 	// 获取当前负载评分
-	currentScore, _, err := s.getCurrentLoadScore(ctx, deviceId)
+	currentScore, _, err := s.getCurrentLoadScore(ctx, input.DeviceID)
 	if err != nil {
 		return nil, err
 	}
 
 	// 生成优化动作
-	actions := s.generateOptimizationActions(strategy, currentScore)
+	actions := s.generateOptimizationActions(input.Strategy, currentScore)
 
 	// 计算优化后的评分
 	optimizedScore := s.calculateOptimizedScore(currentScore, actions)
 
-	return map[string]interface{}{
-		"device_id":       deviceId,
-		"strategy":        strategy,
-		"current_score":   currentScore,
-		"optimized_score": optimizedScore,
-		"improvement":     optimizedScore - currentScore,
-		"actions":         actions,
-		"timestamp":       gtime.Now().Format("2006-01-02 15:04:05"),
+	return &device.OptimizeDeviceLoadOutput{
+		DeviceID:       input.DeviceID,
+		Strategy:       input.Strategy,
+		CurrentScore:   currentScore,
+		OptimizedScore: optimizedScore,
+		Improvement:    optimizedScore - currentScore,
+		Actions:        actions,
+		Timestamp:      gtime.Now().Format("2006-01-02 15:04:05"),
 	}, nil
 }
 
@@ -258,71 +259,67 @@ func (s *sDevice) calculateOptimizedScore(currentScore float64, actions []string
 }
 
 // SetDeviceLoadThreshold 设置设备负载阈值
-func (s *sDevice) SetDeviceLoadThreshold(ctx context.Context, deviceId string, warning, critical float64, maxTasks int) error {
+func (s *sDevice) SetDeviceLoadThreshold(ctx context.Context, input *device.SetDeviceLoadThresholdInput) (*device.SetDeviceLoadThresholdOutput, error) {
 	// 验证设备是否存在
-	if err := s.validateDeviceExists(ctx, deviceId); err != nil {
-		return err
+	if err := s.validateDeviceExists(ctx, input.DeviceID); err != nil {
+		return &device.SetDeviceLoadThresholdOutput{
+			DeviceID:  input.DeviceID,
+			Message:   "设备不存在",
+			IsSuccess: false,
+		}, err
 	}
 
 	// 验证阈值参数
-	if warning <= 0 || critical <= 0 || warning >= critical {
-		return gerror.New("无效的阈值参数")
+	if input.Warning <= 0 || input.Critical <= 0 || input.MaxTasks <= 0 {
+		return &device.SetDeviceLoadThresholdOutput{
+			DeviceID:  input.DeviceID,
+			Message:   "阈值参数无效",
+			IsSuccess: false,
+		}, gerror.New("阈值参数无效")
 	}
 
-	if maxTasks <= 0 {
-		return gerror.New("最大任务数必须大于0")
+	if input.Warning >= input.Critical {
+		return &device.SetDeviceLoadThresholdOutput{
+			DeviceID:  input.DeviceID,
+			Message:   "警告阈值必须小于严重阈值",
+			IsSuccess: false,
+		}, gerror.New("警告阈值必须小于严重阈值")
 	}
 
-	// 这里应该保存到数据库或配置文件
-	// 目前只是验证参数
-	return nil
-}
+	// 这里应该保存到数据库
+	// 目前只是返回成功消息
 
-// GetDeviceLoadThreshold 获取设备负载阈值
-func (s *sDevice) GetDeviceLoadThreshold(ctx context.Context, deviceId string) (map[string]interface{}, error) {
-	// 验证设备是否存在
-	if err := s.validateDeviceExists(ctx, deviceId); err != nil {
-		return nil, err
-	}
-
-	// 这里应该从数据库或配置文件读取
-	// 目前返回默认值
-	return map[string]interface{}{
-		"device_id": deviceId,
-		"warning":   70.0,
-		"critical":  90.0,
-		"max_tasks": 5,
+	return &device.SetDeviceLoadThresholdOutput{
+		DeviceID:  input.DeviceID,
+		Message:   "负载阈值设置成功",
+		IsSuccess: true,
 	}, nil
 }
 
-// 辅助方法
-func (s *sDevice) getFloatValue(data map[string]interface{}, key string, defaultValue float64) float64 {
-	if value, ok := data[key].(float64); ok {
-		return value
+// GetDeviceLoadThreshold 获取设备负载阈值
+func (s *sDevice) GetDeviceLoadThreshold(ctx context.Context, input *device.GetDeviceLoadThresholdInput) (*device.GetDeviceLoadThresholdOutput, error) {
+	// 验证设备是否存在
+	if err := s.validateDeviceExists(ctx, input.DeviceID); err != nil {
+		return nil, err
 	}
-	return defaultValue
-}
 
-func (s *sDevice) getIntValue(data map[string]interface{}, key string, defaultValue int) int {
-	if value, ok := data[key].(int); ok {
-		return value
-	}
-	return defaultValue
+	// 这里应该从数据库获取阈值
+	// 目前返回默认值
+	return &device.GetDeviceLoadThresholdOutput{
+		DeviceID: input.DeviceID,
+		Warning:  70.0, // 默认警告阈值70%
+		Critical: 90.0, // 默认严重阈值90%
+		MaxTasks: 5,    // 默认最大任务数5
+	}, nil
 }
 
 func (s *sDevice) getCurrentLoadScore(ctx context.Context, deviceId string) (float64, map[string]interface{}, error) {
-	result, err := s.CalculateDeviceLoadScore(ctx, deviceId)
+	result, err := s.CalculateDeviceLoadScore(ctx, &device.CalculateDeviceLoadScoreInput{DeviceID: deviceId})
 	if err != nil {
 		return 0, nil, err
 	}
 
-	loadScore := s.getFloatValue(result, "load_score", 0)
-	components := make(map[string]interface{})
-	if comps, ok := result["components"].(map[string]interface{}); ok {
-		components = comps
-	}
-
-	return loadScore, components, nil
+	return result.LoadScore, result.Components, nil
 }
 
 func (s *sDevice) getDeviceData(ctx context.Context, deviceId string) (map[string]interface{}, error) {
