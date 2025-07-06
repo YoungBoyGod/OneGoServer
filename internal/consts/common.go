@@ -20,17 +20,59 @@ const (
 	StatusPending = "pending"
 )
 
+// 通用状态常量
+const (
+	StatusActive    = "active"
+	StatusInactive  = "inactive"
+	StatusRunning   = "running"
+	StatusStopped   = "stopped"
+	StatusPaused    = "paused"
+	StatusCompleted = "completed"
+	StatusFailed    = "failed"
+	StatusCanceled  = "canceled"
+	StatusLocked    = "locked"
+)
+
+// 通用排序常量
+const (
+	SortOrderAsc  = "asc"
+	SortOrderDesc = "desc"
+)
+
+// 通用操作类型常量
+const (
+	ActionTypeCreate   = "create"
+	ActionTypeUpdate   = "update"
+	ActionTypeDelete   = "delete"
+	ActionTypeView     = "view"
+	ActionTypeStart    = "start"
+	ActionTypeStop     = "stop"
+	ActionTypePause    = "pause"
+	ActionTypeResume   = "resume"
+	ActionTypeCancel   = "cancel"
+	ActionTypeRestart  = "restart"
+	ActionTypeRetry    = "retry"
+	ActionTypeAssign   = "assign"
+	ActionTypeUnassign = "unassign"
+)
+
+
+
+// 通用优先级常量
+const (
+	PriorityLowest  = 1
+	PriorityLow     = 3
+	PriorityNormal  = 5
+	PriorityHigh    = 7
+	PriorityUrgent  = 9
+	PriorityHighest = 10
+)
+
 // 分页常量
 const (
 	DefaultPageSize = 20
 	DefaultPage     = 1
 	MaxPageSize     = 100
-)
-
-// 排序常量
-const (
-	SortOrderAsc  = "asc"
-	SortOrderDesc = "desc"
 )
 
 // 时间相关常量

@@ -3,68 +3,70 @@ package common
 import (
 	"time"
 
+	"OneGfServer/internal/consts"
+
 	"github.com/gogf/gf/v2/os/gtime"
 )
 
 // ===============================
-// 通用常量定义
+// 通用常量定义 - 使用consts层常量
 // ===============================
 
-// 通用状态常量
+// 通用状态常量 - 使用consts层常量
 const (
-	StatusActive    = "active"
-	StatusInactive  = "inactive"
-	StatusPending   = "pending"
-	StatusRunning   = "running"
-	StatusStopped   = "stopped"
-	StatusPaused    = "paused"
-	StatusError     = "error"
-	StatusCompleted = "completed"
-	StatusFailed    = "failed"
-	StatusCanceled  = "canceled"
-	StatusLocked    = "locked"
+	StatusActive    = consts.StatusActive
+	StatusInactive  = consts.StatusInactive
+	StatusPending   = consts.StatusPending
+	StatusRunning   = consts.StatusRunning
+	StatusStopped   = consts.StatusStopped
+	StatusPaused    = consts.StatusPaused
+	StatusError     = consts.StatusError
+	StatusCompleted = consts.StatusCompleted
+	StatusFailed    = consts.StatusFailed
+	StatusCanceled  = consts.StatusCanceled
+	StatusLocked    = consts.StatusLocked
 )
 
-// 通用排序常量
+// 通用排序常量 - 使用consts层常量
 const (
-	SortOrderAsc  = "asc"
-	SortOrderDesc = "desc"
+	SortOrderAsc  = consts.SortOrderAsc
+	SortOrderDesc = consts.SortOrderDesc
 )
 
-// 通用操作类型常量
+// 通用操作类型常量 - 使用consts层常量
 const (
-	ActionTypeCreate   = "create"
-	ActionTypeUpdate   = "update"
-	ActionTypeDelete   = "delete"
-	ActionTypeView     = "view"
-	ActionTypeStart    = "start"
-	ActionTypeStop     = "stop"
-	ActionTypePause    = "pause"
-	ActionTypeResume   = "resume"
-	ActionTypeCancel   = "cancel"
-	ActionTypeRestart  = "restart"
-	ActionTypeRetry    = "retry"
-	ActionTypeAssign   = "assign"
-	ActionTypeUnassign = "unassign"
+	ActionTypeCreate   = consts.ActionTypeCreate
+	ActionTypeUpdate   = consts.ActionTypeUpdate
+	ActionTypeDelete   = consts.ActionTypeDelete
+	ActionTypeView     = consts.ActionTypeView
+	ActionTypeStart    = consts.ActionTypeStart
+	ActionTypeStop     = consts.ActionTypeStop
+	ActionTypePause    = consts.ActionTypePause
+	ActionTypeResume   = consts.ActionTypeResume
+	ActionTypeCancel   = consts.ActionTypeCancel
+	ActionTypeRestart  = consts.ActionTypeRestart
+	ActionTypeRetry    = consts.ActionTypeRetry
+	ActionTypeAssign   = consts.ActionTypeAssign
+	ActionTypeUnassign = consts.ActionTypeUnassign
 )
 
-// 通用日志级别常量
+// 通用日志级别常量 - 使用consts层常量
 const (
-	LogLevelDebug    = "debug"
-	LogLevelInfo     = "info"
-	LogLevelWarn     = "warn"
-	LogLevelError    = "error"
-	LogLevelCritical = "critical"
+	LogLevelDebug    = consts.LogLevelDebug
+	LogLevelInfo     = consts.LogLevelInfo
+	LogLevelWarn     = consts.LogLevelWarn
+	LogLevelError    = consts.LogLevelError
+	LogLevelCritical = consts.LogLevelCritical
 )
 
-// 通用优先级常量
+// 通用优先级常量 - 使用consts层常量
 const (
-	PriorityLowest  = 1
-	PriorityLow     = 3
-	PriorityNormal  = 5
-	PriorityHigh    = 7
-	PriorityUrgent  = 9
-	PriorityHighest = 10
+	PriorityLowest  = consts.PriorityLowest
+	PriorityLow     = consts.PriorityLow
+	PriorityNormal  = consts.PriorityNormal
+	PriorityHigh    = consts.PriorityHigh
+	PriorityUrgent  = consts.PriorityUrgent
+	PriorityHighest = consts.PriorityHighest
 )
 
 // ===============================

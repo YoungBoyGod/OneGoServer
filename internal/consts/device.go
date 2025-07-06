@@ -43,13 +43,13 @@ const (
 	ProtocolBACnet = "bacnet"
 )
 
-// 日志级别常量
+// 设备日志级别常量 (使用通用日志级别常量)
 const (
-	LogLevelDebug = "debug"
-	LogLevelInfo  = "info"
-	LogLevelWarn  = "warn"
-	LogLevelError = "error"
-	LogLevelFatal = "fatal"
+	DeviceLogLevelDebug = LogLevelDebug
+	DeviceLogLevelInfo  = LogLevelInfo
+	DeviceLogLevelWarn  = LogLevelWarn
+	DeviceLogLevelError = LogLevelError
+	DeviceLogLevelFatal = "fatal" // 设备特有的致命级别
 )
 
 // 设备命令状态常量
