@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"OneGfServer/internal/consts"
+	"OneGfServer/internal/model/common"
 
 	"github.com/gogf/gf/v2/os/gtime"
 )
@@ -144,15 +145,14 @@ type DeleteTaskOutput struct {
 
 // GetTaskListInput 获取任务列表输入
 type GetTaskListInput struct {
-	Filter     *TaskFilter       `json:"filter"`
-	Sort       *TaskSortOption   `json:"sort"`
-	Pagination *PaginationOption `json:"pagination"`
+	Filter     *TaskFilter               `json:"filter"`
+	Sort       *TaskSortOption           `json:"sort"`
+	Pagination *common.PaginationRequest `json:"pagination"`
 }
 
 // GetTaskListOutput 获取任务列表输出
 type GetTaskListOutput struct {
-	List  []Task `json:"list"`
-	Total int64  `json:"total"`
+	common.PaginationResponse[Task] `json:",inline"`
 }
 
 // GetTasksByTypeInput 根据任务类型获取任务输入
@@ -177,7 +177,7 @@ type GetTasksByStatusOutput struct {
 
 // GetTasksByDeviceInput 根据设备获取任务输入
 type GetTasksByDeviceInput struct {
-	DeviceID string `json:"device_id"`
+	DeviceID int64 `json:"device_id"`
 }
 
 // GetTasksByDeviceOutput 根据设备获取任务输出
@@ -313,13 +313,14 @@ type UpdateTaskStatusOutput struct {
 
 // GetTaskLogsInput 获取任务日志列表输入
 type GetTaskLogsInput struct {
-	TaskID string     `json:"task_id"`
-	Filter *LogFilter `json:"filter"`
+	TaskID     string                    `json:"task_id"`
+	Filter     *LogFilter                `json:"filter"`
+	Pagination *common.PaginationRequest `json:"pagination"`
 }
 
 // GetTaskLogsOutput 获取任务日志列表输出
 type GetTaskLogsOutput struct {
-	Logs []TaskLog `json:"logs"`
+	common.PaginationResponse[TaskLog] `json:",inline"`
 }
 
 // GetTaskLogDetailInput 获取任务日志详情输入
@@ -364,12 +365,13 @@ type ExportTaskLogsOutput struct {
 
 // GetTaskQueuesInput 获取任务队列列表输入
 type GetTaskQueuesInput struct {
-	Filter *QueueFilter `json:"filter"`
+	Filter     *QueueFilter              `json:"filter"`
+	Pagination *common.PaginationRequest `json:"pagination"`
 }
 
 // GetTaskQueuesOutput 获取任务队列列表输出
 type GetTaskQueuesOutput struct {
-	Queues []TaskQueue `json:"queues"`
+	common.PaginationResponse[TaskQueue] `json:",inline"`
 }
 
 // GetTaskQueueDetailInput 获取任务队列详情输入
@@ -408,12 +410,13 @@ type GetTaskQueueStatsOutput struct {
 
 // GetTaskSchedulesInput 获取任务调度列表输入
 type GetTaskSchedulesInput struct {
-	Filter *ScheduleFilter `json:"filter"`
+	Filter     *ScheduleFilter           `json:"filter"`
+	Pagination *common.PaginationRequest `json:"pagination"`
 }
 
 // GetTaskSchedulesOutput 获取任务调度列表输出
 type GetTaskSchedulesOutput struct {
-	Schedules []TaskSchedule `json:"schedules"`
+	common.PaginationResponse[TaskSchedule] `json:",inline"`
 }
 
 // CreateTaskScheduleInput 创建任务调度输入
@@ -508,13 +511,14 @@ type UpdateTaskExecutionOutput struct {
 
 // GetTaskExecutionsInput 获取任务执行历史输入
 type GetTaskExecutionsInput struct {
-	TaskID string           `json:"task_id"`
-	Filter *ExecutionFilter `json:"filter"`
+	TaskID     string                    `json:"task_id"`
+	Filter     *ExecutionFilter          `json:"filter"`
+	Pagination *common.PaginationRequest `json:"pagination"`
 }
 
 // GetTaskExecutionsOutput 获取任务执行历史输出
 type GetTaskExecutionsOutput struct {
-	Executions []TaskExecution `json:"executions"`
+	common.PaginationResponse[TaskExecution] `json:",inline"`
 }
 
 // ===============================
@@ -554,13 +558,14 @@ type UpdateTaskAssignmentOutput struct {
 
 // GetTaskAssignmentsInput 获取任务分配历史输入
 type GetTaskAssignmentsInput struct {
-	TaskID string            `json:"task_id"`
-	Filter *AssignmentFilter `json:"filter"`
+	TaskID     string                    `json:"task_id"`
+	Filter     *AssignmentFilter         `json:"filter"`
+	Pagination *common.PaginationRequest `json:"pagination"`
 }
 
 // GetTaskAssignmentsOutput 获取任务分配历史输出
 type GetTaskAssignmentsOutput struct {
-	Assignments []TaskAssignment `json:"assignments"`
+	common.PaginationResponse[TaskAssignment] `json:",inline"`
 }
 
 // ===============================
@@ -586,7 +591,7 @@ type Task struct {
 	ErrorMessage string      `json:"error_message"`
 	ExecutorType string      `json:"executor_type"`
 	ExecutorID   string      `json:"executor_id"`
-	DeviceID     string      `json:"device_id"`
+	DeviceID     int64       `json:"device_id"`
 	CreatedAt    *gtime.Time `json:"created_at"`
 	UpdatedAt    *gtime.Time `json:"updated_at"`
 	CreatedBy    int64       `json:"created_by"`
@@ -820,7 +825,7 @@ type TaskFilter struct {
 	Status       []string   `json:"status"`
 	Type         []string   `json:"type"`
 	Priority     *int       `json:"priority"`
-	DeviceID     *string    `json:"device_id"`
+	DeviceID     *int64     `json:"device_id"`
 	ExecutorType *string    `json:"executor_type"`
 	IsUrgent     *bool      `json:"is_urgent"`
 	StartTime    *time.Time `json:"start_time"`
@@ -876,10 +881,4 @@ type AssignmentFilter struct {
 	AssignedDeviceID   *int64     `json:"assigned_device_id"`
 	StartTime          *time.Time `json:"start_time"`
 	EndTime            *time.Time `json:"end_time"`
-}
-
-// PaginationOption 分页选项
-type PaginationOption struct {
-	Page int `json:"page"`
-	Size int `json:"size"`
 }

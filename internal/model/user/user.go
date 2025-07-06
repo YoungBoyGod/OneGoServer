@@ -3,6 +3,8 @@ package user
 import (
 	"time"
 
+	"OneGfServer/internal/model/common"
+
 	"github.com/gogf/gf/v2/os/gtime"
 )
 
@@ -137,15 +139,14 @@ type DeleteUserOutput struct {
 
 // GetUserListInput 获取用户列表输入
 type GetUserListInput struct {
-	Filter     *UserFilter       `json:"filter"`
-	Sort       *UserSortOption   `json:"sort"`
-	Pagination *PaginationOption `json:"pagination"`
+	Filter     *UserFilter               `json:"filter"`
+	Sort       *UserSortOption           `json:"sort"`
+	Pagination *common.PaginationRequest `json:"pagination"`
 }
 
 // GetUserListOutput 获取用户列表输出
 type GetUserListOutput struct {
-	List  []User `json:"list"`
-	Total int64  `json:"total"`
+	common.PaginationResponse[User] `json:",inline"`
 }
 
 // GetUsersByStatusInput 根据状态获取用户输入
@@ -307,15 +308,13 @@ type CalculateUserPermissionsOutput struct {
 
 // GetUserSessionsInput 获取用户会话输入
 type GetUserSessionsInput struct {
-	UserID string `json:"user_id"`
-	Page   int    `json:"page"`
-	Size   int    `json:"size"`
+	UserID     string                    `json:"user_id"`
+	Pagination *common.PaginationRequest `json:"pagination"`
 }
 
 // GetUserSessionsOutput 获取用户会话输出
 type GetUserSessionsOutput struct {
-	List  []SessionInfo `json:"list"`
-	Total int64         `json:"total"`
+	common.PaginationResponse[SessionInfo] `json:",inline"`
 }
 
 // RefreshTokenInput 刷新令牌输入
@@ -346,18 +345,16 @@ type RevokeUserSessionOutput struct {
 
 // GetUserActivityInput 获取用户活动输入
 type GetUserActivityInput struct {
-	UserID     string      `json:"user_id"`
-	Page       int         `json:"page"`
-	Size       int         `json:"size"`
-	ActionType string      `json:"action_type"`
-	StartTime  *gtime.Time `json:"start_time"`
-	EndTime    *gtime.Time `json:"end_time"`
+	UserID     string                    `json:"user_id"`
+	ActionType string                    `json:"action_type"`
+	StartTime  *gtime.Time               `json:"start_time"`
+	EndTime    *gtime.Time               `json:"end_time"`
+	Pagination *common.PaginationRequest `json:"pagination"`
 }
 
 // GetUserActivityOutput 获取用户活动输出
 type GetUserActivityOutput struct {
-	List  []ActivityInfo `json:"list"`
-	Total int64          `json:"total"`
+	common.PaginationResponse[ActivityInfo] `json:",inline"`
 }
 
 // CreateUserSessionInput 创建用户会话输入
@@ -425,19 +422,17 @@ type ResetPasswordOutput struct {
 
 // GetUserSecurityLogInput 获取用户安全日志输入
 type GetUserSecurityLogInput struct {
-	UserID    string      `json:"user_id"`
-	Page      int         `json:"page"`
-	Size      int         `json:"size"`
-	LogType   string      `json:"log_type"`
-	Level     string      `json:"level"`
-	StartTime *gtime.Time `json:"start_time"`
-	EndTime   *gtime.Time `json:"end_time"`
+	UserID     string                    `json:"user_id"`
+	LogType    string                    `json:"log_type"`
+	Level      string                    `json:"level"`
+	StartTime  *gtime.Time               `json:"start_time"`
+	EndTime    *gtime.Time               `json:"end_time"`
+	Pagination *common.PaginationRequest `json:"pagination"`
 }
 
 // GetUserSecurityLogOutput 获取用户安全日志输出
 type GetUserSecurityLogOutput struct {
-	List  []SecurityLogInfo `json:"list"`
-	Total int64             `json:"total"`
+	common.PaginationResponse[SecurityLogInfo] `json:",inline"`
 }
 
 // UpdateUserSecuritySettingsInput 更新用户安全设置输入

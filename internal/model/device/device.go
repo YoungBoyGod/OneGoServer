@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"OneGfServer/internal/consts"
+	"OneGfServer/internal/model/common"
 
 	"github.com/gogf/gf/v2/os/gtime"
 )
@@ -119,15 +120,14 @@ type DeleteDeviceOutput struct {
 
 // GetDeviceListInput 获取设备列表输入
 type GetDeviceListInput struct {
-	Filter     *DeviceFilter     `json:"filter"`
-	Sort       *DeviceSortOption `json:"sort"`
-	Pagination *PaginationOption `json:"pagination"`
+	Filter     *DeviceFilter             `json:"filter"`
+	Sort       *DeviceSortOption         `json:"sort"`
+	Pagination *common.PaginationRequest `json:"pagination"`
 }
 
 // GetDeviceListOutput 获取设备列表输出
 type GetDeviceListOutput struct {
-	List  []Device `json:"list"`
-	Total int64    `json:"total"`
+	common.PaginationResponse[Device] `json:",inline"`
 }
 
 // GetDevicesByTypeInput 根据设备类型获取设备输入
@@ -315,13 +315,14 @@ type CreateDeviceLogOutput struct {
 
 // GetDeviceLogsInput 根据设备ID获取设备日志输入
 type GetDeviceLogsInput struct {
-	DeviceID string     `json:"device_id"`
-	Filter   *LogFilter `json:"filter"`
+	DeviceID   string                    `json:"device_id"`
+	Filter     *LogFilter                `json:"filter"`
+	Pagination *common.PaginationRequest `json:"pagination"`
 }
 
 // GetDeviceLogsOutput 根据设备ID获取设备日志输出
 type GetDeviceLogsOutput struct {
-	Logs []DeviceLog `json:"logs"`
+	common.PaginationResponse[DeviceLog] `json:",inline"`
 }
 
 // GetDeviceLogsByLevelInput 根据日志级别获取设备日志输入
@@ -371,13 +372,14 @@ type GetDeviceCommandOutput struct {
 
 // GetDeviceCommandsInput 根据设备ID获取设备命令输入
 type GetDeviceCommandsInput struct {
-	DeviceID string   `json:"device_id"`
-	Status   []string `json:"status"`
+	DeviceID   string                    `json:"device_id"`
+	Status     []string                  `json:"status"`
+	Pagination *common.PaginationRequest `json:"pagination"`
 }
 
 // GetDeviceCommandsOutput 根据设备ID获取设备命令输出
 type GetDeviceCommandsOutput struct {
-	Commands []DeviceCommand `json:"commands"`
+	common.PaginationResponse[DeviceCommand] `json:",inline"`
 }
 
 // UpdateDeviceCommandStatusInput 更新设备命令状态输入
@@ -518,12 +520,6 @@ type DeviceFilter struct {
 type DeviceSortOption struct {
 	Field string `json:"field"` // id, name, status, health_score, last_seen, created_at
 	Order string `json:"order"` // asc, desc
-}
-
-// PaginationOption 分页选项
-type PaginationOption struct {
-	Page int `json:"page"`
-	Size int `json:"size"`
 }
 
 // LogFilter 日志过滤条件

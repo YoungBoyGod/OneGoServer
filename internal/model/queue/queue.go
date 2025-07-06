@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"OneGfServer/internal/consts"
+	"OneGfServer/internal/model/common"
 
 	"github.com/gogf/gf/v2/os/gtime"
 )
@@ -124,15 +125,14 @@ type DeleteQueueOutput struct {
 
 // GetQueueListInput 获取队列列表输入
 type GetQueueListInput struct {
-	Filter     *QueueFilter      `json:"filter"`
-	Sort       *QueueSortOption  `json:"sort"`
-	Pagination *PaginationOption `json:"pagination"`
+	Filter     *QueueFilter              `json:"filter"`
+	Sort       *QueueSortOption          `json:"sort"`
+	Pagination *common.PaginationRequest `json:"pagination"`
 }
 
 // GetQueueListOutput 获取队列列表输出
 type GetQueueListOutput struct {
-	List  []Queue `json:"list"`
-	Total int64   `json:"total"`
+	common.PaginationResponse[Queue] `json:",inline"`
 }
 
 // GetQueuesByTypeInput 根据队列类型获取队列输入
@@ -242,13 +242,14 @@ type ResetQueueOutput struct {
 
 // GetQueueTasksInput 获取队列任务输入
 type GetQueueTasksInput struct {
-	QueueID string      `json:"queue_id"`
-	Filter  *TaskFilter `json:"filter"`
+	QueueID    string                    `json:"queue_id"`
+	Filter     *TaskFilter               `json:"filter"`
+	Pagination *common.PaginationRequest `json:"pagination"`
 }
 
 // GetQueueTasksOutput 获取队列任务输出
 type GetQueueTasksOutput struct {
-	Tasks []QueueTask `json:"tasks"`
+	common.PaginationResponse[QueueTask] `json:",inline"`
 }
 
 // ReorderQueueTasksInput 重新排序队列任务输入
@@ -329,15 +330,13 @@ type UpdateQueueConfigOutput struct {
 
 // GetQueueConfigHistoryInput 获取队列配置历史输入
 type GetQueueConfigHistoryInput struct {
-	QueueID string `json:"queue_id"`
-	Page    int    `json:"page"`
-	Size    int    `json:"size"`
+	QueueID    string                    `json:"queue_id"`
+	Pagination *common.PaginationRequest `json:"pagination"`
 }
 
 // GetQueueConfigHistoryOutput 获取队列配置历史输出
 type GetQueueConfigHistoryOutput struct {
-	History []QueueConfigHistory `json:"history"`
-	Total   int64                `json:"total"`
+	common.PaginationResponse[QueueConfigHistory] `json:",inline"`
 }
 
 // ===============================
@@ -540,10 +539,4 @@ type TaskFilter struct {
 	Priority  *int       `json:"priority"`
 	StartTime *time.Time `json:"start_time"`
 	EndTime   *time.Time `json:"end_time"`
-}
-
-// PaginationOption 分页选项
-type PaginationOption struct {
-	Page int `json:"page"`
-	Size int `json:"size"`
 }
