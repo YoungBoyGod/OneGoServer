@@ -1,8 +1,6 @@
 package user
 
 import (
-	"time"
-
 	"OneGfServer/internal/consts"
 	"OneGfServer/internal/model/common"
 
@@ -226,8 +224,8 @@ type ValidateUserLoginInput struct {
 
 // ValidateUserLoginOutput 验证用户登录输出
 type ValidateUserLoginOutput struct {
-	Valid bool   `json:"valid"`
-	Error string `json:"error"`
+	IsValid bool   `json:"is_valid"`
+	Message string `json:"message,omitempty"`
 }
 
 // ===============================
@@ -281,16 +279,14 @@ type GetUserPermissionsOutput struct {
 
 // CheckUserPermissionInput 检查用户权限输入
 type CheckUserPermissionInput struct {
-	UserID     string `json:"user_id"`
-	Resource   string `json:"resource"`
-	Action     string `json:"action"`
-	ResourceID string `json:"resource_id"`
+	UserPermissions    []string `json:"user_permissions"`
+	RequiredPermission string   `json:"required_permission"`
+	Resource           string   `json:"resource"`
 }
 
 // CheckUserPermissionOutput 检查用户权限输出
 type CheckUserPermissionOutput struct {
-	HasPermission bool   `json:"has_permission"`
-	Reason        string `json:"reason"`
+	HasPermission bool `json:"has_permission"`
 }
 
 // CalculateUserPermissionsInput 计算用户权限输入
@@ -360,7 +356,7 @@ type GetUserActivityOutput struct {
 
 // CreateUserSessionInput 创建用户会话输入
 type CreateUserSessionInput struct {
-	UserID    string                 `json:"user_id"`
+	UserId    string                 `json:"user_id"`
 	LoginData map[string]interface{} `json:"login_data"`
 }
 
@@ -376,8 +372,8 @@ type ValidateUserSessionInput struct {
 
 // ValidateUserSessionOutput 验证用户会话输出
 type ValidateUserSessionOutput struct {
-	Valid bool   `json:"valid"`
-	Error string `json:"error"`
+	IsValid bool   `json:"is_valid"`
+	Message string `json:"message,omitempty"`
 }
 
 // RefreshUserSessionInput 刷新用户会话输入
@@ -387,7 +383,7 @@ type RefreshUserSessionInput struct {
 
 // RefreshUserSessionOutput 刷新用户会话输出
 type RefreshUserSessionOutput struct {
-	SessionData map[string]interface{} `json:"session_data"`
+	UpdatedSessionData map[string]interface{} `json:"updated_session_data"`
 }
 
 // ===============================
@@ -448,4 +444,297 @@ type UpdateUserSecuritySettingsInput struct {
 
 // UpdateUserSecuritySettingsOutput 更新用户安全设置输出
 type UpdateUserSecuritySettingsOutput struct {
-	Message string `
+	Message string `json:"message"`
+}
+
+// ===============================
+// 用户认证授权相关Input/Output结构体
+// ===============================
+
+// HashPasswordInput 密码加密输入
+type HashPasswordInput struct {
+	Password string `json:"password"`
+}
+
+// HashPasswordOutput 密码加密输出
+type HashPasswordOutput struct {
+	HashedPassword string `json:"hashed_password"`
+}
+
+// VerifyPasswordInput 验证密码输入
+type VerifyPasswordInput struct {
+	Password       string `json:"password"`
+	HashedPassword string `json:"hashed_password"`
+}
+
+// VerifyPasswordOutput 验证密码输出
+type VerifyPasswordOutput struct {
+	IsValid bool `json:"is_valid"`
+}
+
+// GenerateSaltInput 生成盐值输入
+type GenerateSaltInput struct{}
+
+// GenerateSaltOutput 生成盐值输出
+type GenerateSaltOutput struct {
+	Salt string `json:"salt"`
+}
+
+// HandleFailedLoginInput 处理登录失败输入
+type HandleFailedLoginInput struct {
+	UserData map[string]interface{} `json:"user_data"`
+}
+
+// HandleFailedLoginOutput 处理登录失败输出
+type HandleFailedLoginOutput struct {
+	UpdatedUserData map[string]interface{} `json:"updated_user_data"`
+	IsLocked        bool                   `json:"is_locked"`
+	LockDuration    string                 `json:"lock_duration,omitempty"`
+}
+
+// CalculateUserRiskScoreInput 计算用户风险评分输入
+type CalculateUserRiskScoreInput struct {
+	UserData  map[string]interface{} `json:"user_data"`
+	LoginData map[string]interface{} `json:"login_data"`
+}
+
+// CalculateUserRiskScoreOutput 计算用户风险评分输出
+type CalculateUserRiskScoreOutput struct {
+	RiskScore       float64            `json:"risk_score"`
+	RiskFactors     map[string]float64 `json:"risk_factors"`
+	RiskLevel       string             `json:"risk_level"`
+	Recommendations []string           `json:"recommendations"`
+}
+
+// ===============================
+// 用户验证相关Input/Output结构体
+// ===============================
+
+// ValidateUserRegistrationInput 验证用户注册输入
+type ValidateUserRegistrationInput struct {
+	UserData map[string]interface{} `json:"user_data"`
+}
+
+// ValidateUserRegistrationOutput 验证用户注册输出
+type ValidateUserRegistrationOutput struct {
+	IsValid bool              `json:"is_valid"`
+	Errors  map[string]string `json:"errors,omitempty"`
+}
+
+// ValidateUsernameInput 验证用户名输入
+type ValidateUsernameInput struct {
+	Username string `json:"username"`
+}
+
+// ValidateUsernameOutput 验证用户名输出
+type ValidateUsernameOutput struct {
+	IsValid bool   `json:"is_valid"`
+	Message string `json:"message,omitempty"`
+}
+
+// ValidatePasswordStrengthInput 验证密码强度输入
+type ValidatePasswordStrengthInput struct {
+	Password string `json:"password"`
+}
+
+// ValidatePasswordStrengthOutput 验证密码强度输出
+type ValidatePasswordStrengthOutput struct {
+	IsValid     bool     `json:"is_valid"`
+	Strength    string   `json:"strength"`
+	Score       float64  `json:"score"`
+	Suggestions []string `json:"suggestions,omitempty"`
+}
+
+// ValidateEmailInput 验证邮箱输入
+type ValidateEmailInput struct {
+	Email string `json:"email"`
+}
+
+// ValidateEmailOutput 验证邮箱输出
+type ValidateEmailOutput struct {
+	IsValid bool   `json:"is_valid"`
+	Message string `json:"message,omitempty"`
+}
+
+// ValidatePhoneInput 验证手机号输入
+type ValidatePhoneInput struct {
+	Phone string `json:"phone"`
+}
+
+// ValidatePhoneOutput 验证手机号输出
+type ValidatePhoneOutput struct {
+	IsValid bool   `json:"is_valid"`
+	Message string `json:"message,omitempty"`
+}
+
+// ===============================
+// 用户会话管理相关Input/Output结构体
+// ===============================
+
+// GenerateSessionIdInput 生成会话ID输入
+type GenerateSessionIdInput struct{}
+
+// GenerateSessionIdOutput 生成会话ID输出
+type GenerateSessionIdOutput struct {
+	SessionId string `json:"session_id"`
+}
+
+// ===============================
+// 用户行为分析相关Input/Output结构体
+// ===============================
+
+// AnalyzeUserBehaviorInput 分析用户行为输入
+type AnalyzeUserBehaviorInput struct {
+	ActivityData []map[string]interface{} `json:"activity_data"`
+}
+
+// AnalyzeUserBehaviorOutput 分析用户行为输出
+type AnalyzeUserBehaviorOutput struct {
+	Analysis map[string]interface{} `json:"analysis"`
+}
+
+// FindMostActiveHourInput 找到最活跃时间段输入
+type FindMostActiveHourInput struct {
+	HourCounts map[int]int `json:"hour_counts"`
+}
+
+// FindMostActiveHourOutput 找到最活跃时间段输出
+type FindMostActiveHourOutput struct {
+	MostActiveHour int `json:"most_active_hour"`
+}
+
+// IdentifyBehaviorPatternInput 识别行为模式输入
+type IdentifyBehaviorPatternInput struct {
+	ActionCounts map[string]int `json:"action_counts"`
+	HourCounts   map[int]int    `json:"hour_counts"`
+}
+
+// IdentifyBehaviorPatternOutput 识别行为模式输出
+type IdentifyBehaviorPatternOutput struct {
+	Pattern string `json:"pattern"`
+}
+
+// CalculateActivityScoreInput 计算活跃度评分输入
+type CalculateActivityScoreInput struct {
+	ActivityData []map[string]interface{} `json:"activity_data"`
+}
+
+// CalculateActivityScoreOutput 计算活跃度评分输出
+type CalculateActivityScoreOutput struct {
+	Score float64 `json:"score"`
+}
+
+// ===============================
+// 风险评分相关Input/Output结构体
+// ===============================
+
+// CalculateLoginRiskScoreInput 计算登录风险评分输入
+type CalculateLoginRiskScoreInput struct {
+	UserData  map[string]interface{} `json:"user_data"`
+	LoginData map[string]interface{} `json:"login_data"`
+}
+
+// CalculateLoginRiskScoreOutput 计算登录风险评分输出
+type CalculateLoginRiskScoreOutput struct {
+	Score float64 `json:"score"`
+}
+
+// CalculateLocationRiskScoreInput 计算地理位置风险评分输入
+type CalculateLocationRiskScoreInput struct {
+	UserData  map[string]interface{} `json:"user_data"`
+	LoginData map[string]interface{} `json:"login_data"`
+}
+
+// CalculateLocationRiskScoreOutput 计算地理位置风险评分输出
+type CalculateLocationRiskScoreOutput struct {
+	Score float64 `json:"score"`
+}
+
+// CalculateDeviceRiskScoreInput 计算设备风险评分输入
+type CalculateDeviceRiskScoreInput struct {
+	UserData  map[string]interface{} `json:"user_data"`
+	LoginData map[string]interface{} `json:"login_data"`
+}
+
+// CalculateDeviceRiskScoreOutput 计算设备风险评分输出
+type CalculateDeviceRiskScoreOutput struct {
+	Score float64 `json:"score"`
+}
+
+// CalculateTimeRiskScoreInput 计算时间异常风险评分输入
+type CalculateTimeRiskScoreInput struct {
+	UserData  map[string]interface{} `json:"user_data"`
+	LoginData map[string]interface{} `json:"login_data"`
+}
+
+// CalculateTimeRiskScoreOutput 计算时间异常风险评分输出
+type CalculateTimeRiskScoreOutput struct {
+	Score float64 `json:"score"`
+}
+
+// CalculateBehaviorRiskScoreInput 计算行为异常风险评分输入
+type CalculateBehaviorRiskScoreInput struct {
+	UserData  map[string]interface{} `json:"user_data"`
+	LoginData map[string]interface{} `json:"login_data"`
+}
+
+// CalculateBehaviorRiskScoreOutput 计算行为异常风险评分输出
+type CalculateBehaviorRiskScoreOutput struct {
+	Score float64 `json:"score"`
+}
+
+// CalculateHistoryRiskScoreInput 计算历史安全事件风险评分输入
+type CalculateHistoryRiskScoreInput struct {
+	UserData map[string]interface{} `json:"user_data"`
+}
+
+// CalculateHistoryRiskScoreOutput 计算历史安全事件风险评分输出
+type CalculateHistoryRiskScoreOutput struct {
+	Score float64 `json:"score"`
+}
+
+// ===============================
+// 辅助功能相关Input/Output结构体
+// ===============================
+
+// IsSameNetworkInput 检查网络输入
+type IsSameNetworkInput struct {
+	IP1 string `json:"ip1"`
+	IP2 string `json:"ip2"`
+}
+
+// IsSameNetworkOutput 检查网络输出
+type IsSameNetworkOutput struct {
+	IsSame bool `json:"is_same"`
+}
+
+// IsKnownMaliciousIPInput 检查恶意IP输入
+type IsKnownMaliciousIPInput struct {
+	IP string `json:"ip"`
+}
+
+// IsKnownMaliciousIPOutput 检查恶意IP输出
+type IsKnownMaliciousIPOutput struct {
+	IsMalicious bool `json:"is_malicious"`
+}
+
+// IsMobileDeviceInput 检查移动设备输入
+type IsMobileDeviceInput struct {
+	UserAgent string `json:"user_agent"`
+}
+
+// IsMobileDeviceOutput 检查移动设备输出
+type IsMobileDeviceOutput struct {
+	IsMobile bool `json:"is_mobile"`
+}
+
+// IsAbnormalLoginPatternInput 检查异常登录模式输入
+type IsAbnormalLoginPatternInput struct {
+	UserData  map[string]interface{} `json:"user_data"`
+	LoginData map[string]interface{} `json:"login_data"`
+}
+
+// IsAbnormalLoginPatternOutput 检查异常登录模式输出
+type IsAbnormalLoginPatternOutput struct {
+	IsAbnormal bool `json:"is_abnormal"`
+}
