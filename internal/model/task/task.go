@@ -603,7 +603,7 @@ type TaskExecution struct {
 	ID                int64       `json:"id"`
 	TaskID            string      `json:"task_id"`
 	ExecutionID       string      `json:"execution_id"`
-	DeviceESN         string      `json:"device_esn"`
+	DeviceID          string      `json:"device_id"`
 	Status            string      `json:"status"`
 	StartTime         *gtime.Time `json:"start_time"`
 	EndTime           *gtime.Time `json:"end_time"`
@@ -869,7 +869,7 @@ type ScheduleFilter struct {
 // ExecutionFilter 执行过滤条件
 type ExecutionFilter struct {
 	Status    []string   `json:"status"`
-	DeviceESN *string    `json:"device_esn"`
+	DeviceID  *string    `json:"device_id"`
 	StartTime *time.Time `json:"start_time"`
 	EndTime   *time.Time `json:"end_time"`
 }
@@ -878,7 +878,7 @@ type ExecutionFilter struct {
 type AssignmentFilter struct {
 	Status             []string   `json:"status"`
 	AssignmentStrategy *string    `json:"assignment_strategy"`
-	AssignedDeviceID   *int64     `json:"assigned_device_id"`
+	AssignedDeviceID   *string    `json:"assigned_device_id"`
 	StartTime          *time.Time `json:"start_time"`
 	EndTime            *time.Time `json:"end_time"`
 }

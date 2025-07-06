@@ -52,7 +52,7 @@
 | ID | `int64` | `int64` | ✅ 一致 | - |
 | TaskID | `string` | `string` | ❌ 命名不一致 | 应为 `TaskId` |
 | ExecutionID | `string` | `string` | ❌ 命名不一致 | 应为 `ExecutionId` |
-| DeviceESN | `string` | `string` | ❌ 命名不一致 | 应为 `DeviceEsn` |
+| DeviceID | `string` | `string` | ❌ 命名不一致 | 应为 `DeviceID` |
 | Status | `string` | `string` | ✅ 一致 | - |
 | StartTime | `*gtime.Time` | `*gtime.Time` | ❌ 命名不一致 | 应为 `StartTime` |
 | EndTime | `*gtime.Time` | `*gtime.Time` | ❌ 命名不一致 | 应为 `EndTime` |

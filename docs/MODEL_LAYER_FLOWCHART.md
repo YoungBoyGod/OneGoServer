@@ -161,7 +161,7 @@ erDiagram
     TaskExecution {
         string task_id
         string execution_id
-        string device_esn
+        string device_id
         string status
         datetime start_time
         datetime end_time
