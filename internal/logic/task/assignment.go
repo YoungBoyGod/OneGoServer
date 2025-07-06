@@ -16,61 +16,111 @@ import (
 // 任务分配相关业务逻辑
 // ===============================
 
-// AssignTaskToDevice 将任务分配给设备
-func (s *sTask) AssignTaskToDevice(ctx context.Context, taskId string, deviceIds []string, strategy string, force bool) (map[string]interface{}, error) {
+// AssignTaskToDevice 分配任务到设备
+func (s *sTask) AssignTaskToDevice(ctx context.Context, input *task.AssignTaskToDeviceInput) (*task.AssignTaskToDeviceOutput, error) {
 	// 验证任务是否存在
-	if err := s.validateTaskExists(ctx, taskId); err != nil {
-		return nil, err
+	if err := s.validateTaskExists(ctx, input.TaskId); err != nil {
+		return &task.AssignTaskToDeviceOutput{
+			Result: map[string]interface{}{
+				"success": false,
+				"error":   err.Error(),
+			},
+		}, err
 	}
 
 	// 获取任务信息
-	taskInfo, err := s.getTaskInfo(ctx, taskId)
-	if err != nil {
-		return nil, err
+	taskInfoInput := &task.GetTaskInfoInput{
+		TaskId: input.TaskId,
 	}
+	taskInfoOutput := s.getTaskInfo(ctx, taskInfoInput)
+	taskInfo := taskInfoOutput.TaskInfo
 
 	// 获取可用设备
 	var devices []map[string]interface{}
-	if len(deviceIds) > 0 {
-		devices, err = s.getAvailableDevices(ctx, deviceIds)
+	if len(input.DeviceIds) > 0 {
+		devicesInput := &task.GetAvailableDevicesInput{
+			DeviceIds: input.DeviceIds,
+		}
+		devicesOutput := s.getAvailableDevices(ctx, devicesInput)
+		devices = devicesOutput.Devices
 	} else {
-		devices, err = s.getAllAvailableDevices(ctx)
-	}
-	if err != nil {
-		return nil, err
+		allDevicesInput := &task.GetAllAvailableDevicesInput{}
+		allDevicesOutput := s.getAllAvailableDevices(ctx, allDevicesInput)
+		devices = allDevicesOutput.Devices
 	}
 
 	if len(devices) == 0 {
-		return nil, gerror.NewCode(gcode.CodeResourceExhausted, "没有可用的设备")
+		return &task.AssignTaskToDeviceOutput{
+			Result: map[string]interface{}{
+				"success": false,
+				"error":   "没有可用的设备",
+			},
+		}, gerror.New("没有可用的设备")
 	}
 
 	// 选择最佳设备
-	selectedDevice, score, reason, err := s.selectBestDevice(ctx, taskInfo, devices, strategy, force)
-	if err != nil {
-		return nil, err
+	selectInput := &task.SelectBestDeviceInput{
+		TaskInfo: taskInfo,
+		Devices:  devices,
+		Strategy: input.Strategy,
+		Force:    input.Force,
+	}
+	selectOutput := s.selectBestDevice(ctx, selectInput)
+	selectedDevice := selectOutput.Device
+	score := selectOutput.Score
+	reason := selectOutput.Reason
+
+	if selectedDevice == nil {
+		return &task.AssignTaskToDeviceOutput{
+			Result: map[string]interface{}{
+				"success": false,
+				"error":   "无法找到合适的设备",
+				"reason":  reason,
+			},
+		}, gerror.New("无法找到合适的设备")
 	}
 
 	// 执行任务分配
-	if err := s.executeTaskAssignment(ctx, taskId, selectedDevice["device_id"].(string)); err != nil {
-		return nil, err
+	deviceId := selectedDevice["id"].(string)
+	executeInput := &task.ExecuteTaskAssignmentInput{
+		TaskId:   input.TaskId,
+		DeviceId: deviceId,
+	}
+	executeOutput := s.executeTaskAssignment(ctx, executeInput)
+
+	if !executeOutput.Success {
+		return &task.AssignTaskToDeviceOutput{
+			Result: map[string]interface{}{
+				"success": false,
+				"error":   executeOutput.Message,
+			},
+		}, gerror.New(executeOutput.Message)
 	}
 
-	return map[string]interface{}{
-		"task_id":           taskId,
-		"assigned_device":   selectedDevice,
-		"assignment_score":  score,
-		"assignment_reason": reason,
-		"strategy":          strategy,
-		"timestamp":         gtime.Now().Format("2006-01-02 15:04:05"),
+	return &task.AssignTaskToDeviceOutput{
+		Result: map[string]interface{}{
+			"success":     true,
+			"task_id":     input.TaskId,
+			"device_id":   deviceId,
+			"device_name": selectedDevice["name"],
+			"score":       score,
+			"reason":      reason,
+			"assigned_at": gtime.Now().Format("2006-01-02 15:04:05"),
+			"strategy":    input.Strategy,
+		},
 	}, nil
 }
 
 // selectBestDevice 选择最佳设备
-func (s *sTask) selectBestDevice(ctx context.Context, taskInfo map[string]interface{}, devices []map[string]interface{}, strategy string, force bool) (map[string]interface{}, float64, string, error) {
+func (s *sTask) selectBestDevice(ctx context.Context, input *task.SelectBestDeviceInput) *task.SelectBestDeviceOutput {
 	// 过滤兼容设备
-	compatibleDevices := s.filterCompatibleDevices(taskInfo, devices)
+	compatibleDevices := s.filterCompatibleDevices(input.TaskInfo, input.Devices)
 	if len(compatibleDevices) == 0 {
-		return nil, 0, "", gerror.NewCode(gcode.CodeResourceExhausted, "没有兼容的设备")
+		return &task.SelectBestDeviceOutput{
+			Device: nil,
+			Score:  0,
+			Reason: "没有兼容的设备",
+		}
 	}
 
 	// 根据策略选择设备
@@ -79,24 +129,36 @@ func (s *sTask) selectBestDevice(ctx context.Context, taskInfo map[string]interf
 	var reason string
 	var err error
 
-	switch strategy {
+	switch input.Strategy {
 	case "auto":
-		selectedDevice, score, reason, err = s.calculateAutoAssignment(compatibleDevices, taskInfo)
+		selectedDevice, score, reason, err = s.calculateAutoAssignment(compatibleDevices, input.TaskInfo)
 	case "load_balanced":
-		selectedDevice, score, reason, err = s.calculateLoadBalancedAssignment(compatibleDevices, taskInfo)
+		selectedDevice, score, reason, err = s.calculateLoadBalancedAssignment(compatibleDevices, input.TaskInfo)
 	case "priority":
-		selectedDevice, score, reason, err = s.calculatePriorityAssignment(compatibleDevices, taskInfo)
+		selectedDevice, score, reason, err = s.calculatePriorityAssignment(compatibleDevices, input.TaskInfo)
 	case "manual":
-		selectedDevice, score, reason, err = s.calculateManualAssignment(compatibleDevices, taskInfo)
+		selectedDevice, score, reason, err = s.calculateManualAssignment(compatibleDevices, input.TaskInfo)
 	default:
-		return nil, 0, "", gerror.NewCode(gcode.CodeInvalidParameter, "不支持的分配策略")
+		return &task.SelectBestDeviceOutput{
+			Device: nil,
+			Score:  0,
+			Reason: "不支持的分配策略",
+		}
 	}
 
 	if err != nil {
-		return nil, 0, "", err
+		return &task.SelectBestDeviceOutput{
+			Device: nil,
+			Score:  0,
+			Reason: err.Error(),
+		}
 	}
 
-	return selectedDevice, score, reason, nil
+	return &task.SelectBestDeviceOutput{
+		Device: selectedDevice,
+		Score:  score,
+		Reason: reason,
+	}
 }
 
 // filterCompatibleDevices 过滤兼容设备
@@ -443,20 +505,22 @@ func (s *sTask) validateTaskExists(ctx context.Context, taskId string) error {
 	return nil
 }
 
-func (s *sTask) getTaskInfo(ctx context.Context, taskId string) (map[string]interface{}, error) {
+func (s *sTask) getTaskInfo(ctx context.Context, input *task.GetTaskInfoInput) *task.GetTaskInfoOutput {
 	// 这里应该从数据库获取任务信息
-	return map[string]interface{}{
-		"task_id":         taskId,
-		"task_type":       "compute",
-		"required_cpu":    20.0,
-		"required_memory": 30.0,
-	}, nil
+	return &task.GetTaskInfoOutput{
+		TaskInfo: map[string]interface{}{
+			"task_id":         input.TaskId,
+			"task_type":       "compute",
+			"required_cpu":    20.0,
+			"required_memory": 30.0,
+		},
+	}
 }
 
-func (s *sTask) getAvailableDevices(ctx context.Context, deviceIds []string) ([]map[string]interface{}, error) {
+func (s *sTask) getAvailableDevices(ctx context.Context, input *task.GetAvailableDevicesInput) *task.GetAvailableDevicesOutput {
 	// 这里应该从数据库获取指定设备信息
 	var devices []map[string]interface{}
-	for _, deviceId := range deviceIds {
+	for _, deviceId := range input.DeviceIds {
 		devices = append(devices, map[string]interface{}{
 			"device_id":            deviceId,
 			"status":               "online",
@@ -466,35 +530,42 @@ func (s *sTask) getAvailableDevices(ctx context.Context, deviceIds []string) ([]
 			"max_concurrent_tasks": 5,
 		})
 	}
-	return devices, nil
+	return &task.GetAvailableDevicesOutput{
+		Devices: devices,
+	}
 }
 
-func (s *sTask) getAllAvailableDevices(ctx context.Context) ([]map[string]interface{}, error) {
+func (s *sTask) getAllAvailableDevices(ctx context.Context, input *task.GetAllAvailableDevicesInput) *task.GetAllAvailableDevicesOutput {
 	// 这里应该从数据库获取所有可用设备
-	return []map[string]interface{}{
-		{
-			"device_id":            "device_1",
-			"status":               "online",
-			"cpu_usage":            45.0,
-			"memory_usage":         62.0,
-			"running_task_count":   2,
-			"max_concurrent_tasks": 5,
+	return &task.GetAllAvailableDevicesOutput{
+		Devices: []map[string]interface{}{
+			{
+				"device_id":            "device_1",
+				"status":               "online",
+				"cpu_usage":            45.0,
+				"memory_usage":         62.0,
+				"running_task_count":   2,
+				"max_concurrent_tasks": 5,
+			},
+			{
+				"device_id":            "device_2",
+				"status":               "online",
+				"cpu_usage":            30.0,
+				"memory_usage":         50.0,
+				"running_task_count":   1,
+				"max_concurrent_tasks": 5,
+			},
 		},
-		{
-			"device_id":            "device_2",
-			"status":               "online",
-			"cpu_usage":            30.0,
-			"memory_usage":         50.0,
-			"running_task_count":   1,
-			"max_concurrent_tasks": 5,
-		},
-	}, nil
+	}
 }
 
-func (s *sTask) executeTaskAssignment(ctx context.Context, taskId, deviceId string) error {
+func (s *sTask) executeTaskAssignment(ctx context.Context, input *task.ExecuteTaskAssignmentInput) *task.ExecuteTaskAssignmentOutput {
 	// 这里应该执行实际的任务分配操作
 	// 更新数据库中的任务分配信息
-	return nil
+	return &task.ExecuteTaskAssignmentOutput{
+		Success: true,
+		Message: "任务分配成功",
+	}
 }
 
 // ===============================

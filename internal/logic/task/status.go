@@ -16,7 +16,7 @@ import (
 // ===============================
 
 // ValidateTaskStatusTransition 验证任务状态转换是否合法
-func (s *sTask) ValidateTaskStatusTransition(ctx context.Context, currentStatus, targetStatus string) error {
+func (s *sTask) ValidateTaskStatusTransition(ctx context.Context, input *task.ValidateTaskStatusTransitionInput) (*task.ValidateTaskStatusTransitionOutput, error) {
 	// 定义合法的状态转换规则
 	validTransitions := map[string][]string{
 		"pending":   {"running", "cancelled", "deleted"},
@@ -29,61 +29,96 @@ func (s *sTask) ValidateTaskStatusTransition(ctx context.Context, currentStatus,
 		"deleted":   {}, // 删除状态不能转换到其他状态
 	}
 
-	allowedStatuses, exists := validTransitions[currentStatus]
+	allowedStatuses, exists := validTransitions[input.CurrentStatus]
 	if !exists {
-		return gerror.NewCode(gcode.CodeInvalidParameter, "无效的当前状态")
+		return &task.ValidateTaskStatusTransitionOutput{
+			IsValid: false,
+			Message: "无效的当前状态",
+		}, gerror.NewCode(gcode.CodeInvalidParameter, "无效的当前状态")
 	}
 
 	// 检查目标状态是否在允许的转换列表中
 	for _, status := range allowedStatuses {
-		if status == targetStatus {
-			return nil
+		if status == input.TargetStatus {
+			return &task.ValidateTaskStatusTransitionOutput{
+				IsValid: true,
+				Message: "状态转换有效",
+			}, nil
 		}
 	}
 
-	return gerror.NewCode(gcode.CodeInvalidParameter,
-		"不允许的状态转换")
+	return &task.ValidateTaskStatusTransitionOutput{
+		IsValid: false,
+		Message: "不允许的状态转换",
+	}, gerror.NewCode(gcode.CodeInvalidParameter, "不允许的状态转换")
 }
 
 // DetermineTaskStatus 根据任务数据自动确定任务状态
-func (s *sTask) DetermineTaskStatus(ctx context.Context, taskData map[string]interface{}) string {
+func (s *sTask) DetermineTaskStatus(ctx context.Context, input *task.DetermineTaskStatusInput) (*task.DetermineTaskStatusOutput, error) {
 	// 检查是否已完成
-	if completedAt, ok := taskData["completed_at"].(*gtime.Time); ok && completedAt != nil {
-		return "completed"
+	if completedAt, ok := input.TaskData["completed_at"].(*gtime.Time); ok && completedAt != nil {
+		return &task.DetermineTaskStatusOutput{
+			Status: "completed",
+		}, nil
 	}
 
 	// 检查是否失败
-	if failedAt, ok := taskData["failed_at"].(*gtime.Time); ok && failedAt != nil {
-		return "failed"
+	if failedAt, ok := input.TaskData["failed_at"].(*gtime.Time); ok && failedAt != nil {
+		return &task.DetermineTaskStatusOutput{
+			Status: "failed",
+		}, nil
 	}
 
 	// 检查是否已取消
-	if cancelledAt, ok := taskData["cancelled_at"].(*gtime.Time); ok && cancelledAt != nil {
-		return "cancelled"
+	if cancelledAt, ok := input.TaskData["cancelled_at"].(*gtime.Time); ok && cancelledAt != nil {
+		return &task.DetermineTaskStatusOutput{
+			Status: "cancelled",
+		}, nil
 	}
 
 	// 检查是否正在执行
-	if startedAt, ok := taskData["started_at"].(*gtime.Time); ok && startedAt != nil {
+	if startedAt, ok := input.TaskData["started_at"].(*gtime.Time); ok && startedAt != nil {
 		// 检查是否暂停
-		if pausedAt, ok := taskData["paused_at"].(*gtime.Time); ok && pausedAt != nil {
-			return "paused"
+		if pausedAt, ok := input.TaskData["paused_at"].(*gtime.Time); ok && pausedAt != nil {
+			return &task.DetermineTaskStatusOutput{
+				Status: "paused",
+			}, nil
 		}
-		return "running"
+		return &task.DetermineTaskStatusOutput{
+			Status: "running",
+		}, nil
 	}
 
 	// 检查是否已删除
-	if deletedAt, ok := taskData["deleted_at"].(*gtime.Time); ok && deletedAt != nil {
-		return "deleted"
+	if deletedAt, ok := input.TaskData["deleted_at"].(*gtime.Time); ok && deletedAt != nil {
+		return &task.DetermineTaskStatusOutput{
+			Status: "deleted",
+		}, nil
 	}
 
 	// 默认状态
-	return "pending"
+	return &task.DetermineTaskStatusOutput{
+		Status: "pending",
+	}, nil
 }
 
 // CanTransitionToStatus 检查是否可以转换到指定状态
-func (s *sTask) CanTransitionToStatus(ctx context.Context, taskData map[string]interface{}, targetStatus string) bool {
-	currentStatus := s.DetermineTaskStatus(ctx, taskData)
-	return s.ValidateTaskStatusTransition(ctx, currentStatus, targetStatus) == nil
+func (s *sTask) CanTransitionToStatus(ctx context.Context, input *task.CanTransitionToStatusInput) (*task.CanTransitionToStatusOutput, error) {
+	determineInput := &task.DetermineTaskStatusInput{
+		TaskData: input.TaskData,
+	}
+	determineOutput := s.DetermineTaskStatus(ctx, determineInput)
+
+	validateInput := &task.ValidateTaskStatusTransitionInput{
+		CurrentStatus: determineOutput.Status,
+		TargetStatus:  input.TargetStatus,
+	}
+	validateOutput := s.ValidateTaskStatusTransition(ctx, validateInput)
+
+	return &task.CanTransitionToStatusOutput{
+		CanTransition: validateOutput.IsValid,
+		Reason:        validateOutput.Message,
+	}, nil
 }
 
 // ===============================
