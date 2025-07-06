@@ -11,6 +11,7 @@ import (
 // Tasks is the golang structure for table tasks.
 type Tasks struct {
 	Id           int64       `json:"id"           orm:"id"            description:""` //
+	DeviceId     string      `json:"deviceId"     orm:"device_id"     description:""` //
 	TaskId       string      `json:"taskId"       orm:"task_id"       description:""` //
 	Name         string      `json:"name"         orm:"name"          description:""` //
 	Description  string      `json:"description"  orm:"description"   description:""` //
@@ -27,9 +28,8 @@ type Tasks struct {
 	ErrorMessage string      `json:"errorMessage" orm:"error_message" description:""` //
 	ExecutorType string      `json:"executorType" orm:"executor_type" description:""` //
 	ExecutorId   string      `json:"executorId"   orm:"executor_id"   description:""` //
-	DeviceId     int64       `json:"deviceId"     orm:"device_id"     description:""` //
 	CreatedAt    *gtime.Time `json:"createdAt"    orm:"created_at"    description:""` //
 	UpdatedAt    *gtime.Time `json:"updatedAt"    orm:"updated_at"    description:""` //
-	CreatedBy    int64       `json:"createdBy"    orm:"created_by"    description:""` //
-	UpdatedBy    int64       `json:"updatedBy"    orm:"updated_by"    description:""` //
+	CreatedBy    string      `json:"createdBy"    orm:"created_by"    description:""` //
+	UpdatedBy    string      `json:"updatedBy"    orm:"updated_by"    description:""` //
 }

@@ -11,7 +11,7 @@ import (
 // DeviceLoadMonitor is the golang structure for table device_load_monitor.
 type DeviceLoadMonitor struct {
 	Id                 int64       `json:"id"                 orm:"id"                   description:""` //
-	DeviceId           int64       `json:"deviceId"           orm:"device_id"            description:""` //
+	DeviceId           string      `json:"deviceId"           orm:"device_id"            description:""` //
 	CurrentTasks       int         `json:"currentTasks"       orm:"current_tasks"        description:""` //
 	MaxConcurrentTasks int         `json:"maxConcurrentTasks" orm:"max_concurrent_tasks" description:""` //
 	CpuLoad            float64     `json:"cpuLoad"            orm:"cpu_load"             description:""` //

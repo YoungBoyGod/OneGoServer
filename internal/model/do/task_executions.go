@@ -15,7 +15,7 @@ type TaskExecutions struct {
 	Id                interface{} //
 	TaskId            interface{} //
 	ExecutionId       interface{} //
-	DeviceEsn         interface{} //
+	DeviceId          interface{} //
 	Status            interface{} //
 	StartTime         *gtime.Time //
 	EndTime           *gtime.Time //

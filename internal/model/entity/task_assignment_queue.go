@@ -20,7 +20,7 @@ type TaskAssignmentQueue struct {
 	ExcludedDeviceIds    []int64     `json:"excludedDeviceIds"    orm:"excluded_device_ids"     description:""` //
 	AssignmentStrategy   string      `json:"assignmentStrategy"   orm:"assignment_strategy"     description:""` //
 	AffinityRules        string      `json:"affinityRules"        orm:"affinity_rules"          description:""` //
-	AssignedDeviceId     int64       `json:"assignedDeviceId"     orm:"assigned_device_id"      description:""` //
+	AssignedDeviceId     string      `json:"assignedDeviceId"     orm:"assigned_device_id"      description:""` //
 	AssignedAt           *gtime.Time `json:"assignedAt"           orm:"assigned_at"             description:""` //
 	AssignmentScore      float64     `json:"assignmentScore"      orm:"assignment_score"        description:""` //
 	QueuePosition        int         `json:"queuePosition"        orm:"queue_position"          description:""` //

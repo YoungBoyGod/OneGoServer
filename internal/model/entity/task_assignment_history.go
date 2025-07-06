@@ -12,7 +12,7 @@ import (
 type TaskAssignmentHistory struct {
 	Id              int64       `json:"id"              orm:"id"               description:""` //
 	TaskId          string      `json:"taskId"          orm:"task_id"          description:""` //
-	DeviceId        int64       `json:"deviceId"        orm:"device_id"        description:""` //
+	DeviceId        string      `json:"deviceId"        orm:"device_id"        description:""` //
 	Action          string      `json:"action"          orm:"action"           description:""` //
 	PreviousStatus  string      `json:"previousStatus"  orm:"previous_status"  description:""` //
 	NewStatus       string      `json:"newStatus"       orm:"new_status"       description:""` //

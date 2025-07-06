@@ -534,25 +534,6 @@ type GetDeviceLoadStatusRes struct {
 	UpdatedAt          *gtime.Time `json:"updated_at"`
 }
 
-// GetDeviceLoadHistory 获取设备负载历史请求
-type GetDeviceLoadHistoryReq struct {
-	g.Meta    `path:"/device/{deviceId}/load/history" method:"get" tags:"设备监控" summary:"获取设备负载历史"`
-	DeviceId  string `json:"deviceId" v:"required#设备ID不能为空"`
-	Page      int    `json:"page" d:"1" v:"min:1#页码最小为1"`
-	Size      int    `json:"size" d:"50" v:"between:1,200#每页数量为1-200"`
-	StartTime string `json:"start_time,omitempty"`
-	EndTime   string `json:"end_time,omitempty"`
-	Metric    string `json:"metric,omitempty" v:"in:cpu,memory,disk,network,tasks#监控指标只能是cpu,memory,disk,network,tasks"`
-}
-
-// GetDeviceLoadHistoryRes 获取设备负载历史响应
-type GetDeviceLoadHistoryRes struct {
-	List  []DeviceLoadHistoryInfo `json:"list"`
-	Total int64                   `json:"total"`
-	Page  int                     `json:"page"`
-	Size  int                     `json:"size"`
-}
-
 // DeviceLoadHistoryInfo 设备负载历史信息
 type DeviceLoadHistoryInfo struct {
 	DeviceId        int64       `json:"device_id"`

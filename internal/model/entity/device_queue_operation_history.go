@@ -11,10 +11,10 @@ import (
 // DeviceQueueOperationHistory is the golang structure for table device_queue_operation_history.
 type DeviceQueueOperationHistory struct {
 	Id               int64       `json:"id"               orm:"id"                 description:""` //
-	DeviceId         int64       `json:"deviceId"         orm:"device_id"          description:""` //
+	DeviceId         string      `json:"deviceId"         orm:"device_id"          description:""` //
 	TaskId           string      `json:"taskId"           orm:"task_id"            description:""` //
 	OperationType    string      `json:"operationType"    orm:"operation_type"     description:""` //
-	OperationBy      int64       `json:"operationBy"      orm:"operation_by"       description:""` //
+	OperationBy      string      `json:"operationBy"      orm:"operation_by"       description:""` //
 	OperationTime    *gtime.Time `json:"operationTime"    orm:"operation_time"     description:""` //
 	OldPriority      int         `json:"oldPriority"      orm:"old_priority"       description:""` //
 	NewPriority      int         `json:"newPriority"      orm:"new_priority"       description:""` //

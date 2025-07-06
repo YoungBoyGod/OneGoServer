@@ -13,7 +13,7 @@ type TaskExecutions struct {
 	Id                int64       `json:"id"                orm:"id"                  description:""` //
 	TaskId            string      `json:"taskId"            orm:"task_id"             description:""` //
 	ExecutionId       string      `json:"executionId"       orm:"execution_id"        description:""` //
-	DeviceEsn         string      `json:"deviceEsn"         orm:"device_esn"          description:""` //
+	DeviceId          string      `json:"deviceId"          orm:"device_id"           description:""` //
 	Status            string      `json:"status"            orm:"status"              description:""` //
 	StartTime         *gtime.Time `json:"startTime"         orm:"start_time"          description:""` //
 	EndTime           *gtime.Time `json:"endTime"           orm:"end_time"            description:""` //

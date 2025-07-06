@@ -408,61 +408,59 @@ type UpdateDeviceCommandResponseOutput struct {
 // ===============================
 
 // Device 设备主表模型
-// 参照entity/devices.go完全对齐
 type Device struct {
-	Id                   int64       `json:"id"                   orm:"id"                     description:"设备内部唯一标识符，自增主键"`
-	DeviceId             string      `json:"deviceId"             orm:"device_id"              description:"设备业务ID，外部系统使用的设备标识"`
-	Name                 string      `json:"name"                 orm:"name"                   description:"设备名称"`
-	Type                 string      `json:"type"                 orm:"type"                   description:"设备类型"`
-	Model                string      `json:"model"                orm:"model"                  description:"设备型号"`
-	BoardId              string      `json:"boardId"              orm:"board_id"               description:"主板ID"`
-	Status               string      `json:"status"               orm:"status"                 description:"设备状态"`
-	HealthScore          int         `json:"healthScore"          orm:"health_score"           description:"设备健康评分"`
-	LoginUsername        string      `json:"loginUsername"        orm:"login_username"         description:"登录用户名"`
-	LoginPort            int         `json:"loginPort"            orm:"login_port"             description:"登录端口"`
-	LoginPublicKey       string      `json:"loginPublicKey"       orm:"login_public_key"       description:"登录公钥"`
-	IpAddress            string      `json:"ipAddress"            orm:"ip_address"             description:"设备IP地址"`
-	Port                 int         `json:"port"                 orm:"port"                   description:"设备服务端口"`
-	Protocol             string      `json:"protocol"             orm:"protocol"               description:"通信协议"`
-	Endpoint             string      `json:"endpoint"             orm:"endpoint"               description:"设备访问端点"`
-	RegTime              *gtime.Time `json:"regTime"              orm:"reg_time"               description:"设备注册时间"`
-	Metadata             string      `json:"metadata"             orm:"metadata"               description:"设备元数据"`
-	Tags                 string      `json:"tags"                 orm:"tags"                   description:"设备标签"`
-	UptimeHours          float64     `json:"uptimeHours"          orm:"uptime_hours"           description:"设备运行时长（小时）"`
-	FirstOnlineTime      *gtime.Time `json:"firstOnlineTime"      orm:"first_online_time"      description:"首次上线时间"`
-	LastOnlineTime       *gtime.Time `json:"lastOnlineTime"       orm:"last_online_time"       description:"最后上线时间"`
-	LastOfflineTime      *gtime.Time `json:"lastOfflineTime"      orm:"last_offline_time"      description:"最后下线时间"`
-	TotalOnlineDuration  int64       `json:"totalOnlineDuration"  orm:"total_online_duration"  description:"总在线时长（秒）"`
-	TotalOfflineDuration int64       `json:"totalOfflineDuration" orm:"total_offline_duration" description:"总离线时长（秒）"`
-	TotalHeartbeats      int64       `json:"totalHeartbeats"      orm:"total_heartbeats"       description:"总心跳次数"`
-	TotalAlerts          int64       `json:"totalAlerts"          orm:"total_alerts"           description:"总告警次数"`
-	TotalTasks           int64       `json:"totalTasks"           orm:"total_tasks"            description:"总任务数"`
-	TotalSuccessTasks    int64       `json:"totalSuccessTasks"    orm:"total_success_tasks"    description:"成功任务数"`
-	TotalFailedTasks     int64       `json:"totalFailedTasks"     orm:"total_failed_tasks"     description:"失败任务数"`
-	TotalCanceledTasks   int64       `json:"totalCanceledTasks"   orm:"total_canceled_tasks"   description:"取消任务数"`
-	TotalPendingTasks    int64       `json:"totalPendingTasks"    orm:"total_pending_tasks"    description:"待执行任务数"`
-	TotalRunningTasks    int64       `json:"totalRunningTasks"    orm:"total_running_tasks"    description:"运行中任务数"`
-	TotalCompletedTasks  int64       `json:"totalCompletedTasks"  orm:"total_completed_tasks"  description:"已完成任务数"`
-	CreatedAt            *gtime.Time `json:"createdAt"            orm:"created_at"             description:"记录创建时间"`
-	UpdatedAt            *gtime.Time `json:"updatedAt"            orm:"updated_at"             description:"记录更新时间"`
-	CreatedBy            string      `json:"createdBy"            orm:"created_by"             description:"创建者"`
-	UpdatedBy            string      `json:"updatedBy"            orm:"updated_by"             description:"更新者"`
-	// ...业务扩展字段请在下方添加，并注明用途
+	Id                   int64       `json:"id"                                       description:"设备内部唯一标识符，自增主键"`
+	DeviceId             string      `json:"deviceId"                           description:"设备业务ID，外部系统使用的设备标识"`
+	Name                 string      `json:"name"                                    description:"设备名称"`
+	Type                 string      `json:"type"                  description:"设备类型"`
+	Model                string      `json:"model"                 description:"设备型号"`
+	BoardId              string      `json:"boardId"               description:"主板ID"`
+	Status               string      `json:"status"                description:"设备状态"`
+	HealthScore          int         `json:"healthScore"           description:"设备健康评分"`
+	LoginUsername        string      `json:"loginUsername"         description:"登录用户名"`
+	LoginPort            int         `json:"loginPort"             description:"登录端口"`
+	LoginPublicKey       string      `json:"loginPublicKey"        description:"登录公钥"`
+	IpAddress            string      `json:"ipAddress"             description:"设备IP地址"`
+	Port                 int         `json:"port"                  description:"设备服务端口"`
+	Protocol             string      `json:"protocol"              description:"通信协议"`
+	Endpoint             string      `json:"endpoint"              description:"设备访问端点"`
+	RegTime              *gtime.Time `json:"regTime"               description:"设备注册时间"`
+	Metadata             string      `json:"metadata"              description:"设备元数据"`
+	Tags                 string      `json:"tags"                  description:"设备标签"`
+	UptimeHours          float64     `json:"uptimeHours"           description:"设备运行时长（小时）"`
+	FirstOnlineTime      *gtime.Time `json:"firstOnlineTime"       description:"首次上线时间"`
+	LastOnlineTime       *gtime.Time `json:"lastOnlineTime"        description:"最后上线时间"`
+	LastOfflineTime      *gtime.Time `json:"lastOfflineTime"       description:"最后下线时间"`
+	TotalOnlineDuration  int64       `json:"totalOnlineDuration"   description:"总在线时长（秒）"`
+	TotalOfflineDuration int64       `json:"totalOfflineDuration"  description:"总离线时长（秒）"`
+	TotalHeartbeats      int64       `json:"totalHeartbeats"       description:"总心跳次数"`
+	TotalAlerts          int64       `json:"totalAlerts"           description:"总告警次数"`
+	TotalTasks           int64       `json:"totalTasks"            description:"总任务数"`
+	TotalSuccessTasks    int64       `json:"totalSuccessTasks"     description:"成功任务数"`
+	TotalFailedTasks     int64       `json:"totalFailedTasks"      description:"失败任务数"`
+	TotalCanceledTasks   int64       `json:"totalCanceledTasks"    description:"取消任务数"`
+	TotalPendingTasks    int64       `json:"totalPendingTasks"     description:"待执行任务数"`
+	TotalRunningTasks    int64       `json:"totalRunningTasks"     description:"运行中任务数"`
+	TotalCompletedTasks  int64       `json:"totalCompletedTasks"   description:"已完成任务数"`
+	CreatedAt            *gtime.Time `json:"createdAt"             description:"记录创建时间"`
+	UpdatedAt            *gtime.Time `json:"updatedAt"             description:"记录更新时间"`
+	CreatedBy            string      `json:"createdBy"             description:"创建者"`
+	UpdatedBy            string      `json:"updatedBy"             description:"更新者"`
 }
 
 // DeviceHeartbeat 设备心跳模型
 type DeviceHeartbeat struct {
-	ID            int64       `json:"id"`
-	DeviceID      string      `json:"device_id"`
-	HeartbeatTime *gtime.Time `json:"heartbeat_time"`
-	// CPUUsage       float64     `json:"cpu_usage"`
-	// MemoryUsage    float64     `json:"memory_usage"`
-	// DiskUsage      float64     `json:"disk_usage"`
-	// NetworkStatus  string      `json:"network_status"`
-	// NetworkLatency int         `json:"network_latency"`
-	// RunningTasks   int         `json:"running_tasks"`
-	// ErrorCount     int         `json:"error_count"`
-	Metadata string `json:"metadata"`
+	ID             int64       `json:"id"`
+	DeviceID       string      `json:"device_id"`
+	HeartbeatTime  *gtime.Time `json:"heartbeat_time"`
+	CPUUsage       float64     `json:"cpu_usage"`
+	MemoryUsage    float64     `json:"memory_usage"`
+	DiskUsage      float64     `json:"disk_usage"`
+	NetworkStatus  string      `json:"network_status"`
+	NetworkLatency int         `json:"network_latency"`
+	RunningTasks   int         `json:"running_tasks"`
+	ErrorCount     int         `json:"error_count"`
+	Metadata       string      `json:"metadata"`
 	// CreatedAt      *gtime.Time `json:"created_at"`
 }
 

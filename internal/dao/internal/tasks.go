@@ -22,6 +22,7 @@ type TasksDao struct {
 // TasksColumns defines and stores column names for the table tasks.
 type TasksColumns struct {
 	Id           string //
+	DeviceId     string //
 	TaskId       string //
 	Name         string //
 	Description  string //
@@ -38,7 +39,6 @@ type TasksColumns struct {
 	ErrorMessage string //
 	ExecutorType string //
 	ExecutorId   string //
-	DeviceId     string //
 	CreatedAt    string //
 	UpdatedAt    string //
 	CreatedBy    string //
@@ -48,6 +48,7 @@ type TasksColumns struct {
 // tasksColumns holds the columns for the table tasks.
 var tasksColumns = TasksColumns{
 	Id:           "id",
+	DeviceId:     "device_id",
 	TaskId:       "task_id",
 	Name:         "name",
 	Description:  "description",
@@ -64,7 +65,6 @@ var tasksColumns = TasksColumns{
 	ErrorMessage: "error_message",
 	ExecutorType: "executor_type",
 	ExecutorId:   "executor_id",
-	DeviceId:     "device_id",
 	CreatedAt:    "created_at",
 	UpdatedAt:    "updated_at",
 	CreatedBy:    "created_by",

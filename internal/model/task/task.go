@@ -568,31 +568,29 @@ type GetTaskAssignmentsOutput struct {
 // ===============================
 
 // Task 任务主表模型
-// 参照entity/tasks.go完全对齐
 type Task struct {
-	Id           int64       `json:"id"           orm:"id"            description:"任务内部唯一标识符，自增主键"`
-	DeviceId     string      `json:"deviceId"     orm:"device_id"     description:"设备业务ID，关联设备表"`
-	TaskId       string      `json:"taskId"       orm:"task_id"       description:"任务业务ID，外部系统使用的任务标识"`
-	Name         string      `json:"name"         orm:"name"          description:"任务名称"`
-	Description  string      `json:"description"  orm:"description"   description:"任务描述"`
-	Type         string      `json:"type"         orm:"type"          description:"任务类型"`
-	Status       string      `json:"status"       orm:"status"        description:"任务状态"`
-	Priority     int         `json:"priority"     orm:"priority"      description:"任务优先级"`
-	ExecuteTime  *gtime.Time `json:"executeTime"  orm:"execute_time"  description:"计划执行时间"`
-	Timeout      int         `json:"timeout"      orm:"timeout"       description:"超时时间（秒）"`
-	RetryCount   int         `json:"retryCount"   orm:"retry_count"   description:"重试次数"`
-	MaxRetries   int         `json:"maxRetries"   orm:"max_retries"   description:"最大重试次数"`
-	IsUrgent     bool        `json:"isUrgent"     orm:"is_urgent"     description:"是否紧急任务"`
-	Parameters   string      `json:"parameters"   orm:"parameters"    description:"任务参数"`
-	Result       string      `json:"result"       orm:"result"        description:"任务结果"`
-	ErrorMessage string      `json:"errorMessage" orm:"error_message" description:"错误信息"`
-	ExecutorType string      `json:"executorType" orm:"executor_type" description:"执行器类型"`
-	ExecutorId   string      `json:"executorId"   orm:"executor_id"   description:"执行器ID"`
-	CreatedAt    *gtime.Time `json:"createdAt"    orm:"created_at"    description:"记录创建时间"`
-	UpdatedAt    *gtime.Time `json:"updatedAt"    orm:"updated_at"    description:"记录更新时间"`
-	CreatedBy    string      `json:"createdBy"    orm:"created_by"    description:"创建者"`
-	UpdatedBy    string      `json:"updatedBy"    orm:"updated_by"    description:"更新者"`
-	// ...业务扩展字段请在下方添加，并注明用途
+	ID           int64       `json:"id"`
+	TaskID       string      `json:"task_id"`
+	Name         string      `json:"name"`
+	Description  string      `json:"description"`
+	Type         string      `json:"type"`
+	Status       string      `json:"status"`
+	Priority     int         `json:"priority"`
+	ExecuteTime  *gtime.Time `json:"execute_time"`
+	Timeout      int         `json:"timeout"`
+	RetryCount   int         `json:"retry_count"`
+	MaxRetries   int         `json:"max_retries"`
+	IsUrgent     bool        `json:"is_urgent"`
+	Parameters   string      `json:"parameters"`
+	Result       string      `json:"result"`
+	ErrorMessage string      `json:"error_message"`
+	ExecutorType string      `json:"executor_type"`
+	ExecutorID   string      `json:"executor_id"`
+	DeviceID     string      `json:"device_id"`
+	CreatedAt    *gtime.Time `json:"created_at"`
+	UpdatedAt    *gtime.Time `json:"updated_at"`
+	CreatedBy    int64       `json:"created_by"`
+	UpdatedBy    int64       `json:"updated_by"`
 }
 
 // TaskExecution 任务执行模型

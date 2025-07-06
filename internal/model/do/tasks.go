@@ -13,6 +13,7 @@ import (
 type Tasks struct {
 	g.Meta       `orm:"table:tasks, do:true"`
 	Id           interface{} //
+	DeviceId     interface{} //
 	TaskId       interface{} //
 	Name         interface{} //
 	Description  interface{} //
@@ -29,7 +30,6 @@ type Tasks struct {
 	ErrorMessage interface{} //
 	ExecutorType interface{} //
 	ExecutorId   interface{} //
-	DeviceId     interface{} //
 	CreatedAt    *gtime.Time //
 	UpdatedAt    *gtime.Time //
 	CreatedBy    interface{} //

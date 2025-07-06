@@ -24,7 +24,7 @@ type TaskExecutionsColumns struct {
 	Id                string //
 	TaskId            string //
 	ExecutionId       string //
-	DeviceEsn         string //
+	DeviceId          string //
 	Status            string //
 	StartTime         string //
 	EndTime           string //
@@ -49,7 +49,7 @@ var taskExecutionsColumns = TaskExecutionsColumns{
 	Id:                "id",
 	TaskId:            "task_id",
 	ExecutionId:       "execution_id",
-	DeviceEsn:         "device_esn",
+	DeviceId:          "device_id",
 	Status:            "status",
 	StartTime:         "start_time",
 	EndTime:           "end_time",

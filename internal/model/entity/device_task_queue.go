@@ -11,7 +11,7 @@ import (
 // DeviceTaskQueue is the golang structure for table device_task_queue.
 type DeviceTaskQueue struct {
 	Id                   int64       `json:"id"                   orm:"id"                      description:""` //
-	DeviceId             int64       `json:"deviceId"             orm:"device_id"               description:""` //
+	DeviceId             string      `json:"deviceId"             orm:"device_id"               description:""` //
 	TaskId               string      `json:"taskId"               orm:"task_id"                 description:""` //
 	QueuePriority        int         `json:"queuePriority"        orm:"queue_priority"          description:""` //
 	OriginalPriority     int         `json:"originalPriority"     orm:"original_priority"       description:""` //

@@ -21,5 +21,5 @@ type DeviceCommands struct {
 	ResponseData  string      `json:"responseData"  orm:"response_data"  description:""` //
 	ErrorMessage  string      `json:"errorMessage"  orm:"error_message"  description:""` //
 	CreatedAt     *gtime.Time `json:"createdAt"     orm:"created_at"     description:""` //
-	CreatedBy     int64       `json:"createdBy"     orm:"created_by"     description:""` //
+	CreatedBy     string      `json:"createdBy"     orm:"created_by"     description:""` //
 }
