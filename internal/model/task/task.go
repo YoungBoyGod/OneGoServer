@@ -75,12 +75,12 @@ const (
 
 // 任务优先级常量 - 使用统一常量
 const (
-	TaskPriorityLowest  = 1
-	TaskPriorityLow     = 3
-	TaskPriorityNormal  = 5
-	TaskPriorityHigh    = 7
-	TaskPriorityUrgent  = 9
-	TaskPriorityHighest = 10
+	TaskPriorityLowest  = consts.TaskPriorityLowest
+	TaskPriorityLow     = consts.TaskPriorityLow
+	TaskPriorityNormal  = consts.TaskPriorityNormal
+	TaskPriorityHigh    = consts.TaskPriorityHigh
+	TaskPriorityUrgent  = consts.TaskPriorityUrgent
+	TaskPriorityHighest = consts.TaskPriorityHighest
 )
 
 // ===============================
