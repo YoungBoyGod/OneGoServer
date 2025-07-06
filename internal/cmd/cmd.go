@@ -21,7 +21,8 @@ var (
 			s.Group("/", func(group *ghttp.RouterGroup) {
 				group.Middleware(ghttp.MiddlewareHandlerResponse)
 				group.Bind(
-					device.NewV1(),
+					device.New(),
+					user.New(),
 				)
 			})
 			s.Run()
