@@ -1,6 +1,8 @@
 package v1
 
 import (
+	"OneGfServer/api/common"
+
 	"github.com/gogf/gf/v2/frame/g"
 	"github.com/gogf/gf/v2/os/gtime"
 )
@@ -11,35 +13,27 @@ import (
 
 // GetDeviceTaskList 获取设备任务列表请求
 type GetDeviceTaskListReq struct {
-	g.Meta   `path:"/device/{deviceId}/tasks" method:"get" tags:"设备任务" summary:"获取设备任务列表"`
-	DeviceId string `json:"deviceId" v:"required#设备ID不能为空"`
-	Page     int    `json:"page" d:"1" v:"min:1#页码最小为1"`
-	Size     int    `json:"size" d:"10" v:"between:1,100#每页数量为1-100"`
-	Status   string `json:"status,omitempty" v:"in:pending,running,completed,failed,canceled#状态只能是pending,running,completed,failed,canceled"`
+	g.Meta                   `path:"/device/{deviceId}/tasks" method:"get" tags:"设备任务" summary:"获取设备任务列表"`
+	DeviceId                 string `json:"deviceId" v:"required#设备ID不能为空"`
+	common.PaginationRequest `json:",inline"`
+	Status                   string `json:"status,omitempty" v:"in:pending,running,completed,failed,canceled#状态只能是pending,running,completed,failed,canceled"`
 }
 
 // GetDeviceTaskListRes 获取设备任务列表响应
 type GetDeviceTaskListRes struct {
-	List  []DeviceTaskInfo `json:"list"`
-	Total int64            `json:"total"`
-	Page  int              `json:"page"`
-	Size  int              `json:"size"`
+	common.PaginationResponse[DeviceTaskInfo] `json:",inline"`
 }
 
 // GetDeviceTaskQueue 获取设备任务队列请求
 type GetDeviceTaskQueueReq struct {
-	g.Meta   `path:"/device/{deviceId}/task-queue" method:"get" tags:"设备任务" summary:"获取设备任务队列"`
-	DeviceId string `json:"deviceId" v:"required#设备ID不能为空"`
-	Page     int    `json:"page" d:"1" v:"min:1#页码最小为1"`
-	Size     int    `json:"size" d:"10" v:"between:1,100#每页数量为1-100"`
+	g.Meta                   `path:"/device/{deviceId}/task-queue" method:"get" tags:"设备任务" summary:"获取设备任务队列"`
+	DeviceId                 string `json:"deviceId" v:"required#设备ID不能为空"`
+	common.PaginationRequest `json:",inline"`
 }
 
 // GetDeviceTaskQueueRes 获取设备任务队列响应
 type GetDeviceTaskQueueRes struct {
-	List  []DeviceTaskQueueInfo `json:"list"`
-	Total int64                 `json:"total"`
-	Page  int                   `json:"page"`
-	Size  int                   `json:"size"`
+	common.PaginationResponse[DeviceTaskQueueInfo] `json:",inline"`
 }
 
 // GetDeviceTaskDetail 获取设备任务详情请求

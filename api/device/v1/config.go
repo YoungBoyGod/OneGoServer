@@ -1,6 +1,8 @@
 package v1
 
 import (
+	"OneGfServer/api/common"
+
 	"github.com/gogf/gf/v2/frame/g"
 	"github.com/gogf/gf/v2/os/gtime"
 )
@@ -43,18 +45,14 @@ type UpdateDeviceConfigRes struct {
 
 // GetDeviceConfigHistory 获取设备配置历史请求
 type GetDeviceConfigHistoryReq struct {
-	g.Meta    `path:"/device/{deviceId}/config/history" method:"get" tags:"设备配置" summary:"获取设备配置历史"`
-	DeviceId  string `json:"deviceId" v:"required#设备ID不能为空"`
-	Page      int    `json:"page" d:"1" v:"min:1#页码最小为1"`
-	Size      int    `json:"size" d:"10" v:"between:1,50#每页数量为1-50"`
-	StartTime string `json:"start_time,omitempty"`
-	EndTime   string `json:"end_time,omitempty"`
+	g.Meta                   `path:"/device/{deviceId}/config/history" method:"get" tags:"设备配置" summary:"获取设备配置历史"`
+	DeviceId                 string `json:"deviceId" v:"required#设备ID不能为空"`
+	common.PaginationRequest `json:",inline"`
+	StartTime                string `json:"start_time,omitempty"`
+	EndTime                  string `json:"end_time,omitempty"`
 }
 
 // GetDeviceConfigHistoryRes 获取设备配置历史响应
 type GetDeviceConfigHistoryRes struct {
-	List  []DeviceConfigHistoryInfo `json:"list"`
-	Total int64                     `json:"total"`
-	Page  int                       `json:"page"`
-	Size  int                       `json:"size"`
+	common.PaginationResponse[DeviceConfigHistoryInfo] `json:",inline"`
 }

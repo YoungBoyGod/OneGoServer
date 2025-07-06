@@ -1,6 +1,8 @@
 package v1
 
 import (
+	"OneGfServer/api/common"
+
 	"github.com/gogf/gf/v2/frame/g"
 	"github.com/gogf/gf/v2/os/gtime"
 )
@@ -11,20 +13,16 @@ import (
 
 // GetDeviceAlertList 获取设备告警列表请求
 type GetDeviceAlertListReq struct {
-	g.Meta     `path:"/device/{deviceId}/alerts" method:"get" tags:"设备告警" summary:"获取设备告警列表"`
-	DeviceId   string `json:"deviceId" v:"required#设备ID不能为空"`
-	Page       int    `json:"page" d:"1" v:"min:1#页码最小为1"`
-	Size       int    `json:"size" d:"10" v:"between:1,100#每页数量为1-100"`
-	AlertLevel string `json:"alert_level,omitempty" v:"in:low,medium,high,critical#告警级别只能是low,medium,high,critical"`
-	Status     string `json:"status,omitempty" v:"in:active,resolved,ignored#状态只能是active,resolved,ignored"`
+	g.Meta                   `path:"/device/{deviceId}/alerts" method:"get" tags:"设备告警" summary:"获取设备告警列表"`
+	DeviceId                 string `json:"deviceId" v:"required#设备ID不能为空"`
+	common.PaginationRequest `json:",inline"`
+	AlertLevel               string `json:"alert_level,omitempty" v:"in:low,medium,high,critical#告警级别只能是low,medium,high,critical"`
+	Status                   string `json:"status,omitempty" v:"in:active,resolved,ignored#状态只能是active,resolved,ignored"`
 }
 
 // GetDeviceAlertListRes 获取设备告警列表响应
 type GetDeviceAlertListRes struct {
-	List  []DeviceAlertInfo `json:"list"`
-	Total int64             `json:"total"`
-	Page  int               `json:"page"`
-	Size  int               `json:"size"`
+	common.PaginationResponse[DeviceAlertInfo] `json:",inline"`
 }
 
 // GetDeviceAlertDetail 获取设备告警详情请求

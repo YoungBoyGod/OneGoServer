@@ -1,6 +1,8 @@
 package v1
 
 import (
+	"OneGfServer/api/common"
+
 	"github.com/gogf/gf/v2/frame/g"
 	"github.com/gogf/gf/v2/os/gtime"
 )
@@ -126,20 +128,16 @@ type OptimizeDeviceLoadRes struct {
 
 // GetDeviceLoadHistory 获取设备负载历史请求
 type GetDeviceLoadHistoryReq struct {
-	g.Meta    `path:"/device/load/history" method:"get" tags:"设备管理" summary:"获取设备负载历史"`
-	DeviceId  string `json:"deviceId" v:"required#设备ID不能为空"`
-	StartTime string `json:"startTime" v:"required#开始时间不能为空"`
-	EndTime   string `json:"endTime" v:"required#结束时间不能为空"`
-	Page      int    `json:"page" d:"1" v:"min:1#页码最小为1"`
-	Size      int    `json:"size" d:"100" v:"between:1,1000#每页数量为1-1000"`
+	g.Meta                   `path:"/device/load/history" method:"get" tags:"设备管理" summary:"获取设备负载历史"`
+	DeviceId                 string `json:"deviceId" v:"required#设备ID不能为空"`
+	StartTime                string `json:"startTime" v:"required#开始时间不能为空"`
+	EndTime                  string `json:"endTime" v:"required#结束时间不能为空"`
+	common.PaginationRequest `json:",inline"`
 }
 
 // GetDeviceLoadHistoryRes 获取设备负载历史响应
 type GetDeviceLoadHistoryRes struct {
-	List  []DeviceLoadRecord `json:"list"`
-	Total int64              `json:"total"`
-	Page  int                `json:"page"`
-	Size  int                `json:"size"`
+	common.PaginationResponse[DeviceLoadRecord] `json:",inline"`
 }
 
 // SetDeviceLoadThreshold 设置设备负载阈值请求

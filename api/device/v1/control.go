@@ -1,6 +1,8 @@
 package v1
 
 import (
+	"OneGfServer/api/common"
+
 	"github.com/gogf/gf/v2/frame/g"
 )
 
@@ -24,18 +26,14 @@ type SendDeviceCommandRes struct {
 
 // GetDeviceHeartbeat 获取设备心跳请求
 type GetDeviceHeartbeatReq struct {
-	g.Meta   `path:"/device/{deviceId}/heartbeat" method:"get" tags:"设备控制" summary:"获取设备心跳"`
-	DeviceId string `json:"deviceId" v:"required#设备ID不能为空"`
-	Page     int    `json:"page" d:"1" v:"min:1#页码最小为1"`
-	Size     int    `json:"size" d:"10" v:"between:1,100#每页数量为1-100"`
+	g.Meta                   `path:"/device/{deviceId}/heartbeat" method:"get" tags:"设备控制" summary:"获取设备心跳"`
+	DeviceId                 string `json:"deviceId" v:"required#设备ID不能为空"`
+	common.PaginationRequest `json:",inline"`
 }
 
 // GetDeviceHeartbeatRes 获取设备心跳响应
 type GetDeviceHeartbeatRes struct {
-	List  []DeviceHeartbeatInfo `json:"list"`
-	Total int64                 `json:"total"`
-	Page  int                   `json:"page"`
-	Size  int                   `json:"size"`
+	common.PaginationResponse[DeviceHeartbeatInfo] `json:",inline"`
 }
 
 // UpdateDeviceHeartbeat 更新设备心跳请求
@@ -54,22 +52,18 @@ type UpdateDeviceHeartbeatRes struct {
 
 // GetDeviceCommandHistory 获取设备命令执行历史请求
 type GetDeviceCommandHistoryReq struct {
-	g.Meta      `path:"/device/{deviceId}/commands" method:"get" tags:"设备控制" summary:"获取设备命令执行历史"`
-	DeviceId    string `json:"deviceId" v:"required#设备ID不能为空"`
-	Page        int    `json:"page" d:"1" v:"min:1#页码最小为1"`
-	Size        int    `json:"size" d:"20" v:"between:1,100#每页数量为1-100"`
-	CommandType string `json:"command_type,omitempty"`
-	Status      string `json:"status,omitempty" v:"in:pending,sent,executed,completed,failed,timeout#状态限制"`
-	StartTime   string `json:"start_time,omitempty"`
-	EndTime     string `json:"end_time,omitempty"`
+	g.Meta                   `path:"/device/{deviceId}/commands" method:"get" tags:"设备控制" summary:"获取设备命令执行历史"`
+	DeviceId                 string `json:"deviceId" v:"required#设备ID不能为空"`
+	common.PaginationRequest `json:",inline"`
+	CommandType              string `json:"command_type,omitempty"`
+	Status                   string `json:"status,omitempty" v:"in:pending,sent,executed,completed,failed,timeout#状态限制"`
+	StartTime                string `json:"start_time,omitempty"`
+	EndTime                  string `json:"end_time,omitempty"`
 }
 
 // GetDeviceCommandHistoryRes 获取设备命令执行历史响应
 type GetDeviceCommandHistoryRes struct {
-	List  []DeviceCommandInfo `json:"list"`
-	Total int64               `json:"total"`
-	Page  int                 `json:"page"`
-	Size  int                 `json:"size"`
+	common.PaginationResponse[DeviceCommandInfo] `json:",inline"`
 }
 
 // GetDeviceCommandDetail 获取设备命令详情请求
