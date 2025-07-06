@@ -277,3 +277,30 @@ type DeviceTaskQueueItem struct {
 	Status             string `json:"status"`
 	QueuedAt           string `json:"queuedAt"`
 }
+
+// TaskAssignmentInfo 任务分配信息
+type TaskAssignmentInfo struct {
+	TaskId          string      `json:"task_id"`
+	DeviceId        string      `json:"device_id"`
+	AssignmentScore float64     `json:"assignment_score"`
+	Strategy        string      `json:"strategy"`
+	Reason          string      `json:"reason"`
+	AssignedAt      *gtime.Time `json:"assigned_at"`
+	CompletedAt     *gtime.Time `json:"completed_at,omitempty"`
+	Status          string      `json:"status"`
+}
+
+// DeviceTaskAssignmentInfo 设备任务分配信息
+type DeviceTaskAssignmentInfo struct {
+	TaskId          string      `json:"task_id"`
+	TaskName        string      `json:"task_name"`
+	TaskType        string      `json:"task_type"`
+	AssignmentScore float64     `json:"assignment_score"`
+	Strategy        string      `json:"strategy"`
+	Reason          string      `json:"reason"`
+	AssignedAt      *gtime.Time `json:"assigned_at"`
+	CompletedAt     *gtime.Time `json:"completed_at,omitempty"`
+	Status          string      `json:"status"`
+	Priority        int         `json:"priority"`
+	Progress        float64     `json:"progress"`
+}
