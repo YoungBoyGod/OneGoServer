@@ -1,6 +1,8 @@
 package v1
 
 import (
+	"OneGfServer/api/common"
+
 	"github.com/gogf/gf/v2/frame/g"
 )
 
@@ -10,18 +12,14 @@ import (
 
 // GetTaskQueueListReq 获取任务队列列表请求
 type GetTaskQueueListReq struct {
-	g.Meta    `path:"/task/queue/list" method:"get" tags:"任务队列" summary:"获取任务队列列表"`
-	Page      int    `json:"page" d:"1" v:"min:1#页码最小为1"`
-	Size      int    `json:"size" d:"10" v:"between:1,100#每页数量为1-100"`
-	QueueType string `json:"queue_type,omitempty" v:"in:pending,running,priority#队列类型无效"`
-	DeviceId  string `json:"device_id,omitempty" v:"max-length:50#设备ID最大50字符"`
+	g.Meta                   `path:"/task/queue/list" method:"get" tags:"任务队列" summary:"获取任务队列列表"`
+	common.PaginationRequest `json:",inline"`
+	QueueType                string `json:"queue_type,omitempty" v:"in:pending,running,priority#队列类型无效"`
+	DeviceId                 string `json:"device_id,omitempty" v:"max-length:50#设备ID最大50字符"`
 }
 
 type GetTaskQueueListRes struct {
-	List  []TaskQueueInfo `json:"list"`
-	Total int64           `json:"total"`
-	Page  int             `json:"page"`
-	Size  int             `json:"size"`
+	common.PaginationResponse[TaskQueueInfo] `json:",inline"`
 }
 
 // GetTaskQueueDetailReq 获取任务队列详情请求

@@ -1,6 +1,8 @@
 package v1
 
 import (
+	"OneGfServer/api/common"
+
 	"github.com/gogf/gf/v2/frame/g"
 	"github.com/gogf/gf/v2/os/gtime"
 )
@@ -11,18 +13,14 @@ import (
 
 // GetTaskScheduleListReq 获取任务调度列表请求
 type GetTaskScheduleListReq struct {
-	g.Meta       `path:"/task/schedule/list" method:"get" tags:"任务调度" summary:"获取任务调度列表"`
-	Page         int    `json:"page" d:"1" v:"min:1#页码最小为1"`
-	Size         int    `json:"size" d:"10" v:"between:1,100#每页数量为1-100"`
-	ScheduleType string `json:"schedule_type,omitempty" v:"in:once,recurring,cron#调度类型无效"`
-	Status       string `json:"status,omitempty" v:"in:active,inactive,paused#状态无效"`
+	g.Meta                   `path:"/task/schedule/list" method:"get" tags:"任务调度" summary:"获取任务调度列表"`
+	common.PaginationRequest `json:",inline"`
+	ScheduleType             string `json:"schedule_type,omitempty" v:"in:once,recurring,cron#调度类型无效"`
+	Status                   string `json:"status,omitempty" v:"in:active,inactive,paused#状态无效"`
 }
 
 type GetTaskScheduleListRes struct {
-	List  []TaskScheduleInfo `json:"list"`
-	Total int64              `json:"total"`
-	Page  int                `json:"page"`
-	Size  int                `json:"size"`
+	common.PaginationResponse[TaskScheduleInfo] `json:",inline"`
 }
 
 // CreateTaskScheduleReq 创建任务调度请求

@@ -59,21 +59,17 @@ type BatchAssignTasksRes struct {
 
 // GetTaskAssignmentHistoryReq 获取任务分配历史请求
 type GetTaskAssignmentHistoryReq struct {
-	g.Meta    `path:"/task/assignment/history" method:"get" tags:"任务管理" summary:"获取任务分配历史"`
-	TaskId    string `json:"taskId,omitempty"`
-	DeviceId  string `json:"deviceId,omitempty"`
-	StartTime string `json:"startTime,omitempty"`
-	EndTime   string `json:"endTime,omitempty"`
-	Page      int    `json:"page" d:"1" v:"min:1#页码最小为1"`
-	Size      int    `json:"size" d:"20" v:"between:1,100#每页数量为1-100"`
+	g.Meta                   `path:"/task/assignment/history" method:"get" tags:"任务管理" summary:"获取任务分配历史"`
+	TaskId                   string `json:"taskId,omitempty"`
+	DeviceId                 string `json:"deviceId,omitempty"`
+	StartTime                string `json:"startTime,omitempty"`
+	EndTime                  string `json:"endTime,omitempty"`
+	common.PaginationRequest `json:",inline"`
 }
 
 // GetTaskAssignmentHistoryRes 获取任务分配历史响应
 type GetTaskAssignmentHistoryRes struct {
-	List  []TaskAssignmentHistory `json:"list"`
-	Total int64                   `json:"total"`
-	Page  int                     `json:"page"`
-	Size  int                     `json:"size"`
+	common.PaginationResponse[TaskAssignmentHistory] `json:",inline"`
 }
 
 // OptimizeTaskAssignmentReq 优化任务分配请求
@@ -94,20 +90,17 @@ type OptimizeTaskAssignmentRes struct {
 
 // GetDeviceTaskQueueReq 获取设备任务队列请求
 type GetDeviceTaskQueueReq struct {
-	g.Meta   `path:"/task/queue/device" method:"get" tags:"任务管理" summary:"获取设备任务队列"`
-	DeviceId string `json:"deviceId" v:"required#设备ID不能为空"`
-	Status   string `json:"status,omitempty"`
-	Page     int    `json:"page" d:"1" v:"min:1#页码最小为1"`
-	Size     int    `json:"size" d:"20" v:"between:1,100#每页数量为1-100"`
+	g.Meta                   `path:"/task/queue/device" method:"get" tags:"任务管理" summary:"获取设备任务队列"`
+	DeviceId                 string `json:"deviceId" v:"required#设备ID不能为空"`
+	Status                   string `json:"status,omitempty"`
+	common.PaginationRequest `json:",inline"`
 }
 
 // GetDeviceTaskQueueRes 获取设备任务队列响应
 type GetDeviceTaskQueueRes struct {
-	DeviceId string                `json:"deviceId"`
-	Queue    []DeviceTaskQueueItem `json:"queue"`
-	Total    int64                 `json:"total"`
-	Page     int                   `json:"page"`
-	Size     int                   `json:"size"`
+	DeviceId                                       string                `json:"deviceId"`
+	Queue                                          []DeviceTaskQueueItem `json:"queue"`
+	common.PaginationResponse[DeviceTaskQueueItem] `json:",inline"`
 }
 
 // ===============================
