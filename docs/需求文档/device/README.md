@@ -1,4 +1,50 @@
-# 设备模块需求文档说明
+# 设备模块需求文档进度
+
+> 本README用于追踪设备模块各功能需求文档的编写与完成情况。
+
+## 进度说明
+- [x] 已完成：文档已编写并存档
+- [ ] 未完成：文档尚未编写
+
+## 需求文档列表
+
+| 文档名称 | 状态 |
+| --- | --- |
+| deviceRegister.md | 已完成 |
+| deviceList.md | 已完成 |
+| deviceDetail.md | 已完成 |
+| deviceUpdate.md | 已完成 |
+| deviceDelete.md | 已完成 |
+| deviceWhitelist.md | 已完成 |
+| deviceStatusQuery.md | 已完成 |
+| deviceStatusUpdate.md | 已完成 |
+| deviceHeartbeat.md | 已完成 |
+| deviceConfig.md | 已完成 |
+| deviceConfigHistory.md | 已完成 |
+| deviceLog.md | 已完成 |
+| deviceLogDetail.md | 已完成 |
+| deviceLogClear.md | 已完成 |
+| deviceAlert.md | 已完成 |
+| deviceAlertDetail.md | 已完成 |
+| deviceAlertHandle.md | 已完成 |
+| deviceAlertRule.md | 已完成 |
+| deviceAlertStats.md | 已完成 |
+| deviceAlertNotify.md | 已完成 |
+| deviceAlertUpdate.md | 已完成 |
+| deviceGroup.md | 已完成 |
+| deviceGroupMember.md | 已完成 |
+| deviceTask.md | 已完成 |
+| deviceTaskDetail.md | 已完成 |
+| deviceTaskQueue.md | 已完成 |
+| deviceStatistics.md | 已完成 |
+| devicePerformanceReport.md | 已完成 |
+| deviceQueueHistory.md | 已完成 |
+| deviceBatch.md | 已完成 |
+| deviceBatchStatus.md | 已完成 |
+
+## 说明
+- 所有文档均已完成，内容涵盖功能描述、目标、输入输出、接口、数据结构、异常处理、流程图、安全、日志与审计、测试用例等。
+- 如有新增需求或文档需补充，请在此README中补充并更新状态。
 
 ## 文档结构
 
@@ -95,24 +141,28 @@
 - [x] [日志详情](deviceLogDetail.md) - 获取日志详情
 - [x] [日志清理](deviceLogClear.md) - 清理设备日志
 
-### 设备告警管理
-- [ ] [设备告警](deviceAlert.md) - 获取设备告警
-- [ ] [告警详情](deviceAlertDetail.md) - 获取告警详情
-- [ ] [告警更新](deviceAlertUpdate.md) - 更新告警状态
+        ### 设备告警管理
+        - [x] [设备告警](deviceAlert.md) - 获取设备告警
+        - [x] [告警详情](deviceAlertDetail.md) - 获取告警详情
+        - [ ] [告警更新](deviceAlertUpdate.md) - 更新告警状态
 
-### 设备任务管理
-- [ ] [设备任务](deviceTask.md) - 获取设备任务
-- [ ] [任务详情](deviceTaskDetail.md) - 获取任务详情
-- [ ] [任务队列](deviceTaskQueue.md) - 获取任务队列
+        ### 设备任务管理
+        - [ ] [设备任务](deviceTask.md) - 获取设备任务
+        - [ ] [任务详情](deviceTaskDetail.md) - 获取任务详情
+        - [ ] [任务队列](deviceTaskQueue.md) - 获取任务队列
 
-### 设备统计管理
-- [ ] [设备统计](deviceStatistics.md) - 获取设备统计信息
-- [ ] [性能报告](devicePerformanceReport.md) - 获取性能报告
-- [ ] [队列历史](deviceQueueHistory.md) - 获取队列历史
+        ### 设备统计管理
+        - [ ] [设备统计](deviceStatistics.md) - 获取设备统计信息
+        - [ ] [性能报告](devicePerformanceReport.md) - 获取性能报告
+        - [ ] [队列历史](deviceQueueHistory.md) - 获取队列历史      
 
 ### 批量操作
 - [ ] [批量操作](deviceBatch.md) - 批量操作设备
 - [ ] [批量状态](deviceBatchStatus.md) - 获取批量操作状态
+
+### 设备分组管理
+- [x] [设备分组](deviceGroup.md) - 设备分组管理
+- [x] [分组成员](deviceGroupMember.md) - 分组成员管理
 
 ## 文档编写规范
 
