@@ -1,0 +1,42 @@
+# 配置模板文件
+# 复制此文件为 config.yaml 并根据您的环境修改配置
+
+# 数据库配置
+database:
+  default:
+    # 数据库连接字符串
+    # 格式: pgsql:用户名:密码@tcp(主机:端口)/数据库名
+    link: "pgsql:admin:onegoserver@123@tcp(192.168.100.128:5432)/onegoserver"
+    debug: true
+    charset: "utf8"
+    maxIdle: 10
+    maxOpen: 100
+    maxLifetime: "30s"
+
+# 服务器配置
+server:
+  address: ":8000"
+  openapiPath: "/api.json"
+  swaggerPath: "/swagger"
+  dumpRouterMap: false
+  graceful: true
+  gracefulTimeout: 30
+
+# 日志配置
+logger:
+  level: "all"
+  stdout: true
+  file: "logs/server.log"
+  rotateSize: "100MB"
+  rotateExpire: "7d"
+  rotateBackupLimit: 10
+  rotateBackupExpire: "7d"
+  rotateBackupCompress: 9
+  rotateCheckInterval: "1h"
+
+# 系统配置
+system:
+  debug: true
+  dumpPanic: true
+  graceful: true
+  gracefulTimeout: 30 

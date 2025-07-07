@@ -1,0 +1,38 @@
+# GoFrame 配置文件
+# 数据库配置
+database:
+  default:
+    link: "pgsql:admin:onegoserver@123@tcp(192.168.100.128:5432)/onegoserver"
+    debug: true
+    charset: "utf8"
+    maxIdle: 10
+    maxOpen: 100
+    maxLifetime: "30s"
+
+# 服务器配置
+server:
+  address: ":8000"
+  openapiPath: "/api.json"
+  swaggerPath: "/swagger"
+  dumpRouterMap: false
+  graceful: true
+  gracefulTimeout: 30
+
+# 日志配置
+logger:
+  level: "all"
+  stdout: true
+  file: "logs/server.log"
+  rotateSize: "100MB"
+  rotateExpire: "7d"
+  rotateBackupLimit: 10
+  rotateBackupExpire: "7d"
+  rotateBackupCompress: 9
+  rotateCheckInterval: "1h"
+
+# 系统配置
+system:
+  debug: true
+  dumpPanic: true
+  graceful: true
+  gracefulTimeout: 30 

@@ -1,0 +1,40 @@
+# 开发环境配置文件
+# 继承基础配置并覆盖开发特定设置
+
+# 数据库配置
+database:
+  default:
+    link: "pgsql:admin:onegoserver@123@tcp(192.168.100.128:5432)/onegoserver"
+    debug: true
+    charset: "utf8"
+    maxIdle: 5
+    maxOpen: 50
+    maxLifetime: "30s"
+
+# 服务器配置
+server:
+  address: ":8000"
+  openapiPath: "/api.json"
+  swaggerPath: "/swagger"
+  dumpRouterMap: true  # 开发环境显示路由映射
+  graceful: true
+  gracefulTimeout: 30
+
+# 日志配置
+logger:
+  level: "all"
+  stdout: true
+  file: "logs/server-dev.log"
+  rotateSize: "50MB"
+  rotateExpire: "3d"
+  rotateBackupLimit: 5
+  rotateBackupExpire: "3d"
+  rotateBackupCompress: 9
+  rotateCheckInterval: "1h"
+
+# 系统配置
+system:
+  debug: true
+  dumpPanic: true
+  graceful: true
+  gracefulTimeout: 30 
