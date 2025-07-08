@@ -1,16 +1,8 @@
+package task
+
 // ===============================
 // 任务优先级相关Input/Output结构体
 // ===============================
-
-// CalculateTaskPriorityInput 计算任务优先级输入
-type CalculateTaskPriorityInput struct {
-	TaskData map[string]interface{} `json:"task_data"`
-}
-
-// CalculateTaskPriorityOutput 计算任务优先级输出
-type CalculateTaskPriorityOutput struct {
-	Priority int `json:"priority"`
-}
 
 // CalculateUrgencyScoreInput 计算紧急度评分输入
 type CalculateUrgencyScoreInput struct {
@@ -50,4 +42,4 @@ type CalculateResourceScoreInput struct {
 // CalculateResourceScoreOutput 计算资源评分输出
 type CalculateResourceScoreOutput struct {
 	Score float64 `json:"score"`
-} 
+}

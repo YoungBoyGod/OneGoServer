@@ -9,6 +9,8 @@ import (
 	"github.com/gogf/gf/v2/os/gcmd"
 
 	deviceController "OneGfServer/internal/controller/device"
+	queueController "OneGfServer/internal/controller/queue"
+	taskController "OneGfServer/internal/controller/task"
 )
 
 var (
@@ -20,12 +22,13 @@ var (
 			// 初始化数据库
 			initDB(ctx)
 			s := g.Server()
-			// s.Group("/", func(group *ghttp.RouterGroup) {
-			// 	group.Middleware(ghttp.MiddlewareHandlerResponse)
-			// 	group.Bind(
-			// 	// user.New(),
-			// 	)
-			// })
+			// 默认路由，显示所有URL路由信息
+			s.Group("/", func(group *ghttp.RouterGroup) {
+				group.Middleware(ghttp.MiddlewareHandlerResponse)
+				group.ALL("/", func(r *ghttp.Request) {
+					r.Response.WritelnExit(s.GetRoutes())
+				})
+			})
 
 			// 注册设备相关路由
 			s.Group("/api/v1", func(group *ghttp.RouterGroup) {
@@ -33,6 +36,14 @@ var (
 				// 设备管理路由
 				group.Group("/device", func(group *ghttp.RouterGroup) {
 					group.Bind(deviceController.NewV1())
+				})
+				// 任务管理路由
+				group.Group("/task", func(group *ghttp.RouterGroup) {
+					group.Bind(taskController.NewV1())
+				})
+				// 队列管理路由
+				group.Group("/queue", func(group *ghttp.RouterGroup) {
+					group.Bind(queueController.NewV1())
 				})
 			})
 			s.Run()

@@ -1,3 +1,5 @@
+package task
+
 // ===============================
 // 任务分配相关Input/Output结构体
 // ===============================
@@ -207,4 +209,4 @@ type ExecuteTaskAssignmentInput struct {
 type ExecuteTaskAssignmentOutput struct {
 	Success bool   `json:"success"`
 	Message string `json:"message,omitempty"`
-} 
+}

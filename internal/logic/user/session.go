@@ -24,9 +24,12 @@ func (s *sUser) CreateUserSession(ctx context.Context, input *user.CreateUserSes
 
 	// 生成会话ID
 	sessionIdInput := &user.GenerateSessionIdInput{}
-	sessionIdOutput := s.GenerateSessionId(ctx, sessionIdInput)
+	// TODO: Fix assignment mismatch - GenerateSessionId returns 2 values
+	sessionIdOutput, _ := s.GenerateSessionId(ctx, sessionIdInput)
 
-	sessionData["session_id"] = sessionIdOutput.SessionId
+	if sessionIdOutput != nil {
+		sessionData["session_id"] = sessionIdOutput.SessionId
+	}
 	sessionData["user_id"] = input.UserId
 	sessionData["created_at"] = gtime.Now()
 	sessionData["last_activity"] = gtime.Now()

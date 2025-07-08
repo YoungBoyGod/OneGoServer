@@ -109,3 +109,10 @@ type UserSortOption struct {
 	Field     string `json:"field"`
 	Direction string `json:"direction"` // asc, desc
 }
+
+type UserInfo struct{}
+type PermissionInfo struct{}
+type RoleInfo struct{}
+type SessionInfo struct{}
+type ActivityInfo struct{}
+type SecurityLogInfo struct{}

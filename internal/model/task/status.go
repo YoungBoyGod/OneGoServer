@@ -1,3 +1,5 @@
+package task
+
 // ===============================
 // 任务状态相关Input/Output结构体
 // ===============================
@@ -34,4 +36,4 @@ type CanTransitionToStatusInput struct {
 type CanTransitionToStatusOutput struct {
 	CanTransition bool   `json:"can_transition"`
 	Reason        string `json:"reason,omitempty"`
-} 
+}

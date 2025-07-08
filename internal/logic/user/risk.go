@@ -48,8 +48,9 @@ func (s *sUser) CalculateLocationRiskScore(ctx context.Context, input *user.Calc
 			IP1: currentIP,
 			IP2: lastIP,
 		}
-		isSameNetworkOutput := s.IsSameNetwork(ctx, isSameNetworkInput)
-		if !isSameNetworkOutput.IsSame {
+		// TODO: Fix assignment mismatch - IsSameNetwork returns 2 values
+		isSameNetworkOutput, _ := s.IsSameNetwork(ctx, isSameNetworkInput)
+		if isSameNetworkOutput != nil && !isSameNetworkOutput.IsSame {
 			score += 40
 		}
 	}
@@ -58,8 +59,9 @@ func (s *sUser) CalculateLocationRiskScore(ctx context.Context, input *user.Calc
 	isMaliciousInput := &user.IsKnownMaliciousIPInput{
 		IP: currentIP,
 	}
-	isMaliciousOutput := s.IsKnownMaliciousIP(ctx, isMaliciousInput)
-	if isMaliciousOutput.IsMalicious {
+	// TODO: Fix assignment mismatch - IsKnownMaliciousIP returns 2 values
+	isMaliciousOutput, _ := s.IsKnownMaliciousIP(ctx, isMaliciousInput)
+	if isMaliciousOutput != nil && isMaliciousOutput.IsMalicious {
 		score += 60
 	}
 
@@ -83,8 +85,9 @@ func (s *sUser) CalculateDeviceRiskScore(ctx context.Context, input *user.Calcul
 	isMobileInput := &user.IsMobileDeviceInput{
 		UserAgent: currentUA,
 	}
-	isMobileOutput := s.IsMobileDevice(ctx, isMobileInput)
-	if isMobileOutput.IsMobile {
+	// TODO: Fix assignment mismatch - IsMobileDevice returns 2 values
+	isMobileOutput, _ := s.IsMobileDevice(ctx, isMobileInput)
+	if isMobileOutput != nil && isMobileOutput.IsMobile {
 		score += 10 // 移动设备风险稍高
 	}
 
@@ -124,8 +127,9 @@ func (s *sUser) CalculateBehaviorRiskScore(ctx context.Context, input *user.Calc
 		UserData:  input.UserData,
 		LoginData: input.LoginData,
 	}
-	isAbnormalOutput := s.IsAbnormalLoginPattern(ctx, isAbnormalInput)
-	if isAbnormalOutput.IsAbnormal {
+	// TODO: Fix assignment mismatch - IsAbnormalLoginPattern returns 2 values
+	isAbnormalOutput, _ := s.IsAbnormalLoginPattern(ctx, isAbnormalInput)
+	if isAbnormalOutput != nil && isAbnormalOutput.IsAbnormal {
 		score += 25
 	}
 

@@ -5,23 +5,23 @@ package task
 // ===============================
 
 // CreateTaskInput 创建任务输入
-type CreateTaskInput struct {
-	Name        string                 `json:"name"`
-	Type        string                 `json:"type"`
-	Priority    int                    `json:"priority"`
-	Description string                 `json:"description"`
-	Parameters  map[string]interface{} `json:"parameters"`
-	Timeout     int                    `json:"timeout"`
-	RetryCount  int                    `json:"retry_count"`
-}
+// type CreateTaskInput struct {
+// 	Name        string                 `json:"name"`
+// 	Type        string                 `json:"type"`
+// 	Priority    int                    `json:"priority"`
+// 	Description string                 `json:"description"`
+// 	Parameters  map[string]interface{} `json:"parameters"`
+// 	Timeout     int                    `json:"timeout"`
+// 	RetryCount  int                    `json:"retry_count"`
+// }
 
-// CreateTaskOutput 创建任务输出
-type CreateTaskOutput struct {
-	TaskID    string `json:"task_id"`
-	Status    string `json:"status"`
-	CreatedAt string `json:"created_at"`
-	Message   string `json:"message"`
-}
+// // CreateTaskOutput 创建任务输出
+// type CreateTaskOutput struct {
+// 	TaskID    string `json:"task_id"`
+// 	Status    string `json:"status"`
+// 	CreatedAt string `json:"created_at"`
+// 	Message   string `json:"message"`
+// }
 
 // GetTaskInput 获取任务输入
 type GetTaskInput struct {
@@ -82,31 +82,31 @@ type ListTasksOutput struct {
 	Size  int                      `json:"size"`
 }
 
-// StartTaskInput 启动任务输入
-type StartTaskInput struct {
-	TaskID string `json:"task_id"`
-}
+// // StartTaskInput 启动任务输入
+// type StartTaskInput struct {
+// 	TaskID string `json:"task_id"`
+// }
 
-// StartTaskOutput 启动任务输出
-type StartTaskOutput struct {
-	TaskID    string `json:"task_id"`
-	Status    string `json:"status"`
-	StartedAt string `json:"started_at"`
-	Message   string `json:"message"`
-}
+// // StartTaskOutput 启动任务输出
+// type StartTaskOutput struct {
+// 	TaskID    string `json:"task_id"`
+// 	Status    string `json:"status"`
+// 	StartedAt string `json:"started_at"`
+// 	Message   string `json:"message"`
+// }
 
-// StopTaskInput 停止任务输入
-type StopTaskInput struct {
-	TaskID string `json:"task_id"`
-}
+// // StopTaskInput 停止任务输入
+// type StopTaskInput struct {
+// 	TaskID string `json:"task_id"`
+// }
 
-// StopTaskOutput 停止任务输出
-type StopTaskOutput struct {
-	TaskID    string `json:"task_id"`
-	Status    string `json:"status"`
-	StoppedAt string `json:"stopped_at"`
-	Message   string `json:"message"`
-}
+// // StopTaskOutput 停止任务输出
+// type StopTaskOutput struct {
+// 	TaskID    string `json:"task_id"`
+// 	Status    string `json:"status"`
+// 	StoppedAt string `json:"stopped_at"`
+// 	Message   string `json:"message"`
+// }
 
 // PauseTaskInput 暂停任务输入
 type PauseTaskInput struct {
@@ -162,65 +162,65 @@ type UnassignTaskOutput struct {
 	Message      string `json:"message"`
 }
 
-// GetTaskStatusInput 获取任务状态输入
-type GetTaskStatusInput struct {
-	TaskID string `json:"task_id"`
-}
+// // GetTaskStatusInput 获取任务状态输入
+// type GetTaskStatusInput struct {
+// 	TaskID string `json:"task_id"`
+// }
 
-// GetTaskStatusOutput 获取任务状态输出
-type GetTaskStatusOutput struct {
-	TaskID    string                 `json:"task_id"`
-	Status    string                 `json:"status"`
-	Progress  float64                `json:"progress"`
-	StartTime string                 `json:"start_time"`
-	EndTime   string                 `json:"end_time"`
-	Duration  string                 `json:"duration"`
-	Details   map[string]interface{} `json:"details"`
-}
+// // GetTaskStatusOutput 获取任务状态输出
+// type GetTaskStatusOutput struct {
+// 	TaskID    string                 `json:"task_id"`
+// 	Status    string                 `json:"status"`
+// 	Progress  float64                `json:"progress"`
+// 	StartTime string                 `json:"start_time"`
+// 	EndTime   string                 `json:"end_time"`
+// 	Duration  string                 `json:"duration"`
+// 	Details   map[string]interface{} `json:"details"`
+// }
 
-// UpdateTaskPriorityInput 更新任务优先级输入
-type UpdateTaskPriorityInput struct {
-	TaskID   string `json:"task_id"`
-	Priority int    `json:"priority"`
-}
+// // UpdateTaskPriorityInput 更新任务优先级输入
+// type UpdateTaskPriorityInput struct {
+// 	TaskID   string `json:"task_id"`
+// 	Priority int    `json:"priority"`
+// }
 
-// UpdateTaskPriorityOutput 更新任务优先级输出
-type UpdateTaskPriorityOutput struct {
-	TaskID    string `json:"task_id"`
-	Priority  int    `json:"priority"`
-	UpdatedAt string `json:"updated_at"`
-	Message   string `json:"message"`
-}
+// // UpdateTaskPriorityOutput 更新任务优先级输出
+// type UpdateTaskPriorityOutput struct {
+// 	TaskID    string `json:"task_id"`
+// 	Priority  int    `json:"priority"`
+// 	UpdatedAt string `json:"updated_at"`
+// 	Message   string `json:"message"`
+// }
 
-// GetTaskStatisticsInput 获取任务统计输入
-type GetTaskStatisticsInput struct {
-	Period string `json:"period"`
-}
+// // GetTaskStatisticsInput 获取任务统计输入
+// type GetTaskStatisticsInput struct {
+// 	Period string `json:"period"`
+// }
 
-// GetTaskStatisticsOutput 获取任务统计输出
-type GetTaskStatisticsOutput struct {
-	Period     string                 `json:"period"`
-	Statistics map[string]interface{} `json:"statistics"`
-}
+// // GetTaskStatisticsOutput 获取任务统计输出
+// type GetTaskStatisticsOutput struct {
+// 	Period     string                 `json:"period"`
+// 	Statistics map[string]interface{} `json:"statistics"`
+// }
 
-// GetTaskLogsInput 获取任务日志输入
-type GetTaskLogsInput struct {
-	TaskID    string `json:"task_id"`
-	Level     string `json:"level"`
-	StartTime string `json:"start_time"`
-	EndTime   string `json:"end_time"`
-	Page      int    `json:"page"`
-	Size      int    `json:"size"`
-}
+// // GetTaskLogsInput 获取任务日志输入
+// type GetTaskLogsInput struct {
+// 	TaskID    string `json:"task_id"`
+// 	Level     string `json:"level"`
+// 	StartTime string `json:"start_time"`
+// 	EndTime   string `json:"end_time"`
+// 	Page      int    `json:"page"`
+// 	Size      int    `json:"size"`
+// }
 
-// GetTaskLogsOutput 获取任务日志输出
-type GetTaskLogsOutput struct {
-	TaskID string                   `json:"task_id"`
-	List   []map[string]interface{} `json:"list"`
-	Total  int                      `json:"total"`
-	Page   int                      `json:"page"`
-	Size   int                      `json:"size"`
-}
+// // GetTaskLogsOutput 获取任务日志输出
+// type GetTaskLogsOutput struct {
+// 	TaskID string                   `json:"task_id"`
+// 	List   []map[string]interface{} `json:"list"`
+// 	Total  int                      `json:"total"`
+// 	Page   int                      `json:"page"`
+// 	Size   int                      `json:"size"`
+// }
 
 // ScheduleTaskInput 调度任务输入
 type ScheduleTaskInput struct {

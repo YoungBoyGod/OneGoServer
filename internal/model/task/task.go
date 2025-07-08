@@ -118,26 +118,26 @@ type GetTaskByTaskIDOutput struct {
 	Task *Task `json:"task"`
 }
 
-// UpdateTaskInput 更新任务输入
-type UpdateTaskInput struct {
-	Task *Task `json:"task"`
-}
+// // UpdateTaskInput 更新任务输入
+// type UpdateTaskInput struct {
+// 	Task *Task `json:"task"`
+// }
 
-// UpdateTaskOutput 更新任务输出
-type UpdateTaskOutput struct {
-	Message string `json:"message"`
-}
+// // UpdateTaskOutput 更新任务输出
+// type UpdateTaskOutput struct {
+// 	Message string `json:"message"`
+// }
 
-// DeleteTaskInput 删除任务输入
-type DeleteTaskInput struct {
-	TaskID string `json:"task_id"`
-	Force  bool   `json:"force"`
-}
+// // DeleteTaskInput 删除任务输入
+// type DeleteTaskInput struct {
+// 	TaskID string `json:"task_id"`
+// 	Force  bool   `json:"force"`
+// }
 
-// DeleteTaskOutput 删除任务输出
-type DeleteTaskOutput struct {
-	Message string `json:"message"`
-}
+// // DeleteTaskOutput 删除任务输出
+// type DeleteTaskOutput struct {
+// 	Message string `json:"message"`
+// }
 
 // ===============================
 // 查询操作 Input/Output
@@ -556,6 +556,10 @@ type UpdateTaskAssignmentOutput struct {
 	Message string `json:"message"`
 }
 
+type AssignmentFilter struct {
+	DeviceID string `json:"device_id"`
+}
+
 // GetTaskAssignmentsInput 获取任务分配历史输入
 type GetTaskAssignmentsInput struct {
 	TaskID     string                    `json:"task_id"`
@@ -574,44 +578,44 @@ type GetTaskAssignmentsOutput struct {
 
 // Task 任务实体
 type Task struct {
-	ID          string                 `json:"id"`
-	Name        string                 `json:"name"`
-	Type        string                 `json:"type"`
-	Priority    int                    `json:"priority"`
-	Status      string                 `json:"status"`
-	Description string                 `json:"description"`
-	Parameters  map[string]interface{} `json:"parameters"`
-	Timeout     int                    `json:"timeout"`
-	RetryCount  int                    `json:"retry_count"`
-	CurrentRetry int                   `json:"current_retry"`
-	Progress    float64                `json:"progress"`
-	DeviceID    string                 `json:"device_id"`
-	CreatedAt   string                 `json:"created_at"`
-	UpdatedAt   string                 `json:"updated_at"`
-	StartedAt   string                 `json:"started_at"`
-	CompletedAt string                 `json:"completed_at"`
-	Error       string                 `json:"error"`
+	ID           string                 `json:"id"`
+	Name         string                 `json:"name"`
+	Type         string                 `json:"type"`
+	Priority     int                    `json:"priority"`
+	Status       string                 `json:"status"`
+	Description  string                 `json:"description"`
+	Parameters   map[string]interface{} `json:"parameters"`
+	Timeout      int                    `json:"timeout"`
+	RetryCount   int                    `json:"retry_count"`
+	CurrentRetry int                    `json:"current_retry"`
+	Progress     float64                `json:"progress"`
+	DeviceID     string                 `json:"device_id"`
+	CreatedAt    string                 `json:"created_at"`
+	UpdatedAt    string                 `json:"updated_at"`
+	StartedAt    string                 `json:"started_at"`
+	CompletedAt  string                 `json:"completed_at"`
+	Error        string                 `json:"error"`
 }
 
 // TaskStatus 任务状态
 type TaskStatus struct {
-	TaskID     string                 `json:"task_id"`
-	Status     string                 `json:"status"`
-	Progress   float64                `json:"progress"`
-	StartTime  string                 `json:"start_time"`
-	EndTime    string                 `json:"end_time"`
-	Duration   string                 `json:"duration"`
-	Details    map[string]interface{} `json:"details"`
+	TaskID    string                 `json:"task_id"`
+	Status    string                 `json:"status"`
+	Progress  float64                `json:"progress"`
+	StartTime string                 `json:"start_time"`
+	EndTime   string                 `json:"end_time"`
+	Duration  string                 `json:"duration"`
+	Details   map[string]interface{} `json:"details"`
 }
 
 // TaskAssignment 任务分配
 type TaskAssignment struct {
-	ID         string `json:"id"`
-	TaskID     string `json:"task_id"`
-	DeviceID   string `json:"device_id"`
-	Status     string `json:"status"`
-	AssignedAt string `json:"assigned_at"`
-	StartedAt  string `json:"started_at"`
+	ID          string `json:"id"`
+	TaskID      string `json:"task_id"`
+	DeviceID    string `json:"device_id"`
+	Status      string `json:"status"`
+	AssignedAt  string `json:"assigned_at"`
+	StartedAt   string `json:"started_at"`
 	CompletedAt string `json:"completed_at"`
 }
 
@@ -650,16 +654,16 @@ type TaskStatistics struct {
 
 // TaskExecution 任务执行
 type TaskExecution struct {
-	ID         string `json:"id"`
-	TaskID     string `json:"task_id"`
-	DeviceID   string `json:"device_id"`
-	Status     string `json:"status"`
-	StartTime  string `json:"start_time"`
-	EndTime    string `json:"end_time"`
-	Duration   string `json:"duration"`
-	Result     string `json:"result"`
-	Error      string `json:"error"`
-	CreatedAt  string `json:"created_at"`
+	ID        string `json:"id"`
+	TaskID    string `json:"task_id"`
+	DeviceID  string `json:"device_id"`
+	Status    string `json:"status"`
+	StartTime string `json:"start_time"`
+	EndTime   string `json:"end_time"`
+	Duration  string `json:"duration"`
+	Result    string `json:"result"`
+	Error     string `json:"error"`
+	CreatedAt string `json:"created_at"`
 }
 
 // TaskDependency 任务依赖
@@ -673,11 +677,11 @@ type TaskDependency struct {
 
 // TaskReport 任务报告
 type TaskReport struct {
-	ID       string `json:"id"`
-	TaskID   string `json:"task_id"`
-	Format   string `json:"format"`
-	URL      string `json:"url"`
-	Status   string `json:"status"`
+	ID        string `json:"id"`
+	TaskID    string `json:"task_id"`
+	Format    string `json:"format"`
+	URL       string `json:"url"`
+	Status    string `json:"status"`
 	CreatedAt string `json:"created_at"`
 }
 
@@ -745,6 +749,8 @@ type TaskQueueStats struct {
 	AverageWaitTime float64 `json:"average_wait_time"`
 	Throughput      float64 `json:"throughput"`
 }
+
+type TaskTrendPoint struct{}
 
 // TaskPerformanceReport 任务性能报告
 type TaskPerformanceReport struct {
@@ -840,4 +846,5 @@ type ScheduleFilter struct {
 
 // ExecutionFilter 执行过滤条件
 type ExecutionFilter struct {
-	Status    []string   `json:"status"`
+	Status []string `json:"status"`
+}
