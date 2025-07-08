@@ -55,6 +55,27 @@ func (s *sDevice) ValidateDeviceStatus(ctx context.Context, input *device.Valida
 
 // DetermineDeviceStatus 根据设备数据自动确定设备状态
 func (s *sDevice) DetermineDeviceStatus(ctx context.Context, input *device.DetermineDeviceStatusInput) (*device.DetermineDeviceStatusOutput, error) {
+	// 检查是否离线
+	if lastHeartbeat, ok := input.DeviceData["last_heartbeat"].(*gtime.Time); ok && lastHeartbeat != nil {
+		if time.Since(lastHeartbeat.Time) > 15*time.Minute {
+			return &device.DetermineDeviceStatusOutput{
+				Status:      "offline",
+				Reason:      "设备心跳超时",
+				HealthScore: 0, // 心跳超时，健康度为0
+			}, nil
+		}
+	}
+
+	// 检查是否处于维护状态
+	if maintenanceMode, ok := input.DeviceData["maintenance_mode"].(bool); ok && maintenanceMode {
+		return &device.DetermineDeviceStatusOutput{
+			Status:      "maintenance",
+			Reason:      "设备处于维护模式",
+			HealthScore: 0, // 维护模式，健康度为0
+		}, nil
+	}
+
+	// 根据健康度评分确定状态
 	healthScore, err := s.CalculateDeviceHealthScore(ctx, &device.CalculateDeviceHealthScoreInput{
 		DeviceData: input.DeviceData,
 	})
@@ -65,43 +86,26 @@ func (s *sDevice) DetermineDeviceStatus(ctx context.Context, input *device.Deter
 	status := ""
 	reason := ""
 
-	// 检查是否离线
-	if lastHeartbeat, ok := input.DeviceData["last_heartbeat"].(*gtime.Time); ok && lastHeartbeat != nil {
-		if time.Since(lastHeartbeat.Time) > 15*time.Minute {
-			status = "offline"
-			reason = "设备心跳超时"
-		}
-	}
-
-	// 检查是否处于维护状态
-	if maintenanceMode, ok := input.DeviceData["maintenance_mode"].(bool); ok && maintenanceMode {
-		status = "maintenance"
-		reason = "设备处于维护模式"
-	}
-
-	// 根据健康度评分确定状态
-	if status == "" {
-		if healthScore.HealthScore < 30 {
-			status = "error"
-			reason = "设备健康度评分过低"
-		} else if healthScore.HealthScore < 70 {
-			// 检查是否正在执行任务
-			if taskCount, ok := input.DeviceData["running_task_count"].(int); ok && taskCount > 0 {
-				status = "busy"
-				reason = "设备正在执行任务"
-			} else {
-				status = "online"
-				reason = "设备在线但健康度一般"
-			}
+	if healthScore.HealthScore < 30 {
+		status = "error"
+		reason = "设备健康度评分过低"
+	} else if healthScore.HealthScore < 70 {
+		// 检查是否正在执行任务
+		if taskCount, ok := input.DeviceData["running_task_count"].(int); ok && taskCount > 0 {
+			status = "busy"
+			reason = "设备正在执行任务"
 		} else {
-			// 检查是否正在执行任务
-			if taskCount, ok := input.DeviceData["running_task_count"].(int); ok && taskCount > 0 {
-				status = "busy"
-				reason = "设备正在执行任务"
-			} else {
-				status = "online"
-				reason = "设备在线且健康度良好"
-			}
+			status = "online"
+			reason = "设备在线但健康度一般"
+		}
+	} else {
+		// 检查是否正在执行任务
+		if taskCount, ok := input.DeviceData["running_task_count"].(int); ok && taskCount > 0 {
+			status = "busy"
+			reason = "设备正在执行任务"
+		} else {
+			status = "online"
+			reason = "设备在线且健康度良好"
 		}
 	}
 

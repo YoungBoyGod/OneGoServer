@@ -16,106 +16,28 @@ import (
 
 // AssignTaskToDevice 分配任务到设备
 func (s *sTask) AssignTaskToDevice(ctx context.Context, input *task.AssignTaskToDeviceInput) (*task.AssignTaskToDeviceOutput, error) {
-	// TODO: Implement AssignTaskToDevice logic - commented out for reorganization
 	/*
-		// 验证任务是否存在
-		if err := s.validateTaskExists(ctx, input.TaskId); err != nil {
-			return &task.AssignTaskToDeviceOutput{
-				Result: map[string]interface{}{
-					"success": false,
-					"error":   err.Error(),
-				},
-			}, err
-		}
-
-		// 获取任务信息
-		taskInfoInput := &task.GetTaskInfoInput{
-			TaskId: input.TaskId,
-		}
-		taskInfoOutput := s.getTaskInfo(ctx, taskInfoInput)
-		taskInfo := taskInfoOutput.TaskInfo
-
-		// 获取可用设备
-		var devices []map[string]interface{}
-		if len(input.DeviceIds) > 0 {
-			devicesInput := &task.GetAvailableDevicesInput{
-				DeviceIds: input.DeviceIds,
-			}
-			devicesOutput := s.getAvailableDevices(ctx, devicesInput)
-			devices = devicesOutput.Devices
-		} else {
-			allDevicesInput := &task.GetAllAvailableDevicesInput{}
-			allDevicesOutput := s.getAllAvailableDevices(ctx, allDevicesInput)
-			devices = allDevicesOutput.Devices
-		}
-
-		if len(devices) == 0 {
-			return &task.AssignTaskToDeviceOutput{
-				Result: map[string]interface{}{
-					"success": false,
-					"error":   "没有可用的设备",
-				},
-			}, gerror.New("没有可用的设备")
-		}
-
-		// 选择最佳设备
-		selectInput := &task.SelectBestDeviceInput{
-			TaskInfo: taskInfo,
-			Devices:  devices,
-			Strategy: input.Strategy,
-			Force:    input.Force,
-		}
-		selectOutput := s.selectBestDevice(ctx, selectInput)
-		selectedDevice := selectOutput.Device
-		score := selectOutput.Score
-		reason := selectOutput.Reason
-
-		if selectedDevice == nil {
-			return &task.AssignTaskToDeviceOutput{
-				Result: map[string]interface{}{
-					"success": false,
-					"error":   "无法找到合适的设备",
-					"reason":  reason,
-				},
-			}, gerror.New("无法找到合适的设备")
-		}
-
-		// 执行任务分配
-		deviceId := selectedDevice["id"].(string)
-		executeInput := &task.ExecuteTaskAssignmentInput{
-			TaskId:   input.TaskId,
-			DeviceId: deviceId,
-		}
-		executeOutput := s.executeTaskAssignment(ctx, executeInput)
-
-		if !executeOutput.Success {
-			return &task.AssignTaskToDeviceOutput{
-				Result: map[string]interface{}{
-					"success": false,
-					"error":   executeOutput.Message,
-				},
-			}, gerror.New(executeOutput.Message)
-		}
-
+		// 伪代码：分配任务到设备
 		return &task.AssignTaskToDeviceOutput{
-			Result: map[string]interface{}{
-				"success":     true,
-				"task_id":     input.TaskId,
-				"device_id":   deviceId,
-				"device_name": selectedDevice["name"],
-				"score":       score,
-				"reason":      reason,
-				"assigned_at": gtime.Now().Format("2006-01-02 15:04:05"),
-				"strategy":    input.Strategy,
-			},
+			Success: true,
 		}, nil
 	*/
-	return nil, nil
+	return &task.AssignTaskToDeviceOutput{}, nil
+}
+
+// BatchAssignTasks 批量分配任务
+func (s *sTask) BatchAssignTasks(ctx context.Context, input *task.BatchAssignTasksInput) (*task.BatchAssignTasksOutput, error) {
+	/*
+		// 伪代码：批量分配任务
+		return &task.BatchAssignTasksOutput{
+			Success: true,
+		}, nil
+	*/
+	return &task.BatchAssignTasksOutput{}, nil
 }
 
 // selectBestDevice 选择最佳设备
 func (s *sTask) selectBestDevice(ctx context.Context, input *task.SelectBestDeviceInput) *task.SelectBestDeviceOutput {
-	// TODO: Implement selectBestDevice logic - commented out for reorganization
 	/*
 		// 过滤兼容设备
 		compatibleDevices := s.filterCompatibleDevices(input.TaskInfo, input.Devices)

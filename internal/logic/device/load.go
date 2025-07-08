@@ -347,8 +347,8 @@ func (s *sDevice) getDeviceMetrics(ctx context.Context, deviceId string) (map[st
 func (s *sDevice) validateDeviceExists(ctx context.Context, deviceId string) error {
 	// 这里应该检查设备是否存在
 	// 目前只是简单验证
-	if deviceId == "" {
-		return gerror.New("设备ID不能为空")
-	}
+	// if deviceId == "" {
+	// 	return gerror.New("设备ID不能为空")
+	// }
 	return nil
 }

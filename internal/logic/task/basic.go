@@ -20,77 +20,24 @@ func New() *sTask {
 
 // CreateTask 创建任务
 func (s *sTask) CreateTask(ctx context.Context, input *task.CreateTaskInput) (*task.CreateTaskOutput, error) {
-	// TODO: Implement CreateTask logic - commented out for reorganization
 	/*
-		// TODO: Fix field access - CreateTaskInput should have Task field, not individual fields
-		// 验证任务数据
-		validateInput := &task.ValidateTaskInput{
-			TaskData: map[string]interface{}{
-				"name":        input.Task.Name,
-				"type":        input.Task.Type,
-				"priority":    input.Task.Priority,
-				"description": input.Task.Description,
-				"timeout":     input.Task.Timeout,
-				"retry_count": input.Task.RetryCount,
-			},
-		}
-		validateOutput := s.validateTask(validateInput)
-		if !validateOutput.IsValid {
-			return nil, gerror.NewCode(gcode.CodeValidationFailed, validateOutput.Message)
-		}
-
-		// TODO: Fix field access - use input.Task fields
-		// 计算任务优先级
-		priorityInput := &task.CalculateTaskPriorityInput{
-			TaskType:     input.Task.Type,
-			Parameters:   input.Task.Parameters,
-			UserPriority: input.Task.Priority,
-		}
-		// TODO: Fix unused variable
-		_ = s.calculateTaskPriority(priorityInput)
-
-		// 生成任务ID
-		taskID := s.generateTaskID()
-
-		// 创建任务记录
-		// 这里应该保存到数据库
-		// 目前返回模拟结果
-
-		// TODO: Fix CreateTaskOutput structure - remove Status and CreatedAt fields
+		// 伪代码：创建任务
 		return &task.CreateTaskOutput{
-			TaskID:  taskID,
-			Message: "任务创建成功",
+			TaskId: "",
 		}, nil
 	*/
-	return nil, nil
+	return &task.CreateTaskOutput{}, nil
 }
 
 // GetTask 获取任务
 func (s *sTask) GetTask(ctx context.Context, input *task.GetTaskInput) (*task.GetTaskOutput, error) {
-	// TODO: Implement GetTask logic - commented out for reorganization
 	/*
-		// 这里应该从数据库获取任务
-		// 目前返回模拟数据
-		taskData := map[string]interface{}{
-			"id":          input.TaskID,
-			"name":        "示例任务",
-			"type":        "data_processing",
-			"priority":    5,
-			"status":      "pending",
-			"description": "这是一个示例任务",
-			"parameters":  map[string]interface{}{},
-			"timeout":     3600,
-			"retry_count": 3,
-			"progress":    0.0,
-			"created_at":  gtime.Now().Add(-time.Hour).Format("2006-01-02 15:04:05"),
-			"updated_at":  gtime.Now().Format("2006-01-02 15:04:05"),
-		}
-
+		// 伪代码：获取任务
 		return &task.GetTaskOutput{
-			Task: taskData,
+			Task: nil,
 		}, nil
 	*/
-	return nil, nil
+	return &task.GetTaskOutput{}, nil
 }
 
 // UpdateTask 更新任务

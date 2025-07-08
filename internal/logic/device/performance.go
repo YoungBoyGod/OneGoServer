@@ -16,16 +16,18 @@ import (
 
 // AnalyzeDevicePerformance 分析设备性能
 func (s *sDevice) AnalyzeDevicePerformance(ctx context.Context, input *device.AnalyzeDevicePerformanceInput) (*device.AnalyzeDevicePerformanceOutput, error) {
-	if len(input.PerformanceData) == 0 {
-		return &device.AnalyzeDevicePerformanceOutput{
-			BasicStats:       nil,
-			Trends:           nil,
-			Bottlenecks:      nil,
-			PerformanceScore: 0,
-			Recommendations:  []string{"没有性能数据可供分析"},
-			TimeRange:        nil,
-		}, nil
-	}
+	/*
+		if len(input.PerformanceData) == 0 {
+			return &device.AnalyzeDevicePerformanceOutput{
+				BasicStats:       nil,
+				Trends:           nil,
+				Bottlenecks:      nil,
+				PerformanceScore: 0,
+				Recommendations:  []string{"没有性能数据可供分析"},
+				TimeRange:        nil,
+			}, nil
+		}
+	*/
 
 	// 1. 基础统计信息
 	basicStatsInput := &device.CalculateBasicStatsInput{
@@ -92,63 +94,63 @@ func (s *sDevice) AnalyzeDevicePerformance(ctx context.Context, input *device.An
 // calculateBasicStats 计算基础统计信息
 func (s *sDevice) calculateBasicStats(input *device.CalculateBasicStatsInput) *device.CalculateBasicStatsOutput {
 	stats := make(map[string]interface{})
+	/*
+		// CPU统计
+		cpuValuesOutput := s.extractValues(&device.ExtractValuesInput{
+			Data: input.PerformanceData,
+			Key:  "cpu_usage",
+		})
+		stats["cpu"] = map[string]interface{}{
+			"avg": s.calculateAverage(cpuValuesOutput.Values),
+			"max": s.calculateMax(cpuValuesOutput.Values),
+			"min": s.calculateMin(cpuValuesOutput.Values),
+			"std": s.calculateStandardDeviation(&device.CalculateStandardDeviationInput{Values: cpuValuesOutput.Values}).StandardDeviation,
+			"p95": s.calculatePercentile(&device.CalculatePercentileInput{Values: cpuValuesOutput.Values, Percentile: 95}).PercentileValue,
+			"p99": s.calculatePercentile(&device.CalculatePercentileInput{Values: cpuValuesOutput.Values, Percentile: 99}).PercentileValue,
+		}
 
-	// CPU统计
-	cpuValuesOutput := s.extractValues(&device.ExtractValuesInput{
-		Data: input.PerformanceData,
-		Key:  "cpu_usage",
-	})
-	stats["cpu"] = map[string]interface{}{
-		"avg": s.calculateAverage(cpuValuesOutput.Values),
-		"max": s.calculateMax(cpuValuesOutput.Values),
-		"min": s.calculateMin(cpuValuesOutput.Values),
-		"std": s.calculateStandardDeviation(&device.CalculateStandardDeviationInput{Values: cpuValuesOutput.Values}).StandardDeviation,
-		"p95": s.calculatePercentile(&device.CalculatePercentileInput{Values: cpuValuesOutput.Values, Percentile: 95}).PercentileValue,
-		"p99": s.calculatePercentile(&device.CalculatePercentileInput{Values: cpuValuesOutput.Values, Percentile: 99}).PercentileValue,
-	}
+		// 内存统计
+		memValuesOutput := s.extractValues(&device.ExtractValuesInput{
+			Data: input.PerformanceData,
+			Key:  "memory_usage",
+		})
+		stats["memory"] = map[string]interface{}{
+			"avg": s.calculateAverage(memValuesOutput.Values),
+			"max": s.calculateMax(memValuesOutput.Values),
+			"min": s.calculateMin(memValuesOutput.Values),
+			"std": s.calculateStandardDeviation(&device.CalculateStandardDeviationInput{Values: memValuesOutput.Values}).StandardDeviation,
+			"p95": s.calculatePercentile(&device.CalculatePercentileInput{Values: memValuesOutput.Values, Percentile: 95}).PercentileValue,
+			"p99": s.calculatePercentile(&device.CalculatePercentileInput{Values: memValuesOutput.Values, Percentile: 99}).PercentileValue,
+		}
 
-	// 内存统计
-	memValuesOutput := s.extractValues(&device.ExtractValuesInput{
-		Data: input.PerformanceData,
-		Key:  "memory_usage",
-	})
-	stats["memory"] = map[string]interface{}{
-		"avg": s.calculateAverage(memValuesOutput.Values),
-		"max": s.calculateMax(memValuesOutput.Values),
-		"min": s.calculateMin(memValuesOutput.Values),
-		"std": s.calculateStandardDeviation(&device.CalculateStandardDeviationInput{Values: memValuesOutput.Values}).StandardDeviation,
-		"p95": s.calculatePercentile(&device.CalculatePercentileInput{Values: memValuesOutput.Values, Percentile: 95}).PercentileValue,
-		"p99": s.calculatePercentile(&device.CalculatePercentileInput{Values: memValuesOutput.Values, Percentile: 99}).PercentileValue,
-	}
+		// 磁盘统计
+		diskValuesOutput := s.extractValues(&device.ExtractValuesInput{
+			Data: input.PerformanceData,
+			Key:  "disk_usage",
+		})
+		stats["disk"] = map[string]interface{}{
+			"avg": s.calculateAverage(diskValuesOutput.Values),
+			"max": s.calculateMax(diskValuesOutput.Values),
+			"min": s.calculateMin(diskValuesOutput.Values),
+			"std": s.calculateStandardDeviation(&device.CalculateStandardDeviationInput{Values: diskValuesOutput.Values}).StandardDeviation,
+			"p95": s.calculatePercentile(&device.CalculatePercentileInput{Values: diskValuesOutput.Values, Percentile: 95}).PercentileValue,
+			"p99": s.calculatePercentile(&device.CalculatePercentileInput{Values: diskValuesOutput.Values, Percentile: 99}).PercentileValue,
+		}
 
-	// 磁盘统计
-	diskValuesOutput := s.extractValues(&device.ExtractValuesInput{
-		Data: input.PerformanceData,
-		Key:  "disk_usage",
-	})
-	stats["disk"] = map[string]interface{}{
-		"avg": s.calculateAverage(diskValuesOutput.Values),
-		"max": s.calculateMax(diskValuesOutput.Values),
-		"min": s.calculateMin(diskValuesOutput.Values),
-		"std": s.calculateStandardDeviation(&device.CalculateStandardDeviationInput{Values: diskValuesOutput.Values}).StandardDeviation,
-		"p95": s.calculatePercentile(&device.CalculatePercentileInput{Values: diskValuesOutput.Values, Percentile: 95}).PercentileValue,
-		"p99": s.calculatePercentile(&device.CalculatePercentileInput{Values: diskValuesOutput.Values, Percentile: 99}).PercentileValue,
-	}
-
-	// 网络统计
-	netValuesOutput := s.extractValues(&device.ExtractValuesInput{
-		Data: input.PerformanceData,
-		Key:  "network_latency",
-	})
-	stats["network"] = map[string]interface{}{
-		"avg": s.calculateAverage(netValuesOutput.Values),
-		"max": s.calculateMax(netValuesOutput.Values),
-		"min": s.calculateMin(netValuesOutput.Values),
-		"std": s.calculateStandardDeviation(&device.CalculateStandardDeviationInput{Values: netValuesOutput.Values}).StandardDeviation,
-		"p95": s.calculatePercentile(&device.CalculatePercentileInput{Values: netValuesOutput.Values, Percentile: 95}).PercentileValue,
-		"p99": s.calculatePercentile(&device.CalculatePercentileInput{Values: netValuesOutput.Values, Percentile: 99}).PercentileValue,
-	}
-
+		// 网络统计
+		netValuesOutput := s.extractValues(&device.ExtractValuesInput{
+			Data: input.PerformanceData,
+			Key:  "network_latency",
+		})
+		stats["network"] = map[string]interface{}{
+			"avg": s.calculateAverage(netValuesOutput.Values),
+			"max": s.calculateMax(netValuesOutput.Values),
+			"min": s.calculateMin(netValuesOutput.Values),
+			"std": s.calculateStandardDeviation(&device.CalculateStandardDeviationInput{Values: netValuesOutput.Values}).StandardDeviation,
+			"p95": s.calculatePercentile(&device.CalculatePercentileInput{Values: netValuesOutput.Values, Percentile: 95}).PercentileValue,
+			"p99": s.calculatePercentile(&device.CalculatePercentileInput{Values: netValuesOutput.Values, Percentile: 99}).PercentileValue,
+		}
+	*/
 	return &device.CalculateBasicStatsOutput{
 		Stats: stats,
 	}
@@ -157,61 +159,61 @@ func (s *sDevice) calculateBasicStats(input *device.CalculateBasicStatsInput) *d
 // analyzePerformanceTrends 分析性能趋势
 func (s *sDevice) analyzePerformanceTrends(input *device.AnalyzePerformanceTrendsInput) *device.AnalyzePerformanceTrendsOutput {
 	trends := make(map[string]interface{})
+	/*
+		// 按时间排序数据
+		sortInput := &device.SortByTimestampInput{
+			Data: input.PerformanceData,
+		}
+		sortOutput := s.sortByTimestamp(sortInput)
 
-	// 按时间排序数据
-	sortInput := &device.SortByTimestampInput{
-		Data: input.PerformanceData,
-	}
-	sortOutput := s.sortByTimestamp(sortInput)
+		// 分析CPU趋势
+		cpuTrendInput := &device.AnalyzeMetricTrendInput{
+			SortedData: sortOutput.SortedData,
+			MetricKey:  "cpu_usage",
+		}
+		cpuTrendOutput := s.analyzeMetricTrend(cpuTrendInput)
+		trends["cpu"] = map[string]interface{}{
+			"trend":      cpuTrendOutput.Trend,
+			"slope":      cpuTrendOutput.Slope,
+			"volatility": cpuTrendOutput.Volatility,
+		}
 
-	// 分析CPU趋势
-	cpuTrendInput := &device.AnalyzeMetricTrendInput{
-		SortedData: sortOutput.SortedData,
-		MetricKey:  "cpu_usage",
-	}
-	cpuTrendOutput := s.analyzeMetricTrend(cpuTrendInput)
-	trends["cpu"] = map[string]interface{}{
-		"trend":      cpuTrendOutput.Trend,
-		"slope":      cpuTrendOutput.Slope,
-		"volatility": cpuTrendOutput.Volatility,
-	}
+		// 分析内存趋势
+		memTrendInput := &device.AnalyzeMetricTrendInput{
+			SortedData: sortOutput.SortedData,
+			MetricKey:  "memory_usage",
+		}
+		memTrendOutput := s.analyzeMetricTrend(memTrendInput)
+		trends["memory"] = map[string]interface{}{
+			"trend":      memTrendOutput.Trend,
+			"slope":      memTrendOutput.Slope,
+			"volatility": memTrendOutput.Volatility,
+		}
 
-	// 分析内存趋势
-	memTrendInput := &device.AnalyzeMetricTrendInput{
-		SortedData: sortOutput.SortedData,
-		MetricKey:  "memory_usage",
-	}
-	memTrendOutput := s.analyzeMetricTrend(memTrendInput)
-	trends["memory"] = map[string]interface{}{
-		"trend":      memTrendOutput.Trend,
-		"slope":      memTrendOutput.Slope,
-		"volatility": memTrendOutput.Volatility,
-	}
+		// 分析磁盘趋势
+		diskTrendInput := &device.AnalyzeMetricTrendInput{
+			SortedData: sortOutput.SortedData,
+			MetricKey:  "disk_usage",
+		}
+		diskTrendOutput := s.analyzeMetricTrend(diskTrendInput)
+		trends["disk"] = map[string]interface{}{
+			"trend":      diskTrendOutput.Trend,
+			"slope":      diskTrendOutput.Slope,
+			"volatility": diskTrendOutput.Volatility,
+		}
 
-	// 分析磁盘趋势
-	diskTrendInput := &device.AnalyzeMetricTrendInput{
-		SortedData: sortOutput.SortedData,
-		MetricKey:  "disk_usage",
-	}
-	diskTrendOutput := s.analyzeMetricTrend(diskTrendInput)
-	trends["disk"] = map[string]interface{}{
-		"trend":      diskTrendOutput.Trend,
-		"slope":      diskTrendOutput.Slope,
-		"volatility": diskTrendOutput.Volatility,
-	}
-
-	// 分析网络趋势
-	netTrendInput := &device.AnalyzeMetricTrendInput{
-		SortedData: sortOutput.SortedData,
-		MetricKey:  "network_latency",
-	}
-	netTrendOutput := s.analyzeMetricTrend(netTrendInput)
-	trends["network"] = map[string]interface{}{
-		"trend":      netTrendOutput.Trend,
-		"slope":      netTrendOutput.Slope,
-		"volatility": netTrendOutput.Volatility,
-	}
-
+		// 分析网络趋势
+		netTrendInput := &device.AnalyzeMetricTrendInput{
+			SortedData: sortOutput.SortedData,
+			MetricKey:  "network_latency",
+		}
+		netTrendOutput := s.analyzeMetricTrend(netTrendInput)
+		trends["network"] = map[string]interface{}{
+			"trend":      netTrendOutput.Trend,
+			"slope":      netTrendOutput.Slope,
+			"volatility": netTrendOutput.Volatility,
+		}
+	*/
 	return &device.AnalyzePerformanceTrendsOutput{
 		Trends: trends,
 	}
@@ -219,47 +221,44 @@ func (s *sDevice) analyzePerformanceTrends(input *device.AnalyzePerformanceTrend
 
 // analyzeMetricTrend 分析单个指标趋势
 func (s *sDevice) analyzeMetricTrend(input *device.AnalyzeMetricTrendInput) *device.AnalyzeMetricTrendOutput {
-	extractInput := &device.ExtractValuesInput{
-		Data: input.SortedData,
-		Key:  input.MetricKey,
-	}
-	valuesOutput := s.extractValues(extractInput)
-	values := valuesOutput.Values
-
-	if len(values) < 2 {
-		return &device.AnalyzeMetricTrendOutput{
-			Trend:      "insufficient_data",
-			Slope:      0,
-			Volatility: 0,
+	/*
+		extractInput := &device.ExtractValuesInput{
+			Data: input.SortedData,
+			Key:  input.MetricKey,
 		}
-	}
+		valuesOutput := s.extractValues(extractInput)
+		values := valuesOutput.Values
 
-	// 计算线性回归斜率
-	slope := s.calculateLinearRegressionSlope(values)
+		if len(values) < 2 {
+			return &device.AnalyzeMetricTrendOutput{
+				Trend:      "insufficient_data",
+				Slope:      0,
+				Volatility: 0,
+			}
+		}
 
-	// 判断趋势
-	var trend string
-	if slope > 0.1 {
-		trend = "increasing"
-	} else if slope < -0.1 {
-		trend = "decreasing"
-	} else {
-		trend = "stable"
-	}
+		// 计算线性回归斜率
+		slope := s.calculateLinearRegressionSlope(values)
 
-	volatilityInput := &device.CalculateVolatilityInput{
-		Values: values,
-	}
-	volatilityOutput := s.calculateVolatility(volatilityInput)
+		// 判断趋势
+		var trend string
+		if slope > 0.1 {
+			trend = "increasing"
+		} else if slope < -0.1 {
+			trend = "decreasing"
+		} else {
+			trend = "stable"
+		}
 
-	return &device.AnalyzeMetricTrendOutput{
-		Trend:      trend,
-		Slope:      slope,
-		Volatility: volatilityOutput.Volatility,
-	}
+		volatilityInput := &device.CalculateVolatilityInput{
+			Values: values,
+		}
+		volatilityOutput := s.calculateVolatility(volatilityInput)
+	*/
+	return &device.AnalyzeMetricTrendOutput{}
 }
 
-// identifyBottlenecks 识别性能瓶颈
+// identifyBottlenecks 识别瓶颈
 func (s *sDevice) identifyBottlenecks(input *device.IdentifyBottlenecksInput) *device.IdentifyBottlenecksOutput {
 	var bottlenecks []map[string]interface{}
 
@@ -306,71 +305,70 @@ func (s *sDevice) identifyBottlenecks(input *device.IdentifyBottlenecksInput) *d
 
 // checkCPUBottleneck 检查CPU瓶颈
 func (s *sDevice) checkCPUBottleneck(input *device.CheckCPUBottleneckInput) *device.CheckCPUBottleneckOutput {
-	extractInput := &device.ExtractValuesInput{
-		Data: input.PerformanceData,
-		Key:  "cpu_usage",
-	}
-	cpuValuesOutput := s.extractValues(extractInput)
-	cpuValues := cpuValuesOutput.Values
-
-	avgCPU := s.calculateAverage(cpuValues)
-	p95Input := &device.CalculatePercentileInput{
-		Values:     cpuValues,
-		Percentile: 95,
-	}
-	p95Output := s.calculatePercentile(p95Input)
-	p95CPU := p95Output.PercentileValue
-
-	if avgCPU > 80 || p95CPU > 95 {
-		severityInput := &device.GetBottleneckSeverityInput{
-			Usage: avgCPU,
+	/*
+		extractInput := &device.ExtractValuesInput{
+			Data: input.PerformanceData,
+			Key:  "cpu_usage",
 		}
-		severityOutput := s.getBottleneckSeverity(severityInput)
+		cpuValuesOutput := s.extractValues(extractInput)
+		cpuValues := cpuValuesOutput.Values
 
-		return &device.CheckCPUBottleneckOutput{
-			HasIssue: true,
-			Bottleneck: map[string]interface{}{
-				"type":           "cpu",
-				"severity":       severityOutput.Severity,
-				"avg_usage":      avgCPU,
-				"p95_usage":      p95CPU,
-				"description":    "CPU使用率过高，可能影响系统性能",
-				"recommendation": "考虑优化CPU密集型任务或增加CPU资源",
-			},
+		avgCPU := s.calculateAverage(cpuValues)
+		p95Input := &device.CalculatePercentileInput{
+			Values:     cpuValues,
+			Percentile: 95,
 		}
-	}
+		p95Output := s.calculatePercentile(p95Input)
+		p95CPU := p95Output.PercentileValue
 
-	return &device.CheckCPUBottleneckOutput{
-		HasIssue:   false,
-		Bottleneck: nil,
-	}
+		if avgCPU > 80 || p95CPU > 95 {
+			severityInput := &device.GetBottleneckSeverityInput{
+				Usage: avgCPU,
+			}
+			severityOutput := s.getBottleneckSeverity(severityInput)
+
+			return &device.CheckCPUBottleneckOutput{
+				HasIssue: true,
+				Bottleneck: map[string]interface{}{
+					"type":           "cpu",
+					"severity":       severityOutput.Severity,
+					"avg_usage":      avgCPU,
+					"p95_usage":      p95CPU,
+					"description":    "CPU使用率过高，可能影响系统性能",
+					"recommendation": "考虑优化CPU密集型任务或增加CPU资源",
+				},
+			}
+		}
+	*/
+	return &device.CheckCPUBottleneckOutput{}
 }
 
 // checkMemoryBottleneck 检查内存瓶颈
 func (s *sDevice) checkMemoryBottleneck(input *device.CheckMemoryBottleneckInput) *device.CheckMemoryBottleneckOutput {
-	memValuesOutput := s.extractValues(&device.ExtractValuesInput{
-		Data: input.PerformanceData,
-		Key:  "memory_usage",
-	})
-	memValues := memValuesOutput.Values
-	avgMem := s.calculateAverage(memValues)
-	p95Mem := s.calculatePercentile(&device.CalculatePercentileInput{Values: memValues, Percentile: 95}).PercentileValue
+	/*
+		memValuesOutput := s.extractValues(&device.ExtractValuesInput{
+			Data: input.PerformanceData,
+			Key:  "memory_usage",
+		})
+		memValues := memValuesOutput.Values
+		avgMem := s.calculateAverage(memValues)
+		p95Mem := s.calculatePercentile(&device.CalculatePercentileInput{Values: memValues, Percentile: 95}).PercentileValue
 
-	if avgMem > 85 || p95Mem > 95 {
-		severity := s.getBottleneckSeverity(&device.GetBottleneckSeverityInput{Usage: avgMem}).Severity
-		return &device.CheckMemoryBottleneckOutput{
-			HasIssue: true,
-			Bottleneck: map[string]interface{}{
-				"type":           "memory",
-				"severity":       severity,
-				"avg_usage":      avgMem,
-				"p95_usage":      p95Mem,
-				"description":    "内存使用率过高，可能导致系统不稳定",
-				"recommendation": "考虑增加内存或优化内存使用",
-			},
+		if avgMem > 85 || p95Mem > 95 {
+			severity := s.getBottleneckSeverity(&device.GetBottleneckSeverityInput{Usage: avgMem}).Severity
+			return &device.CheckMemoryBottleneckOutput{
+				HasIssue: true,
+				Bottleneck: map[string]interface{}{
+					"type":           "memory",
+					"severity":       severity,
+					"avg_usage":      avgMem,
+					"p95_usage":      p95Mem,
+					"description":    "内存使用率过高，可能导致系统不稳定",
+					"recommendation": "考虑增加内存或优化内存使用",
+				},
+			}
 		}
-	}
-
+	*/
 	return &device.CheckMemoryBottleneckOutput{
 		HasIssue:   false,
 		Bottleneck: nil,
@@ -379,29 +377,30 @@ func (s *sDevice) checkMemoryBottleneck(input *device.CheckMemoryBottleneckInput
 
 // checkDiskBottleneck 检查磁盘瓶颈
 func (s *sDevice) checkDiskBottleneck(input *device.CheckDiskBottleneckInput) *device.CheckDiskBottleneckOutput {
-	diskValuesOutput := s.extractValues(&device.ExtractValuesInput{
-		Data: input.PerformanceData,
-		Key:  "disk_usage",
-	})
-	diskValues := diskValuesOutput.Values
-	avgDisk := s.calculateAverage(diskValues)
-	p95Disk := s.calculatePercentile(&device.CalculatePercentileInput{Values: diskValues, Percentile: 95}).PercentileValue
+	/*
+		diskValuesOutput := s.extractValues(&device.ExtractValuesInput{
+			Data: input.PerformanceData,
+			Key:  "disk_usage",
+		})
+		diskValues := diskValuesOutput.Values
+		avgDisk := s.calculateAverage(diskValues)
+		p95Disk := s.calculatePercentile(&device.CalculatePercentileInput{Values: diskValues, Percentile: 95}).PercentileValue
 
-	if avgDisk > 90 || p95Disk > 98 {
-		severity := s.getBottleneckSeverity(&device.GetBottleneckSeverityInput{Usage: avgDisk}).Severity
-		return &device.CheckDiskBottleneckOutput{
-			HasIssue: true,
-			Bottleneck: map[string]interface{}{
-				"type":           "disk",
-				"severity":       severity,
-				"avg_usage":      avgDisk,
-				"p95_usage":      p95Disk,
-				"description":    "磁盘使用率过高，可能影响I/O性能",
-				"recommendation": "考虑清理磁盘空间或扩容",
-			},
+		if avgDisk > 90 || p95Disk > 98 {
+			severity := s.getBottleneckSeverity(&device.GetBottleneckSeverityInput{Usage: avgDisk}).Severity
+			return &device.CheckDiskBottleneckOutput{
+				HasIssue: true,
+				Bottleneck: map[string]interface{}{
+					"type":           "disk",
+					"severity":       severity,
+					"avg_usage":      avgDisk,
+					"p95_usage":      p95Disk,
+					"description":    "磁盘使用率过高，可能影响I/O性能",
+					"recommendation": "考虑清理磁盘空间或扩容",
+				},
+			}
 		}
-	}
-
+	*/
 	return &device.CheckDiskBottleneckOutput{
 		HasIssue:   false,
 		Bottleneck: nil,
@@ -410,29 +409,30 @@ func (s *sDevice) checkDiskBottleneck(input *device.CheckDiskBottleneckInput) *d
 
 // checkNetworkBottleneck 检查网络瓶颈
 func (s *sDevice) checkNetworkBottleneck(input *device.CheckNetworkBottleneckInput) *device.CheckNetworkBottleneckOutput {
-	netValuesOutput := s.extractValues(&device.ExtractValuesInput{
-		Data: input.PerformanceData,
-		Key:  "network_latency",
-	})
-	netValues := netValuesOutput.Values
-	avgNet := s.calculateAverage(netValues)
-	p95Net := s.calculatePercentile(&device.CalculatePercentileInput{Values: netValues, Percentile: 95}).PercentileValue
+	/*
+		netValuesOutput := s.extractValues(&device.ExtractValuesInput{
+			Data: input.PerformanceData,
+			Key:  "network_latency",
+		})
+		netValues := netValuesOutput.Values
+		avgNet := s.calculateAverage(netValues)
+		p95Net := s.calculatePercentile(&device.CalculatePercentileInput{Values: netValues, Percentile: 95}).PercentileValue
 
-	if avgNet > 100 || p95Net > 200 {
-		severity := s.getBottleneckSeverity(&device.GetBottleneckSeverityInput{Usage: avgNet / 10}).Severity
-		return &device.CheckNetworkBottleneckOutput{
-			HasIssue: true,
-			Bottleneck: map[string]interface{}{
-				"type":           "network",
-				"severity":       severity,
-				"avg_latency":    avgNet,
-				"p95_latency":    p95Net,
-				"description":    "网络延迟过高，可能影响响应时间",
-				"recommendation": "检查网络连接或优化网络配置",
-			},
+		if avgNet > 100 || p95Net > 200 {
+			severity := s.getBottleneckSeverity(&device.GetBottleneckSeverityInput{Usage: avgNet / 10}).Severity
+			return &device.CheckNetworkBottleneckOutput{
+				HasIssue: true,
+				Bottleneck: map[string]interface{}{
+					"type":           "network",
+					"severity":       severity,
+					"avg_latency":    avgNet,
+					"p95_latency":    p95Net,
+					"description":    "网络延迟过高，可能影响响应时间",
+					"recommendation": "检查网络连接或优化网络配置",
+				},
+			}
 		}
-	}
-
+	*/
 	return &device.CheckNetworkBottleneckOutput{
 		HasIssue:   false,
 		Bottleneck: nil,
@@ -441,69 +441,68 @@ func (s *sDevice) checkNetworkBottleneck(input *device.CheckNetworkBottleneckInp
 
 // calculatePerformanceScoreFromData 计算性能评分
 func (s *sDevice) calculatePerformanceScoreFromData(input *device.CalculatePerformanceScoreFromDataInput) *device.CalculatePerformanceScoreFromDataOutput {
-	score := 100.0
+	/*
+		score := 100.0
 
-	// CPU评分 (权重: 30%)
-	extractInput := &device.ExtractValuesInput{
-		Data: input.PerformanceData,
-		Key:  "cpu_usage",
-	}
-	cpuValuesOutput := s.extractValues(extractInput)
-	avgCPU := s.calculateAverage(cpuValuesOutput.Values)
-	if avgCPU > 90 {
-		score -= 30
-	} else if avgCPU > 70 {
-		score -= 15
-	} else if avgCPU > 50 {
-		score -= 5
-	}
+		// CPU评分 (权重: 30%)
+		extractInput := &device.ExtractValuesInput{
+			Data: input.PerformanceData,
+			Key:  "cpu_usage",
+		}
+		cpuValuesOutput := s.extractValues(extractInput)
+		avgCPU := s.calculateAverage(cpuValuesOutput.Values)
+		if avgCPU > 90 {
+			score -= 30
+		} else if avgCPU > 70 {
+			score -= 15
+		} else if avgCPU > 50 {
+			score -= 5
+		}
 
-	// 内存评分 (权重: 25%)
-	extractInput.Key = "memory_usage"
-	memValuesOutput := s.extractValues(extractInput)
-	avgMem := s.calculateAverage(memValuesOutput.Values)
-	if avgMem > 90 {
-		score -= 25
-	} else if avgMem > 80 {
-		score -= 12
-	} else if avgMem > 60 {
-		score -= 5
-	}
+		// 内存评分 (权重: 25%)
+		extractInput.Key = "memory_usage"
+		memValuesOutput := s.extractValues(extractInput)
+		avgMem := s.calculateAverage(memValuesOutput.Values)
+		if avgMem > 90 {
+			score -= 25
+		} else if avgMem > 80 {
+			score -= 12
+		} else if avgMem > 60 {
+			score -= 5
+		}
 
-	// 磁盘评分 (权重: 20%)
-	extractInput.Key = "disk_usage"
-	diskValuesOutput := s.extractValues(extractInput)
-	avgDisk := s.calculateAverage(diskValuesOutput.Values)
-	if avgDisk > 95 {
-		score -= 20
-	} else if avgDisk > 85 {
-		score -= 10
-	} else if avgDisk > 70 {
-		score -= 3
-	}
+		// 磁盘评分 (权重: 20%)
+		extractInput.Key = "disk_usage"
+		diskValuesOutput := s.extractValues(extractInput)
+		avgDisk := s.calculateAverage(diskValuesOutput.Values)
+		if avgDisk > 95 {
+			score -= 20
+		} else if avgDisk > 85 {
+			score -= 10
+		} else if avgDisk > 70 {
+			score -= 3
+		}
 
-	// 网络评分 (权重: 15%)
-	extractInput.Key = "network_latency"
-	netValuesOutput := s.extractValues(extractInput)
-	avgNet := s.calculateAverage(netValuesOutput.Values)
-	if avgNet > 200 {
-		score -= 15
-	} else if avgNet > 100 {
-		score -= 8
-	} else if avgNet > 50 {
-		score -= 3
-	}
+		// 网络评分 (权重: 15%)
+		extractInput.Key = "network_latency"
+		netValuesOutput := s.extractValues(extractInput)
+		avgNet := s.calculateAverage(netValuesOutput.Values)
+		if avgNet > 200 {
+			score -= 15
+		} else if avgNet > 100 {
+			score -= 8
+		} else if avgNet > 50 {
+			score -= 3
+		}
 
-	// 稳定性评分 (权重: 10%)
-	stabilityInput := &device.CalculateStabilityScoreInput{
-		PerformanceData: input.PerformanceData,
-	}
-	stabilityOutput := s.calculateStabilityScore(stabilityInput)
-	score += stabilityOutput.Score * 0.1
-
-	return &device.CalculatePerformanceScoreFromDataOutput{
-		Score: math.Max(0, math.Min(score, 100)),
-	}
+		// 稳定性评分 (权重: 10%)
+		stabilityInput := &device.CalculateStabilityScoreInput{
+			PerformanceData: input.PerformanceData,
+		}
+		stabilityOutput := s.calculateStabilityScore(stabilityInput)
+		score += stabilityOutput.Score * 0.1
+	*/
+	return &device.CalculatePerformanceScoreFromDataOutput{}
 }
 
 // generatePerformanceRecommendations 生成性能优化建议

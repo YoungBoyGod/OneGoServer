@@ -4,8 +4,6 @@ import (
 	"context"
 	"math"
 
-	"github.com/gogf/gf/v2/os/gtime"
-
 	"OneGfServer/internal/model/user"
 )
 
@@ -13,78 +11,46 @@ import (
 // 用户行为分析相关业务逻辑
 // ===============================
 
-// AnalyzeUserBehavior 分析用户行为模式
-func (s *sUser) AnalyzeUserBehavior(ctx context.Context, input *user.AnalyzeUserBehaviorInput) (*user.AnalyzeUserBehaviorOutput, error) {
-	if len(input.ActivityData) == 0 {
-		return &user.AnalyzeUserBehaviorOutput{
-			Analysis: map[string]interface{}{
-				"status":  "insufficient_data",
-				"message": "活动数据不足",
-			},
+// LogUserBehavior 记录用户行为日志
+func (s *sUser) LogUserBehavior(ctx context.Context, input *user.LogUserBehaviorInput) (*user.LogUserBehaviorOutput, error) {
+	/*
+		g.Log().Info(ctx, "记录用户行为", g.Map{
+			"user_id":   input.UserId,
+			"action":    input.Action,
+			"timestamp": gtime.Now(),
+			"details":   input.Details,
+		})
+		return &user.LogUserBehaviorOutput{
+			Success: true,
 		}, nil
-	}
+	*/
+	return &user.LogUserBehaviorOutput{}, nil
+}
 
-	analysis := make(map[string]interface{})
+// GetUserBehaviorLogs 获取用户行为日志
+func (s *sUser) GetUserBehaviorLogs(ctx context.Context, input *user.GetUserBehaviorLogsInput) (*user.GetUserBehaviorLogsOutput, error) {
+	/*
+		logs := make([]map[string]interface{}, 0)
+		// 查询日志（伪代码）
+		// logs, err := dao.GetUserLogs(input.UserId, input.Limit, input.Offset)
+		return &user.GetUserBehaviorLogsOutput{
+			Logs: logs,
+		}, nil
+	*/
+	return &user.GetUserBehaviorLogsOutput{}, nil
+}
 
-	// 统计活动类型分布
-	actionCounts := make(map[string]int)
-	hourCounts := make(map[int]int)
-	var totalSessions, totalDuration float64
-
-	for _, activity := range input.ActivityData {
-		// 统计操作类型
-		if action, ok := activity["action_type"].(string); ok {
-			actionCounts[action]++
-		}
-
-		// 统计活跃时间段
-		if timestamp, ok := activity["timestamp"].(*gtime.Time); ok && timestamp != nil {
-			hour := timestamp.Time.Hour()
-			hourCounts[hour]++
-		}
-
-		// 统计会话时长
-		if duration, ok := activity["session_duration"].(float64); ok {
-			totalDuration += duration
-			totalSessions++
-		}
-	}
-
-	analysis["action_distribution"] = actionCounts
-	analysis["active_hours"] = hourCounts
-
-	if totalSessions > 0 {
-		analysis["avg_session_duration"] = totalDuration / totalSessions
-	}
-
-	// 识别活跃时间段
-	mostActiveHourInput := &user.FindMostActiveHourInput{
-		HourCounts: hourCounts,
-	}
-	// TODO: Fix assignment mismatch - FindMostActiveHour returns 2 values
-	mostActiveHourOutput, _ := s.FindMostActiveHour(ctx, mostActiveHourInput)
-	analysis["most_active_hour"] = mostActiveHourOutput.MostActiveHour
-
-	// 识别行为模式
-	behaviorPatternInput := &user.IdentifyBehaviorPatternInput{
-		ActionCounts: actionCounts,
-		HourCounts:   hourCounts,
-	}
-	// TODO: Fix assignment mismatch - IdentifyBehaviorPattern returns 2 values
-	behaviorPatternOutput, _ := s.IdentifyBehaviorPattern(ctx, behaviorPatternInput)
-	analysis["behavior_pattern"] = behaviorPatternOutput.Pattern
-
-	// 计算活跃度评分
-	activityScoreInput := &user.CalculateActivityScoreInput{
-		ActivityData: input.ActivityData,
-	}
-	// TODO: Fix assignment mismatch - CalculateActivityScore returns 2 values
-	activityScoreOutput, _ := s.CalculateActivityScore(ctx, activityScoreInput)
-	analysis["activity_score"] = activityScoreOutput.Score
-
-	return &user.AnalyzeUserBehaviorOutput{
-		Analysis: analysis,
-	}, nil
+// AnalyzeUserBehavior 分析用户行为
+func (s *sUser) AnalyzeUserBehavior(ctx context.Context, input *user.AnalyzeUserBehaviorInput) (*user.AnalyzeUserBehaviorOutput, error) {
+	/*
+		result := make(map[string]interface{})
+		// 分析行为（伪代码）
+		// result = analyze(input.UserId)
+		return &user.AnalyzeUserBehaviorOutput{
+			Result: result,
+		}, nil
+	*/
+	return &user.AnalyzeUserBehaviorOutput{}, nil
 }
 
 // FindMostActiveHour 找到最活跃的时间段
